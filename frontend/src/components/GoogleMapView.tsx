@@ -28,7 +28,7 @@ interface GoogleMapViewProps {
 let cachedApiKey: string | null = null;
 let mapsLoadedPromise: Promise<void> | null = null;
 
-async function getMapsApiKey(): Promise<string> {
+export async function getMapsApiKey(): Promise<string> {
   if (cachedApiKey) return cachedApiKey;
 
   // 1. Check Vite build-time environment variable
@@ -50,6 +50,34 @@ async function getMapsApiKey(): Promise<string> {
   }
 
   return '';
+}
+
+export async function loadGoogleMaps(): Promise<boolean> {
+  const apiKey = await getMapsApiKey();
+  if (!apiKey) return false;
+
+  try {
+    if (!mapsLoadedPromise) {
+      setOptions({
+        key: apiKey,
+        v: 'weekly',
+      });
+      mapsLoadedPromise = (async () => {
+        await importLibrary('maps');
+        await importLibrary('marker');
+        try {
+          await importLibrary('places');
+        } catch (e) {
+          console.warn('[GoogleMapView] Places library optional load note:', e);
+        }
+      })();
+    }
+    await mapsLoadedPromise;
+    return true;
+  } catch (err) {
+    console.warn('[GoogleMapView] Failed to load Google Maps:', err);
+    return false;
+  }
 }
 
 export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
@@ -78,25 +106,12 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
       setError(null);
 
       try {
-        const apiKey = await getMapsApiKey();
-        if (!apiKey) {
+        const loaded = await loadGoogleMaps();
+        if (!loaded) {
           setError('Google Maps API key not configured. Please set GOOGLE_MAPS_API or VITE_GOOGLE_MAPS_API_KEY.');
           setLoading(false);
           return;
         }
-
-        if (!mapsLoadedPromise) {
-          setOptions({
-            key: apiKey,
-            v: 'weekly',
-          });
-          mapsLoadedPromise = (async () => {
-            await importLibrary('maps');
-            await importLibrary('marker');
-          })();
-        }
-
-        await mapsLoadedPromise;
         if (!isMounted || !mapContainerRef.current) return;
 
         const initialCenter = selectedLocation || center;

@@ -7,6 +7,7 @@ import { authenticateToken, optionalAuth } from '../auth/middleware';
 import { upload, saveFile, getFileViewUrl } from '../services/storage.service';
 import { logAudit } from '../services/audit.service';
 import { CaseStatus, UserRole } from '../types';
+import { config } from '../config';
 
 const router = Router();
 
@@ -77,6 +78,128 @@ function generateCaseNumber(): string {
   const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '');
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `CC-${yyyymmdd}-${rand}`;
+}
+
+export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+export function validateLandmarkQuality(text: string): { valid: boolean; reason?: string } {
+  const trimmed = text.trim();
+  if (trimmed.length < 4) {
+    return { valid: false, reason: 'Landmark or address must be at least 4 characters.' };
+  }
+  // Must contain letters or Hindi / Indic unicode characters
+  if (!/[a-zA-Z\u0900-\u097F]/.test(trimmed)) {
+    return { valid: false, reason: 'Landmark must contain identifiable street or place names.' };
+  }
+  // No excessive repeating characters (e.g. "aaaaa", "11111", ".....")
+  if (/(.)\1{3,}/i.test(trimmed)) {
+    return { valid: false, reason: 'Landmark contains excessive repeating characters.' };
+  }
+  // Keyboard mash sequences
+  const mashPatterns = [/asdfgh/i, /sdfghj/i, /dfghjk/i, /qwerty/i, /wertyu/i, /zxcvbn/i];
+  if (mashPatterns.some(p => p.test(trimmed))) {
+    return { valid: false, reason: 'Landmark text appears to be arbitrary keyboard input.' };
+  }
+  // Check continuous single words without spaces
+  const singleToken = trimmed.replace(/[^a-zA-Z0-9]/g, '');
+  if (!trimmed.includes(' ') && singleToken.length > 18) {
+    return { valid: false, reason: 'Please provide a realistic street, crossroad, or building landmark.' };
+  }
+  // Check vowel ratio on Latin strings with length >= 7
+  const lettersOnly = trimmed.replace(/[^a-zA-Z]/g, '').toLowerCase();
+  if (lettersOnly.length >= 7) {
+    const vowels = lettersOnly.match(/[aeiou]/g) || [];
+    const vowelRatio = vowels.length / lettersOnly.length;
+    if (vowelRatio < 0.12) {
+      return { valid: false, reason: 'Landmark does not appear to be a recognizable street name or location.' };
+    }
+  }
+  return { valid: true };
+}
+
+interface GeocodeCheckResult {
+  verified: boolean;
+  geocodedLocation?: { lat: number; lng: number };
+  formattedAddress?: string;
+  disparityMeters?: number;
+  notice?: string;
+  status: string;
+}
+
+export async function verifyWithGoogleMaps(
+  landmark: string,
+  submittedLat: number,
+  submittedLng: number
+): Promise<GeocodeCheckResult> {
+  const apiKey = config.googleMapsApiKey;
+  if (!apiKey) {
+    return { verified: false, status: 'API_KEY_UNCONFIGURED', notice: 'Google Maps API key is not configured.' };
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(landmark)}&key=${apiKey}`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    const data = await res.json() as any;
+
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      const topResult = data.results[0];
+      const geoLoc = topResult.geometry?.location;
+      if (geoLoc && typeof geoLoc.lat === 'number' && typeof geoLoc.lng === 'number') {
+        const dist = calculateDistanceMeters(submittedLat, submittedLng, geoLoc.lat, geoLoc.lng);
+        return {
+          verified: true,
+          status: 'OK',
+          geocodedLocation: { lat: geoLoc.lat, lng: geoLoc.lng },
+          formattedAddress: topResult.formatted_address,
+          disparityMeters: dist,
+        };
+      }
+    }
+
+    if (data.status === 'ZERO_RESULTS') {
+      return {
+        verified: false,
+        status: 'ZERO_RESULTS',
+        notice: `Google Maps could not locate "${landmark}". Please enter a recognized street, road, or landmark.`,
+      };
+    }
+
+    if (data.status === 'REQUEST_DENIED') {
+      return {
+        verified: false,
+        status: 'REQUEST_DENIED',
+        notice: data.error_message || 'Google Maps request denied (check project billing & API key settings).',
+      };
+    }
+
+    return {
+      verified: false,
+      status: data.status || 'UNKNOWN',
+      notice: data.error_message || `Google Maps Geocoding status: ${data.status}`,
+    };
+  } catch (err: any) {
+    return {
+      verified: false,
+      status: 'FETCH_ERROR',
+      notice: err.message || 'Geocoding request timed out or network error.',
+    };
+  }
 }
 
 // GET /api/v1/cases/nearby
@@ -265,7 +388,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
     const listQuery = `
       SELECT 
         c.id, c.case_number, c.status, c.description, c.landmark, c.latitude, c.longitude,
-        c.is_hotspot, c.created_at, c.updated_at, c.acknowledged_at, c.resolved_at, c.verified_at,
+        c.is_hotspot, c.location_source, c.created_at, c.updated_at, c.acknowledged_at, c.resolved_at, c.verified_at,
         cat.id AS cat_id, cat.name_en AS cat_name_en, cat.name_hi AS cat_name_hi, cat.slug AS cat_slug,
         sa.id AS sa_id, sa.name AS sa_name, sa.name_hi AS sa_name_hi,
         u.id AS rep_id, u.display_name AS rep_name,
@@ -299,6 +422,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
         latitude: row.latitude,
         longitude: row.longitude,
         is_hotspot: row.is_hotspot,
+        location_source: row.location_source || 'MANUAL_PIN',
         created_at: row.created_at,
         updated_at: row.updated_at,
         acknowledged_at: row.acknowledged_at,
@@ -344,11 +468,12 @@ const CreateCaseSchema = z.object({
   category_id: z.string().uuid().optional(),
   category: z.string().uuid().optional(),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
-  landmark: z.string().min(2, 'Landmark is required.'),
-  latitude: z.number({ required_error: 'Latitude coordinate is required.' }),
-  longitude: z.number({ required_error: 'Longitude coordinate is required.' }),
+  landmark: z.string().min(4, 'Landmark or address must be at least 4 characters.'),
+  latitude: z.number({ required_error: 'Latitude coordinate is required.' }).min(-90).max(90),
+  longitude: z.number({ required_error: 'Longitude coordinate is required.' }).min(-180).max(180),
   service_area_id: z.string().uuid().optional().nullable(),
   service_area: z.string().uuid().optional().nullable(),
+  location_source: z.enum(['VERIFIED_ADDRESS', 'MANUAL_PIN', 'GPS_DETECTED']).optional().default('MANUAL_PIN'),
   is_hotspot: z.boolean().optional().default(false),
 }).refine(data => Boolean(data.category_id || data.category), {
   message: 'Category is required.',
@@ -366,31 +491,124 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
 
   const user = req.user!;
   const data = parseResult.data;
-  const categoryId = (data.category_id || data.category)!;
-  const caseId = crypto.randomUUID();
-  const caseNumber = generateCaseNumber();
-  const transitionId = crypto.randomUUID();
-  const now = new Date();
+
+  // 1. Quality & Anti-gibberish Check
+  const quality = validateLandmarkQuality(data.landmark);
+  if (!quality.valid) {
+    res.status(400).json({
+      detail: quality.reason || 'Invalid address or landmark text provided.',
+      field: 'landmark',
+    });
+    return;
+  }
 
   const client = await getClient();
   try {
     await client.query('BEGIN');
 
-    // Default to specified service area, or first active service area if not specified
-    let serviceAreaId = data.service_area_id || data.service_area || null;
-    if (!serviceAreaId) {
-      const saRes = await client.query('SELECT id FROM areas_servicearea WHERE is_active = true LIMIT 1;');
-      if (saRes.rows.length > 0) {
-        serviceAreaId = saRes.rows[0].id;
+    // 2. Service Area Boundary Check (Haversine Formula)
+    const saListRes = await client.query(
+      'SELECT id, name, name_hi, latitude, longitude, radius_meters FROM areas_servicearea WHERE is_active = true;'
+    );
+    const activeAreas = saListRes.rows;
+
+    let assignedServiceAreaId: string | null = null;
+    const requestedAreaId = data.service_area_id || data.service_area || null;
+
+    if (activeAreas.length > 0) {
+      if (requestedAreaId) {
+        const targetArea = activeAreas.find((a: any) => a.id === requestedAreaId);
+        if (!targetArea) {
+          await client.query('ROLLBACK');
+          res.status(400).json({ detail: 'Requested service area is inactive or does not exist.' });
+          return;
+        }
+
+        const distance = calculateDistanceMeters(data.latitude, data.longitude, targetArea.latitude, targetArea.longitude);
+        const maxAllowed = targetArea.radius_meters * 1.25; // 25% boundary perimeter buffer
+        if (distance > maxAllowed) {
+          await client.query('ROLLBACK');
+          res.status(400).json({
+            detail: `Selected coordinates (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}) are outside ${targetArea.name}'s operational boundary (${Math.round(distance)}m away; allowed radius is ${targetArea.radius_meters}m).`,
+            field: 'coordinates',
+            distance_meters: Math.round(distance),
+            max_radius_meters: targetArea.radius_meters,
+          });
+          return;
+        }
+        assignedServiceAreaId = targetArea.id;
+      } else {
+        // Auto-match closest active service area
+        let closestArea: any = null;
+        let minDistance = Infinity;
+
+        for (const area of activeAreas) {
+          const dist = calculateDistanceMeters(data.latitude, data.longitude, area.latitude, area.longitude);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestArea = area;
+          }
+        }
+
+        if (closestArea && minDistance <= closestArea.radius_meters * 1.25) {
+          assignedServiceAreaId = closestArea.id;
+        } else {
+          await client.query('ROLLBACK');
+          const zoneNames = activeAreas.map((a: any) => a.name).join(', ');
+          res.status(400).json({
+            detail: `Selected coordinates (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}) are outside all active CitizenCivic operational zones (${Math.round(minDistance)}m from nearest zone ${closestArea?.name || 'unknown'}). Currently active zones: ${zoneNames}.`,
+            field: 'coordinates',
+            nearest_zone: closestArea?.name,
+            distance_meters: Math.round(minDistance),
+          });
+          return;
+        }
       }
     }
 
-    // Insert Case
+    // 3. Google Maps Geocoding & Distance Disparity Verification (if key is configured or verified address)
+    if (data.location_source === 'VERIFIED_ADDRESS' || config.googleMapsApiKey) {
+      const geoCheck = await verifyWithGoogleMaps(data.landmark, data.latitude, data.longitude);
+      
+      if (geoCheck.status === 'ZERO_RESULTS') {
+        await client.query('ROLLBACK');
+        res.status(400).json({
+          detail: geoCheck.notice || `Invalid address: Google Maps could not locate "${data.landmark}". Please provide an authentic street, road, or landmark.`,
+          field: 'landmark',
+        });
+        return;
+      }
+
+      if (geoCheck.status === 'OK' && typeof geoCheck.disparityMeters === 'number') {
+        // If disparity between Google's geocoded location and user's pinned coordinates is > 5 km (e.g. Aligarh address placed into Bangalore Ward 82)
+        if (geoCheck.disparityMeters > 5000) {
+          await client.query('ROLLBACK');
+          res.status(400).json({
+            detail: `Address disparity detected: The address "${data.landmark}" is situated ${Math.round(geoCheck.disparityMeters / 1000)} km away from the pinned coordinates. Please ensure the address text matches the on-map location.`,
+            field: 'landmark',
+            disparity_km: Math.round(geoCheck.disparityMeters / 1000),
+          });
+          return;
+        }
+      }
+
+      if (geoCheck.status === 'REQUEST_DENIED') {
+        console.warn(`[Geocoding] Google Maps API billing or key permission required: ${geoCheck.notice}`);
+      }
+    }
+
+    const categoryId = (data.category_id || data.category)!;
+    const caseId = crypto.randomUUID();
+    const caseNumber = generateCaseNumber();
+    const transitionId = crypto.randomUUID();
+    const now = new Date();
+
+    // Insert Case with location_source and verified serviceAreaId
     const insertCaseQuery = `
       INSERT INTO cases_case 
         (id, case_number, status, description, landmark, latitude, longitude,
-         is_hotspot, primary_reporter_id, category_id, service_area_id, created_at, updated_at)
-      VALUES ($1, $2, 'SUBMITTED', $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+         is_hotspot, primary_reporter_id, category_id, service_area_id, location_source, created_at, updated_at)
+      VALUES ($1, $2, 'SUBMITTED', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
       RETURNING *;
     `;
     const caseResult = await client.query(insertCaseQuery, [
@@ -403,7 +621,8 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       data.is_hotspot,
       user.id,
       categoryId,
-      serviceAreaId || null,
+      assignedServiceAreaId,
+      data.location_source,
       now,
     ]);
 

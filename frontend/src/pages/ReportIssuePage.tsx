@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,10 +12,11 @@ import {
   Copy,
   Check,
   Sparkles,
+  Search,
 } from 'lucide-react';
 import apiClient from '../api/client';
 import ImageUpload from '../components/ImageUpload';
-import GoogleMapView from '../components/GoogleMapView';
+import GoogleMapView, { loadGoogleMaps } from '../components/GoogleMapView';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import type { Category } from '../types';
@@ -26,6 +27,16 @@ interface AITriageData {
   hazard_flags: string[];
   action_summary: string;
   duplicate_risk: string;
+}
+
+function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export const ReportIssuePage: React.FC = () => {
@@ -39,17 +50,22 @@ export const ReportIssuePage: React.FC = () => {
 
   // Form State
   const [categories, setCategories] = useState<Category[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [description, setDescription] = useState('');
   const [landmark, setLandmark] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationSource, setLocationSource] = useState<'VERIFIED_ADDRESS' | 'MANUAL_PIN' | 'GPS_DETECTED'>('MANUAL_PIN');
   const [locationDetecting, setLocationDetecting] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
   const [manualCoordsOpen, setManualCoordsOpen] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [declarationChecked, setDeclarationChecked] = useState(false);
+
+  // Autocomplete ref
+  const landmarkInputRef = useRef<HTMLInputElement>(null);
 
   // Submission State
   const [submitting, setSubmitting] = useState(false);
@@ -69,14 +85,58 @@ export const ReportIssuePage: React.FC = () => {
         const cats = catRes.data.results || catRes.data || [];
         const areas = areaRes.data.results || areaRes.data || [];
         setCategories(cats);
+        setServiceAreas(areas);
         if (cats.length > 0) setSelectedCategory(cats[0].id);
         if (areas.length > 0) setSelectedArea(areas[0].id);
+
+        // Preload Google Maps libraries in background
+        loadGoogleMaps().catch(() => {});
       } catch (e) {
         console.error('Failed to load metadata', e);
       }
     };
     loadMetadata();
   }, []);
+
+  // Initialize Places Autocomplete on landmark input in Step 2
+  useEffect(() => {
+    let isMounted = true;
+    if (step === 2) {
+      const timer = setTimeout(() => {
+        if (!isMounted || !landmarkInputRef.current) return;
+        if (typeof google !== 'undefined' && google.maps?.places?.Autocomplete) {
+          try {
+            const autocomplete = new google.maps.places.Autocomplete(landmarkInputRef.current, {
+              componentRestrictions: { country: 'in' },
+              fields: ['formatted_address', 'geometry', 'name'],
+            });
+
+            autocomplete.addListener('place_changed', () => {
+              if (!isMounted) return;
+              const place = autocomplete.getPlace();
+              if (place.geometry?.location) {
+                const lat = Number(place.geometry.location.lat().toFixed(6));
+                const lng = Number(place.geometry.location.lng().toFixed(6));
+                setLatitude(lat);
+                setLongitude(lng);
+                setLandmark(place.formatted_address || place.name || '');
+                setLocationSource('VERIFIED_ADDRESS');
+                setLocationDetected(false);
+                setError(null);
+              }
+            });
+          } catch (e) {
+            console.warn('[ReportIssuePage] Autocomplete setup notice:', e);
+          }
+        }
+      }, 200);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
+    }
+  }, [step]);
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
@@ -92,6 +152,7 @@ export const ReportIssuePage: React.FC = () => {
         setLongitude(Number(pos.coords.longitude.toFixed(6)));
         setLocationDetecting(false);
         setLocationDetected(true);
+        setLocationSource('GPS_DETECTED');
       },
       (err) => {
         console.warn('Geolocation notice:', err.message);
@@ -134,6 +195,10 @@ export const ReportIssuePage: React.FC = () => {
     if (step === 2) {
       if (!landmark.trim() || !description.trim()) {
         setError('Please provide a specific street landmark and problem description.');
+        return;
+      }
+      if (landmark.trim().length < 4) {
+        setError('Street landmark or address must be at least 4 characters long.');
         return;
       }
       if (description.trim().length < 10) {
@@ -183,8 +248,8 @@ export const ReportIssuePage: React.FC = () => {
       return;
     }
 
-    if (!landmark.trim() || landmark.trim().length < 2) {
-      setError('Street landmark is required (at least 2 characters).');
+    if (!landmark.trim() || landmark.trim().length < 4) {
+      setError('Street landmark is required (at least 4 characters).');
       return;
     }
 
@@ -200,6 +265,7 @@ export const ReportIssuePage: React.FC = () => {
         landmark: landmark.trim(),
         latitude: Number(latitude),
         longitude: Number(longitude),
+        location_source: locationSource,
       };
 
       const caseRes = await apiClient.post('/cases', casePayload);
@@ -577,28 +643,96 @@ export const ReportIssuePage: React.FC = () => {
                   setLatitude(loc.lat);
                   setLongitude(loc.lng);
                   setLocationDetected(false);
+                  setLocationSource('MANUAL_PIN');
                   setError(null);
+                  if (typeof google !== 'undefined' && google.maps?.Geocoder) {
+                    try {
+                      const geocoder = new google.maps.Geocoder();
+                      geocoder.geocode({ location: loc }, (results, status) => {
+                        if (status === 'OK' && results && results[0]) {
+                          if (!landmark.trim()) {
+                            setLandmark(results[0].formatted_address);
+                          }
+                        }
+                      });
+                    } catch (e) {
+                      console.warn('Reverse geocode note:', e);
+                    }
+                  }
                 }}
                 interactive={true}
                 height="260px"
               />
             </div>
 
-            {/* Landmark / Street Input */}
+            {/* Landmark / Street Input with Google Places Autocomplete */}
             <div className="space-y-1.5">
-              <label htmlFor="landmark-input" className="block text-xs font-semibold text-slate-800">
-                {t('report.landmark') || 'Street Landmark or Address'} <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="landmark-input"
-                type="text"
-                required
-                value={landmark}
-                onChange={(e) => setLandmark(e.target.value)}
-                placeholder={t('report.landmarkPlaceholder') || 'e.g. Opposite Metro Pillar 104, near 12th Main crossroad'}
-                className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
-              />
+              <div className="flex items-center justify-between">
+                <label htmlFor="landmark-input" className="block text-xs font-semibold text-slate-800">
+                  {t('report.landmark') || 'Street Landmark or Address'} <span className="text-rose-600">*</span>
+                </label>
+                <Badge variant={locationSource === 'VERIFIED_ADDRESS' ? 'navy' : locationSource === 'GPS_DETECTED' ? 'emerald' : 'default'} size="xs">
+                  {locationSource === 'VERIFIED_ADDRESS'
+                    ? (t('report.locationSourceVerified') || '✓ Google Places Verified')
+                    : locationSource === 'GPS_DETECTED'
+                    ? (t('report.gpsAcquired') || '🛰️ Device GPS')
+                    : (t('report.locationSourceManual') || '📍 Manual Pin')}
+                </Badge>
+              </div>
+              <div className="relative">
+                <input
+                  ref={landmarkInputRef}
+                  id="landmark-input"
+                  type="text"
+                  required
+                  value={landmark}
+                  onChange={(e) => {
+                    setLandmark(e.target.value);
+                    if (locationSource === 'VERIFIED_ADDRESS') {
+                      setLocationSource('MANUAL_PIN');
+                    }
+                  }}
+                  placeholder={t('report.landmarkPlaceholder') || 'Search Google Maps address or enter street landmark...'}
+                  className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
+                />
+                <Search className="h-4 w-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Google Places suggestions appear automatically as you type. Or click on the map above to drop a pinpoint.
+              </p>
             </div>
+
+            {/* Live Service Zone Boundary Verification Feedback */}
+            {(() => {
+              const activeZone = serviceAreas.find((a: any) => a.id === selectedArea) || serviceAreas[0];
+              if (latitude !== null && longitude !== null && activeZone && typeof activeZone.latitude === 'number') {
+                const dist = calculateDistanceMeters(latitude, longitude, activeZone.latitude, activeZone.longitude);
+                const isInside = dist <= (activeZone.radius_meters || 2500) * 1.25;
+                const zoneName = i18n.language === 'hi' ? (activeZone.name_hi || activeZone.name) : activeZone.name;
+                return (
+                  <div
+                    className={`p-3 rounded-md border flex items-center gap-2.5 text-xs transition-colors ${
+                      isInside
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
+                        : 'bg-amber-50/80 border-amber-200 text-amber-900'
+                    }`}
+                  >
+                    {isInside ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                    )}
+                    <span className="leading-relaxed font-medium">
+                      {isInside
+                        ? t('report.locationWithinZone', { area: zoneName, meters: Math.round(dist) }) || `✓ Within ${zoneName} service area (${Math.round(dist)}m from center)`
+                        : t('report.locationOutsideZone', { meters: Math.round(dist) }) || `⚠️ Warning: Location is outside active service zones (${Math.round(dist / 1000)} km away). Active zones: Indiranagar Ward 82 and Koramangala 4th Block.`
+                      }
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Detailed Description */}
             <div className="space-y-1.5">
@@ -743,7 +877,18 @@ export const ReportIssuePage: React.FC = () => {
 
             <div className="p-4 grid grid-cols-3 gap-2">
               <span className="font-semibold text-slate-500">{t('case.landmarkLabel') || 'Landmark'}:</span>
-              <span className="col-span-2 font-medium text-slate-900">{landmark}</span>
+              <div className="col-span-2 space-y-1">
+                <p className="font-medium text-slate-900">{landmark}</p>
+                <div>
+                  <Badge variant={locationSource === 'VERIFIED_ADDRESS' ? 'navy' : locationSource === 'GPS_DETECTED' ? 'emerald' : 'default'} size="xs">
+                    {locationSource === 'VERIFIED_ADDRESS'
+                      ? (t('report.locationSourceVerified') || '✓ Google Maps Verified Place')
+                      : locationSource === 'GPS_DETECTED'
+                      ? (t('report.gpsAcquired') || '🛰️ Device GPS Geotag')
+                      : (t('report.locationSourceManual') || '📍 Manual Pin')}
+                  </Badge>
+                </div>
+              </div>
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">

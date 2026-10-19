@@ -219,7 +219,42 @@ describe('4. Cases & Civic Workflow', () => {
     expect(res.status).toBe(201);
     expect(res.body.case_number).toMatch(/^CC-\d{8}-\d{4}$/);
     expect(res.body.status).toBe('SUBMITTED');
+    expect(res.body.location_source).toBe('MANUAL_PIN');
     createdCaseId = res.body.id;
+  });
+
+  it('POST /api/v1/cases should reject gibberish address text', async () => {
+    const res = await request(app)
+      .post('/api/v1/cases')
+      .set('Authorization', `Bearer ${testAccessToken}`)
+      .send({
+        category_id: categoryId,
+        description: 'Large waste accumulation near 12th Main Indiranagar park entrance',
+        landmark: 'hgijhkjkl',
+        latitude: 12.9784,
+        longitude: 77.6408,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('landmark');
+    expect(res.body.detail).toBeDefined();
+  });
+
+  it('POST /api/v1/cases should reject out-of-boundary coordinates', async () => {
+    const res = await request(app)
+      .post('/api/v1/cases')
+      .set('Authorization', `Bearer ${testAccessToken}`)
+      .send({
+        category_id: categoryId,
+        description: 'Piles of uncollected garbage left near residential colony road',
+        landmark: 'Near Aligarh Railway Road Junction',
+        latitude: 27.8974, // Far outside all active Bangalore pilot zones
+        longitude: 78.0880,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.field).toBe('coordinates');
+    expect(res.body.detail).toContain('outside');
   });
 
   it('GET /api/v1/cases/:id should return complete case details with timeline', async () => {
@@ -307,6 +342,29 @@ describe('5. Rewards & Karma Points', () => {
     const res = await request(app).get('/api/v1/rewards/leaderboard');
     expect(res.status).toBe(200);
     expect(res.body.ward).toContain('Ward 82');
+    expect(Array.isArray(res.body.leaderboard)).toBe(true);
+  });
+
+  it('GET /api/v1/rewards/leaderboard?type=officer should return officer performance metrics', async () => {
+    const res = await request(app).get('/api/v1/rewards/leaderboard?type=officer');
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('officer');
+    expect(Array.isArray(res.body.leaderboard)).toBe(true);
+    if (res.body.leaderboard.length > 0) {
+      const firstOfficer = res.body.leaderboard[0];
+      expect(firstOfficer).toHaveProperty('display_name');
+      expect(firstOfficer).toHaveProperty('role');
+      expect(firstOfficer).toHaveProperty('assigned_cases');
+      expect(firstOfficer).toHaveProperty('verified_resolved');
+      expect(firstOfficer).toHaveProperty('resolution_rate_pct');
+      expect(firstOfficer).toHaveProperty('avg_resolution_hours');
+    }
+  });
+
+  it('GET /api/v1/rewards/leaderboard with area_id filter should return scoped leaderboard', async () => {
+    const res = await request(app).get(`/api/v1/rewards/leaderboard?type=citizen&area_id=${serviceAreaId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.area_id).toBe(serviceAreaId);
     expect(Array.isArray(res.body.leaderboard)).toBe(true);
   });
 });
