@@ -11,11 +11,13 @@ djangorestframework-simplejwt==5.3.1
 python-dotenv==1.0.1
 dj-database-url==2.2.0
 
-# Database (PostgreSQL - optional for dev, required for prod)
-# psycopg2-binary==2.9.9
+# Database (PostgreSQL - Neon Cloud Database)
+psycopg2-binary==2.9.12
 
-# File handling
+# File handling & Cloud Storage
 Pillow==10.4.0
+boto3==1.42.97
+django-storages==1.14.6
 
 # Utilities
 django-extensions==3.2.3
