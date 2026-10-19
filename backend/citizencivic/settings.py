@@ -72,7 +72,7 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip()
     for o in os.environ.get(
         'CSRF_TRUSTED_ORIGINS',
-        'https://*.onrender.com,http://localhost:5173,http://localhost:3000'
+        'https://*.onrender.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000'
     ).split(',')
     if o.strip()
 ]
@@ -170,16 +170,21 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+    for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000').split(',')
     if o.strip()
 ]
+
+for dev_origin in ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000']:
+    if dev_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(dev_origin)
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.onrender\.com$",
     r"^https://.*\.pages\.dev$",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL', 'false').lower() in ('true', '1', 'yes')
+# Strict CORS: Allow only explicit origins and trusted domains in production
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------- Internationalization ----------

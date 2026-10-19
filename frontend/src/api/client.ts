@@ -24,8 +24,34 @@ export function setRefreshToken(token: string | null): void {
   }
 }
 
+/**
+ * API Base URL resolution:
+ * - If VITE_API_BASE_URL is provided (e.g. 'https://citizencivic.onrender.com' in production),
+ *   it directs requests to that backend host with '/api/v1'.
+ * - If empty (e.g. local development), defaults to '/api/v1' to leverage Vite dev server proxy.
+ */
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() || '';
+const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, '');
+export const API_BASE_URL = cleanBaseUrl
+  ? cleanBaseUrl.endsWith('/api/v1')
+    ? cleanBaseUrl
+    : `${cleanBaseUrl}/api/v1`
+  : '/api/v1';
+
+export const BACKEND_ROOT_URL = cleanBaseUrl
+  ? cleanBaseUrl.replace(/\/api\/v1$/, '')
+  : '';
+
+export function getMediaUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!BACKEND_ROOT_URL) return url;
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${BACKEND_ROOT_URL}${path}`;
+}
+
 const apiClient = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -89,7 +115,7 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post('/api/v1/auth/token/refresh/', {
+        const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
           refresh: refreshToken,
         });
         setAccessToken(data.access);

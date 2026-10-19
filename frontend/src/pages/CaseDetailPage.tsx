@@ -14,7 +14,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import apiClient from '../api/client';
+import apiClient, { getMediaUrl } from '../api/client';
 import CaseStatusBadge from '../components/CaseStatusBadge';
 import CaseTimeline from '../components/CaseTimeline';
 import ImageUpload from '../components/ImageUpload';
@@ -270,7 +270,7 @@ export const CaseDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {caseData.evidence.map((ev, i) => (
                 <div key={ev.id || i} className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs">
-                  <img src={ev.file} alt={ev.evidence_type} className="h-full w-full object-cover" />
+                  <img src={getMediaUrl(ev.file)} alt={ev.evidence_type} className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent p-2 flex flex-col justify-end">
                     <span className="text-[10px] font-bold text-white uppercase tracking-wider">
                       {ev.evidence_type.replace('_', ' ')}
