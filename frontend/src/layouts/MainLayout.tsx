@@ -30,11 +30,16 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans">
-      {/* Pilot environment indicator banner */}
-      <div className="bg-emerald-900 px-4 py-1.5 text-center text-xs font-medium text-emerald-100 flex items-center justify-center gap-2">
+      {/* Pilot environment indicator banner with Neon Realtime */}
+      <div className="bg-emerald-900 px-4 py-1.5 text-center text-xs font-medium text-emerald-100 flex flex-wrap items-center justify-center gap-2">
         <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span>
           <strong>Pilot Live</strong>: Indiranagar Ward 82 & Koramangala 4th Block — Verified civic accountability workflow
+        </span>
+        <span className="hidden sm:inline text-emerald-400">•</span>
+        <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold bg-emerald-950/70 text-emerald-200 border border-emerald-700/50 px-2 py-0.5 rounded-full">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+          <span>Neon Realtime Sync</span>
         </span>
       </div>
 

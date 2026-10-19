@@ -94,6 +94,8 @@ else:
         }
     }
 
+NEON_REALTIME_URL = os.environ.get('NEON_REALTIME_URL', '')
+
 # ---------- Auth ----------
 
 AUTH_USER_MODEL = 'accounts.User'

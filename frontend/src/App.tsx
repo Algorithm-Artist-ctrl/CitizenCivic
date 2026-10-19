@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { RealtimeProvider } from './contexts/RealtimeContext';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -17,7 +18,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <RealtimeProvider>
+          <Routes>
           <Route element={<MainLayout />}>
             {/* Protected Routes */}
             <Route
@@ -61,6 +63,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
+        </RealtimeProvider>
       </AuthProvider>
     </BrowserRouter>
   );
