@@ -100,7 +100,7 @@ export const RewardsPage: React.FC = () => {
           className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
         >
           <PlusCircle className="h-4 w-4 text-emerald-400" />
-          <span>Report Blackspot (+50 Pts)</span>
+          <span>Report Issue (+10 Pts)</span>
         </Link>
       </div>
 
@@ -114,13 +114,22 @@ export const RewardsPage: React.FC = () => {
             <div className="mt-2 text-4xl font-extrabold font-tabular text-white">
               {totalPoints} <span className="text-sm font-normal text-slate-400">pts</span>
             </div>
-            <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-300">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>{currentTier.title}</span>
-            </div>
+            {!user ? (
+              <div className="mt-2 text-xs text-slate-400">
+                <Link to="/login" className="text-emerald-400 underline hover:text-emerald-300 font-medium">
+                  Sign in
+                </Link>{' '}
+                to view and track your verified points
+              </div>
+            ) : (
+              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-300">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>{currentTier.title}</span>
+              </div>
+            )}
           </div>
           <p className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400">
-            {currentTier.next}
+            {user ? currentTier.next : 'Verified civic reporting ledger'}
           </p>
         </div>
 
@@ -221,8 +230,12 @@ export const RewardsPage: React.FC = () => {
 
             <div className="divide-y divide-slate-100">
               {leaderboard.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-500">
-                  Loading community leaderboard...
+                <div className="p-8 text-center space-y-2">
+                  <Award className="mx-auto h-6 w-6 text-slate-300" />
+                  <p className="text-xs font-semibold text-slate-800">No community contributors recorded yet</p>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                    Verified civic points are credited dynamically upon approved resolution and on-ground audits.
+                  </p>
                 </div>
               ) : (
                 leaderboard.slice(0, 15).map((entry, index) => (

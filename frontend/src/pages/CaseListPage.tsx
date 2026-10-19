@@ -152,7 +152,7 @@ export const CaseListPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by case number (e.g. CC-20261019-...) or street landmark..."
+              placeholder="Search by case number or street landmark..."
               className="w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
             />
           </div>

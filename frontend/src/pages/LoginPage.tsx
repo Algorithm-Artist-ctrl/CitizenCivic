@@ -52,12 +52,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handlePreFill = (roleEmail: string, rolePass: string) => {
-    setEmail(roleEmail);
-    setPassword(rolePass);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white flex flex-col justify-between">
       {/* Top minimal header */}
@@ -128,7 +122,7 @@ export const LoginPage: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="officer@citizencivic.gov or citizen@gmail.com"
+                    placeholder="name@example.com"
                     className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
                   />
                 </div>
@@ -181,52 +175,6 @@ export const LoginPage: React.FC = () => {
                 </Button>
               </div>
             </form>
-
-            {/* Quick-fill Role Evaluator for Demo & Test Users */}
-            <div className="pt-5 border-t border-slate-100 space-y-2.5">
-              <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                <span className="font-semibold text-slate-700">Quick Test Accounts:</span>
-                <span>Click to auto-fill</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => handlePreFill('citizen@citizencivic.org', 'testpass123')}
-                  className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left hover:bg-slate-100 hover:border-slate-300 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-slate-800 block">Citizen User</span>
-                  <span className="text-[10px] text-slate-500 font-mono">Report & track</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handlePreFill('operator@citizencivic.org', 'testpass123')}
-                  className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left hover:bg-slate-100 hover:border-slate-300 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-slate-800 block">Field Operator</span>
-                  <span className="text-[10px] text-slate-500 font-mono">Dispatch & resolve</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handlePreFill('moderator@citizencivic.org', 'testpass123')}
-                  className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left hover:bg-slate-100 hover:border-slate-300 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-slate-800 block">Ward Verifier</span>
-                  <span className="text-[10px] text-slate-500 font-mono">Review & verify</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handlePreFill('supervisor@citizencivic.org', 'testpass123')}
-                  className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left hover:bg-slate-100 hover:border-slate-300 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-slate-800 block">Supervisor</span>
-                  <span className="text-[10px] text-slate-500 font-mono">SLA & analytics</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Privacy footnote */}
