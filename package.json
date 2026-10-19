@@ -12,5 +12,10 @@
     "dev": "npm --prefix frontend run dev",
     "preview": "npm --prefix frontend run preview",
     "test": "npm --prefix server test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "dotenv": "^18.0.8"
   }
 }
