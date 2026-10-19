@@ -32,16 +32,23 @@ class NeonRealtimeClient {
     const rawUrl =
       import.meta.env.VITE_NEON_REALTIME_WS ||
       import.meta.env.VITE_NEON_REALTIME_URL ||
-      'https://br-floral-bird-aoi9ledz-neonrealtimesocket.compute.c-2.ap-southeast-1.aws.neon.tech/';
+      '';
 
-    // Ensure wss:// scheme
-    this.url = rawUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
-    if (!this.url.endsWith('/')) {
-      this.url += '/';
+    if (rawUrl) {
+      // Ensure wss:// scheme
+      this.url = rawUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+      if (!this.url.endsWith('/')) {
+        this.url += '/';
+      }
+    } else {
+      this.url = '';
     }
   }
 
   public connect(): void {
+    if (!this.url) {
+      return;
+    }
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
