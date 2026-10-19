@@ -2,17 +2,18 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  Plus,
+  Search,
+  ShieldCheck,
+  ClipboardList,
+  Clock,
+  CheckCircle2,
   Camera,
   ArrowRight,
-  MapPin,
-  CheckCircle2,
-  AlertCircle,
-  RotateCw,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
-import Button from '../components/ui/Button';
-import CaseStatusBadge from '../components/CaseStatusBadge';
 import CivicStreetGridFallback from '../components/CivicStreetGridFallback';
 import type { Case, PaginatedResponse } from '../types';
 
@@ -33,38 +34,20 @@ export const LandingPage: React.FC = () => {
   // 100% Real Database State
   const [cases, setCases] = useState<Case[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'record' | '3d'>('record');
   const [analytics, setAnalytics] = useState<CaseAnalytics | null>(null);
-  const [loadingCases, setLoadingCases] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRealData();
   }, []);
 
   const fetchRealData = async () => {
-    setLoadingCases(true);
     setLoadingAnalytics(true);
-    setLoadError(null);
+    setAnalyticsError(null);
 
     try {
-      // 1. Fetch real public cases from PostgreSQL database
-      const casesPromise = apiClient
-        .get<PaginatedResponse<Case>>('/cases/?page_size=5')
-        .then((res) => {
-          const list = res.data?.results || [];
-          setCases(list);
-          if (list.length > 0) {
-            setSelectedCaseId(list[0].id);
-          }
-        })
-        .catch((err) => {
-          console.warn('Failed to load public cases:', err);
-          setLoadError('Unable to connect to municipal case database.');
-        });
-
-      // 2. Fetch real analytics from database
+      // 1. Fetch real analytics directly from PostgreSQL
       const analyticsPromise = apiClient
         .get<CaseAnalytics>('/cases/analytics')
         .then((res) => {
@@ -73,57 +56,57 @@ export const LandingPage: React.FC = () => {
           }
         })
         .catch((err) => {
-          console.warn('Failed to load case analytics:', err);
+          console.warn('Analytics endpoint unavailable:', err);
+          setAnalyticsError('Database statistics unavailable');
         });
 
-      await Promise.all([casesPromise, analyticsPromise]);
+      // 2. Fetch real public cases for interactive references
+      const casesPromise = apiClient
+        .get<PaginatedResponse<Case>>('/cases/?page_size=6')
+        .then((res) => {
+          const list = res.data?.results || [];
+          setCases(list);
+          if (list.length > 0) {
+            setSelectedCaseId(list[0].id);
+          }
+        })
+        .catch((err) => {
+          console.warn('Cases directory fetch error:', err);
+        });
+
+      await Promise.all([analyticsPromise, casesPromise]);
     } finally {
-      setLoadingCases(false);
       setLoadingAnalytics(false);
     }
   };
 
-  const activeCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
+  const isHindi = i18n.language === 'hi';
 
-  // Helper for workflow milestone status
-  const getWorkflowStep = (status?: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 0;
-      case 'SUBMITTED':
-      case 'REVIEWED':
-        return 1;
-      case 'FORWARDED':
-      case 'ACKNOWLEDGED':
-      case 'IN_PROGRESS':
-        return 2;
-      case 'RESOLUTION_REPORTED':
-      case 'VERIFICATION_PENDING':
-      case 'DISPUTED_CLOSURE':
-        return 3;
-      case 'VERIFIED_RESOLVED':
-        return 4;
-      default:
-        return 1;
-    }
-  };
-
-  const activeStep = activeCase ? getWorkflowStep(activeCase.status) : 1;
+  // Real database metrics computed accurately
+  const totalReportsCount = analytics?.total_cases ?? null;
+  const inProgressCount = analytics?.by_status
+    ? (analytics.by_status.IN_PROGRESS || 0) +
+      (analytics.by_status.FORWARDED || 0) +
+      (analytics.by_status.ACKNOWLEDGED || 0) +
+      (analytics.by_status.SUBMITTED || 0)
+    : null;
+  const verifiedResolvedCount = analytics?.by_status?.VERIFIED_RESOLVED ?? null;
 
   return (
-    <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto w-full font-sans">
+    <div className="flex-1 flex flex-col justify-between px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto w-full font-sans">
+      {/* 1. HERO SECTION: Two-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* LEFT COLUMN: Value Proposition, CTAs, Real Grounded Metrics */}
         <div className="lg:col-span-6 space-y-6">
-          {/* Eyebrow Label */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-600" />
-            <span className="tracking-wide">{t('landing.badge') || 'Independent Civic Accountability Initiative'}</span>
+          {/* Small rounded white badge with a green dot */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="tracking-wide">{t('landing.eyebrow') || 'Independent Civic Accountability Initiative'}</span>
           </div>
 
-          {/* Main Headline (44–54px scale) */}
+          {/* Main Heading: Large Bold Typography (Navy line 1, Emerald Green line 2) */}
           <h1 className="text-4xl sm:text-5xl lg:text-[46px] xl:text-[50px] font-extrabold tracking-tight text-slate-950 leading-[1.12] font-heading">
-            {i18n.language === 'hi' ? (
+            {isHindi ? (
               <>
                 नागरिक समस्याएं दर्ज करें।{' '}
                 <span className="text-emerald-700 block sm:inline">सत्यापित समाधान ट्रैक करें।</span>
@@ -136,325 +119,228 @@ export const LandingPage: React.FC = () => {
             )}
           </h1>
 
-          {/* Supporting Paragraph (18–20px scale) */}
-          <p className="text-lg sm:text-[19px] text-slate-600 leading-relaxed max-w-xl">
-            {t('landing.subheadline') || 'Report neighbourhood problems, follow progress, and review real resolution evidence — all in one place.'}
+          {/* Short bold supporting line */}
+          <p className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+            {t('landing.heroSupporting') || 'Cleaner neighbourhoods. Safer streets. Better cities.'}
           </p>
 
-          {/* Primary Action Buttons (16–18px scale) */}
+          {/* Description */}
+          <p className="text-base sm:text-[18px] text-slate-600 leading-relaxed max-w-xl">
+            {t('landing.heroSubtitle') || 'Report local civic problems, track progress in real time, and see verified outcomes — all in one place.'}
+          </p>
+
+          {/* Two Large CTA Buttons */}
           <div className="flex flex-wrap items-center gap-3.5 pt-1">
-            <Link to={user ? '/report' : '/login'}>
-              <Button
-                variant="primary"
-                size="lg"
-                className="text-base sm:text-[17px] font-semibold px-6 py-3.5 shadow-sm"
-                icon={<Camera className="h-5 w-5 text-emerald-400" />}
-              >
-                {t('landing.reportIssue') || 'Report an Issue'}
-              </Button>
+            <Link
+              to={user ? '/report' : '/login'}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-6 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-800 active:scale-98 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 focus:ring-offset-2 transition-all cursor-pointer"
+            >
+              <Plus className="h-5 w-5 text-emerald-200" />
+              <span>{t('landing.reportCta') || 'Report an Issue'}</span>
             </Link>
 
-            <Link to="/cases">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="text-base sm:text-[17px] font-semibold px-6 py-3.5"
-                icon={<ArrowRight className="h-5 w-5" />}
-              >
-                {t('landing.exploreCases') || 'Explore Public Cases'}
-              </Button>
+            <Link
+              to="/cases"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-400 active:scale-98 focus:outline-hidden focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-all cursor-pointer"
+            >
+              <Search className="h-5 w-5 text-slate-600" />
+              <span>{t('landing.exploreCta') || 'Explore Public Cases'}</span>
             </Link>
           </div>
 
-          {/* Real Metrics Grounded in Database Records */}
+          {/* Three Compact Real-Data Statistic Cards */}
           <div className="pt-4 border-t border-slate-200">
-            <div className="grid grid-cols-3 gap-6 max-w-md">
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-slate-500 block">
-                  {t('landing.metrics.totalCases') || 'Total Cases'}
-                </span>
-                <div className="text-2xl font-black font-tabular font-mono text-slate-950 mt-1">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-xl">
+              {/* Card 1: Total Reports */}
+              <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-500 mb-1">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-slate-600 font-semibold truncate">
+                    {t('landing.metrics.totalReports') || 'Total Reports'}
+                  </span>
+                  <ClipboardList className="h-4 w-4 text-slate-500 shrink-0" />
+                </div>
+                <div className="text-2xl font-black font-tabular font-mono text-slate-950">
                   {loadingAnalytics ? (
-                    <span className="text-slate-300">...</span>
-                  ) : analytics ? (
-                    analytics.total_cases
+                    <span className="text-slate-300 text-lg">...</span>
+                  ) : totalReportsCount !== null ? (
+                    totalReportsCount
                   ) : (
-                    cases.length
+                    <span className="text-xs text-slate-400 font-sans font-normal">0</span>
                   )}
+                </div>
+                {/* Subtle decorative trend line */}
+                <div className="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-slate-700 rounded-full w-4/5" />
                 </div>
               </div>
 
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-amber-700 block">
-                  {t('landing.metrics.inProgress') || 'In Progress'}
-                </span>
-                <div className="text-2xl font-black font-tabular font-mono text-amber-800 mt-1">
+              {/* Card 2: In Progress */}
+              <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs">
+                <div className="flex items-center justify-between text-amber-700 mb-1">
+                  <span className="text-[11px] font-mono uppercase tracking-wider font-semibold truncate">
+                    {t('landing.metrics.inProgress') || 'In Progress'}
+                  </span>
+                  <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                </div>
+                <div className="text-2xl font-black font-tabular font-mono text-amber-800">
                   {loadingAnalytics ? (
-                    <span className="text-slate-300">...</span>
-                  ) : analytics ? (
-                    (analytics.by_status?.IN_PROGRESS || 0) +
-                    (analytics.by_status?.FORWARDED || 0) +
-                    (analytics.by_status?.ACKNOWLEDGED || 0)
+                    <span className="text-slate-300 text-lg">...</span>
+                  ) : inProgressCount !== null ? (
+                    inProgressCount
                   ) : (
-                    0
+                    <span className="text-xs text-slate-400 font-sans font-normal">0</span>
                   )}
+                </div>
+                {/* Subtle decorative trend line */}
+                <div className="mt-2 h-1 w-full bg-amber-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full w-3/5" />
                 </div>
               </div>
 
-              <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-emerald-700 block">
-                  {t('landing.metrics.verifiedClosed') || 'Verified Closed'}
-                </span>
-                <div className="text-2xl font-black font-tabular font-mono text-emerald-800 mt-1">
+              {/* Card 3: Verified Resolved */}
+              <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-2xs">
+                <div className="flex items-center justify-between text-emerald-700 mb-1">
+                  <span className="text-[11px] font-mono uppercase tracking-wider font-semibold truncate">
+                    {t('landing.metrics.verifiedResolved') || 'Verified Resolved'}
+                  </span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                </div>
+                <div className="text-2xl font-black font-tabular font-mono text-emerald-800">
                   {loadingAnalytics ? (
-                    <span className="text-slate-300">...</span>
-                  ) : analytics ? (
-                    analytics.by_status?.VERIFIED_RESOLVED || 0
+                    <span className="text-slate-300 text-lg">...</span>
+                  ) : verifiedResolvedCount !== null ? (
+                    verifiedResolvedCount
                   ) : (
-                    0
+                    <span className="text-xs text-slate-400 font-sans font-normal">0</span>
                   )}
+                </div>
+                {/* Subtle decorative trend line */}
+                <div className="mt-2 h-1 w-full bg-emerald-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-600 rounded-full w-5/6" />
                 </div>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
-              <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
-              <span>{t('landing.metrics.liveDatabase') || 'Calculated directly from live platform database records'}</span>
-            </p>
+            {/* Shield Icon + Slogan */}
+            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-slate-600 flex items-center gap-1.5 font-medium">
+                <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0" />
+                <span>{t('landing.metrics.slogan') || 'Real reports. Real communities. Real change.'}</span>
+              </p>
+              {analyticsError && (
+                <span className="text-[11px] font-mono text-slate-400">
+                  {analyticsError}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Elegant Compact Product Interface */}
+        {/* RIGHT COLUMN: 3D Isometric Miniature City Scene with 3 Floating Cards */}
         <div className="lg:col-span-6">
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            {/* Header & View Switcher */}
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-2.5">
-              <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-slate-200/70 border border-slate-300/60">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('record')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                    viewMode === 'record'
-                      ? 'bg-white text-slate-950 shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('landing.viewRecord') || 'Case Record'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('3d')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    viewMode === '3d'
-                      ? 'bg-white text-slate-950 shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                  <span>{t('landing.view3d') || '3D Ward Grid'}</span>
-                </button>
-              </div>
-
-              {/* Real Case Selector Pills if multiple cases exist and in record view */}
-              {cases.length > 1 && viewMode === 'record' && (
-                <div className="flex items-center gap-1 overflow-x-auto">
-                  {cases.slice(0, 4).map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedCaseId(c.id)}
-                      className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer ${
-                        c.id === (activeCase?.id || '')
-                          ? 'bg-slate-900 text-white font-semibold'
-                          : 'text-slate-600 hover:bg-slate-200/60'
-                      }`}
-                      title={c.case_number}
-                    >
-                      {c.case_number.split('-').slice(-1)[0]}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {viewMode === '3d' && (
-                <div className="text-[11px] font-mono text-slate-500">
-                  {cases.length} Pins · Orbit & Drag
-                </div>
-              )}
-            </div>
-
-            {/* Content Area */}
-            <div className="p-5">
-              {loadingCases ? (
-                <div className="py-16 text-center space-y-3">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent mx-auto" />
-                  <p className="text-xs text-slate-500 font-mono">
-                    Connecting to live PostgreSQL records...
-                  </p>
-                </div>
-              ) : loadError ? (
-                <div className="py-12 text-center space-y-3">
-                  <AlertCircle className="h-8 w-8 text-rose-500 mx-auto" />
-                  <h3 className="text-sm font-bold text-slate-900 font-heading">Database Connection Notice</h3>
-                  <p className="text-xs text-slate-600 max-w-sm mx-auto">{loadError}</p>
-                  <Button variant="secondary" size="sm" onClick={fetchRealData} icon={<RotateCw className="h-3.5 w-3.5" />}>
-                    Retry Connection
-                  </Button>
-                </div>
-              ) : cases.length === 0 ? (
-                /* Genuine Empty State */
-                <div className="py-12 text-center space-y-3">
-                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 font-heading">
-                    {t('landing.noCasesTitle') || 'No active civic cases in this jurisdiction yet'}
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                    {t('landing.noCasesDesc') || 'All reports are backed by on-ground photographic evidence. Be the first to file a verified report in your ward.'}
-                  </p>
-                  <Link to={user ? '/report' : '/login'}>
-                    <Button variant="primary" size="sm" icon={<Camera className="h-3.5 w-3.5 text-emerald-400" />}>
-                      {t('landing.fileFirst') || 'File the First Report'}
-                    </Button>
-                  </Link>
-                </div>
-              ) : viewMode === '3d' ? (
-                /* 3D Ward Grid Interactive View */
-                <div className="space-y-3">
-                  <Suspense fallback={<CivicStreetGridFallback className="h-72 w-full" />}>
-                    <CivicStreetGrid3D
-                      className="h-72 w-full"
-                      cases={cases}
-                      selectedCaseId={selectedCaseId}
-                      onSelectCase={(id) => setSelectedCaseId(id)}
-                    />
-                  </Suspense>
-
-                  {activeCase && (
-                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="font-mono font-bold text-slate-950 shrink-0">{activeCase.case_number}</span>
-                        <span className="text-slate-600 truncate">
-                          {activeCase.landmark || (i18n.language === 'hi' ? activeCase.category?.name_hi : activeCase.category?.name_en)}
-                        </span>
-                        <CaseStatusBadge status={activeCase.status} size="xs" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('record')}
-                        className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 shrink-0 cursor-pointer ml-2"
-                      >
-                        {t('dashboard.reviewDetails') || 'View Record'} &rarr;
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : activeCase ? (
-                /* Single Case Record View */
-                <div className="space-y-4">
-                  {/* Case Identifiers */}
-                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-bold font-mono text-slate-950">
-                          {activeCase.case_number}
-                        </span>
-                        <CaseStatusBadge status={activeCase.status} size="xs" />
-                      </div>
-                      <p className="text-xs font-semibold text-emerald-800 mt-0.5">
-                        {i18n.language === 'hi'
-                          ? (activeCase.category?.name_hi || activeCase.category?.name_en)
-                          : (activeCase.category?.name_en || 'Municipal Issue')}
-                      </p>
-                    </div>
-
-                    <div className="text-right text-[11px] font-mono text-slate-500">
-                      {new Date(activeCase.created_at).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Real Description */}
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-                      {t('cases.table.category') || 'Citizen Issue Report'}
-                    </span>
-                    <p className="text-sm sm:text-[15px] text-slate-800 leading-relaxed line-clamp-3">
-                      {activeCase.description}
-                    </p>
-                  </div>
-
-                  {/* Real Location & Coordinates */}
-                  <div className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200/80 px-3 py-2 text-xs text-slate-700 font-sans">
-                    <MapPin className="h-4 w-4 text-emerald-700 shrink-0" />
-                    <span className="truncate font-medium">{activeCase.landmark}</span>
-                    {activeCase.latitude && activeCase.longitude && (
-                      <span className="ml-auto font-mono text-[11px] text-slate-400 shrink-0">
-                        {activeCase.latitude.toFixed(4)}, {activeCase.longitude.toFixed(4)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 4-Step Resolution Progress Indicator */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                      <span>{t('landing.pipeline') || 'Verification Pipeline'}</span>
-                      <span>
-                        {activeStep === 4
-                          ? (t('landing.pipelineResolved') || 'Resolved & Verified')
-                          : (t('landing.pipelineMilestone', { current: activeStep, total: 4 }) || `Milestone 0${activeStep} of 04`)}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1.5">
-                      <div className={`h-1.5 rounded-full ${activeStep >= 1 ? 'bg-emerald-600' : 'bg-slate-200'}`} title="1. Submitted" />
-                      <div className={`h-1.5 rounded-full ${activeStep >= 2 ? 'bg-emerald-600' : 'bg-slate-200'}`} title="2. Dispatched" />
-                      <div className={`h-1.5 rounded-full ${activeStep >= 3 ? 'bg-emerald-600' : 'bg-slate-200'}`} title="3. Resolution Evidence" />
-                      <div className={`h-1.5 rounded-full ${activeStep >= 4 ? 'bg-emerald-600' : 'bg-slate-200'}`} title="4. Verified Closed" />
-                    </div>
-
-                    <div className="grid grid-cols-4 text-[10px] text-slate-500 font-mono pt-0.5">
-                      <span className={activeStep >= 1 ? 'text-slate-900 font-semibold' : ''}>
-                        {t('landing.pipelineSteps.report') || 'Report'}
-                      </span>
-                      <span className={activeStep >= 2 ? 'text-slate-900 font-semibold' : ''}>
-                        {t('landing.pipelineSteps.dispatch') || 'Dispatch'}
-                      </span>
-                      <span className={activeStep >= 3 ? 'text-slate-900 font-semibold' : ''}>
-                        {t('landing.pipelineSteps.evidence') || 'Evidence'}
-                      </span>
-                      <span className={activeStep >= 4 ? 'text-emerald-700 font-bold' : ''}>
-                        {t('landing.pipelineSteps.verified') || 'Verified'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* View Complete Audit Trail Action Link */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <Link
-                      to={`/cases/${activeCase.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 transition-colors"
-                    >
-                      <span>{t('landing.exploreTimeline') || 'Explore Case Timeline & Evidence'}</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-
-                    <Link
-                      to="/cases"
-                      className="text-[11px] font-mono text-slate-500 hover:text-slate-800"
-                    >
-                      {t('landing.directoryLoaded', { count: cases.length }) || `Directory (${cases.length} loaded) →`}
-                    </Link>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <Suspense fallback={<CivicStreetGridFallback className="h-[460px] w-full" />}>
+            <CivicStreetGrid3D
+              className="h-[460px] w-full"
+              cases={cases}
+              selectedCaseId={selectedCaseId}
+              onSelectCase={(id) => setSelectedCaseId(id)}
+            />
+          </Suspense>
         </div>
       </div>
+
+      {/* 2. FOUR FEATURE CARDS BELOW THE HERO (Equally Spaced) */}
+      <section className="pt-10 sm:pt-14 pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Feature 1: Report */}
+          <Link
+            to={user ? '/report' : '/login'}
+            className="group rounded-xl border border-emerald-200/90 bg-emerald-50/70 p-5 shadow-2xs hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-xs transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 mb-3 group-hover:scale-105 transition-transform">
+                <Camera className="h-5 w-5 text-emerald-700" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">
+                {t('landing.features.report.title') || 'Report'}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-slate-600 mt-1.5 leading-relaxed">
+                {t('landing.features.report.description') || 'Click a photo, add location and submit a civic issue.'}
+              </p>
+            </div>
+            <div className="pt-4 flex items-center gap-1 text-xs font-semibold text-emerald-800">
+              <span>{t('nav.report') || 'Report issue'}</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Feature 2: Track */}
+          <Link
+            to="/cases"
+            className="group rounded-xl border border-sky-200/90 bg-sky-50/70 p-5 shadow-2xs hover:bg-sky-50 hover:border-sky-300 hover:shadow-xs transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-sky-100 text-sky-800 mb-3 group-hover:scale-105 transition-transform">
+                <Search className="h-5 w-5 text-sky-700" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">
+                {t('landing.features.track.title') || 'Track'}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-slate-600 mt-1.5 leading-relaxed">
+                {t('landing.features.track.description') || 'Follow the progress of your reported issue.'}
+              </p>
+            </div>
+            <div className="pt-4 flex items-center gap-1 text-xs font-semibold text-sky-800">
+              <span>{t('landing.features.track.title') || 'Track'}</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Feature 3: See Impact */}
+          <Link
+            to="/cases?status=VERIFIED_RESOLVED"
+            className="group rounded-xl border border-amber-200/90 bg-amber-50/70 p-5 shadow-2xs hover:bg-amber-50 hover:border-amber-300 hover:shadow-xs transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-800 mb-3 group-hover:scale-105 transition-transform">
+                <CheckCircle2 className="h-5 w-5 text-amber-700" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">
+                {t('landing.features.seeImpact.title') || 'See Impact'}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-slate-600 mt-1.5 leading-relaxed">
+                {t('landing.features.seeImpact.description') || 'View verified resolutions and community improvements.'}
+              </p>
+            </div>
+            <div className="pt-4 flex items-center gap-1 text-xs font-semibold text-amber-800">
+              <span>{t('landing.features.seeImpact.title') || 'See Impact'}</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Feature 4: Earn Karma */}
+          <Link
+            to="/rewards"
+            className="group rounded-xl border border-purple-200/90 bg-purple-50/70 p-5 shadow-2xs hover:bg-purple-50 hover:border-purple-300 hover:shadow-xs transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-purple-100 text-purple-800 mb-3 group-hover:scale-105 transition-transform">
+                <Award className="h-5 w-5 text-purple-700" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">
+                {t('landing.features.earnKarma.title') || 'Earn Karma'}
+              </h3>
+              <p className="text-xs sm:text-[13px] text-slate-600 mt-1.5 leading-relaxed">
+                {t('landing.features.earnKarma.description') || 'Contribute to a cleaner, stronger community.'}
+              </p>
+            </div>
+            <div className="pt-4 flex items-center gap-1 text-xs font-semibold text-purple-800">
+              <span>{t('nav.karma') || 'Earn Karma'}</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 };

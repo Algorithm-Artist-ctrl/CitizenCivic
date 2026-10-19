@@ -22,18 +22,61 @@
     "eyebrow": "Independent Civic Accountability Initiative",
     "heroTitle1": "Report civic issues.",
     "heroTitle2": "Track real resolution.",
-    "heroSubtitle": "Report neighbourhood problems, follow progress, and review real resolution evidence — all in one place.",
+    "heroSupporting": "Cleaner neighbourhoods. Safer streets. Better cities.",
+    "heroSubtitle": "Report local civic problems, track progress in real time, and see verified outcomes — all in one place.",
     "reportCta": "Report an Issue",
-    "directoryCta": "View Public Directory",
-    "liveVerification": "Live Verification Feed",
-    "grid3D": "3D Street Grid",
-    "publicLedger": "Live Public Ledger",
-    "noPublicCases": "No public cases recorded yet in database.",
-    "firstReport": "Be the first citizen to report an issue in your locality.",
-    "totalRecorded": "Total Recorded",
-    "verifiedResolved": "Verified Clean",
-    "resolutionRate": "Resolution Rate",
-    "avgSla": "Avg Turnaround"
+    "exploreCta": "Explore Public Cases",
+    "directoryCta": "Explore Public Cases",
+    "metrics": {
+      "totalReports": "Total Reports",
+      "inProgress": "In Progress",
+      "verifiedResolved": "Verified Resolved",
+      "slogan": "Real reports. Real communities. Real change.",
+      "liveDatabase": "Calculated directly from live platform database records",
+      "connecting": "Connecting to live records...",
+      "noRecords": "No cases recorded"
+    },
+    "scene": {
+      "illustrativeTitle": "Illustrative Isometric Ward Model",
+      "locationPin": "Central Ward Node",
+      "exampleIssue": "Example issue",
+      "orbitHint": "Drag to orbit precinct · Scroll to zoom",
+      "garbage": "Garbage Accumulation",
+      "garbageStatus": "Reported · Under Review",
+      "garbageLoc": "Commercial Corridor",
+      "water": "Water Logging",
+      "waterStatus": "Dispatched · In Progress",
+      "waterLoc": "Storm Drain Network",
+      "light": "Street Light Fixed",
+      "lightStatus": "Verified Resolved",
+      "lightLoc": "Public Park Road"
+    },
+    "features": {
+      "report": {
+        "title": "Report",
+        "description": "Click a photo, add location and submit a civic issue."
+      },
+      "track": {
+        "title": "Track",
+        "description": "Follow the progress of your reported issue."
+      },
+      "seeImpact": {
+        "title": "See Impact",
+        "description": "View verified resolutions and community improvements."
+      },
+      "earnKarma": {
+        "title": "Earn Karma",
+        "description": "Contribute to a cleaner, stronger community."
+      }
+    },
+    "footer": {
+      "platform": "Civic Accountability Platform",
+      "rights": "All rights reserved.",
+      "publicCases": "Public Cases",
+      "communityKarma": "Community Karma",
+      "reportIssue": "Report an Issue",
+      "independent": "Independent Civic Tech"
+    }
   },
   "dashboard": {
     "wardBadge": "PILOT WARD 82 (INDIRANAGAR)",

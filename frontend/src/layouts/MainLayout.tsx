@@ -41,9 +41,9 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased">
-      {/* Main Navigation Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      {/* Main Navigation Header: ~80px Tall Premium Civic Shell */}
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xs min-h-[76px] sm:min-h-[80px] flex items-center">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
           {/* Logo & Platform Name */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-950 text-white shadow-2xs group-hover:bg-slate-800 transition-colors">
@@ -320,18 +320,27 @@ export const MainLayout: React.FC = () => {
       )}
 
       {/* Institutional Civic Footer */}
-      <footer className="border-t border-slate-200 bg-white py-3">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white py-5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0" />
             <span>
-              <strong>CitizenCivic</strong> — Civic Accountability Platform &copy; {new Date().getFullYear()}.
+              <strong className="text-slate-800">CitizenCivic</strong> — {t('landing.footer.platform', 'Civic Accountability Platform')} &copy; {new Date().getFullYear()}. {t('landing.footer.rights', 'All rights reserved.')}
             </span>
           </div>
-          <div className="flex items-center gap-4 text-slate-600 font-medium">
-            <Link to="/cases" className="hover:text-slate-900">Public Cases</Link>
-            <Link to="/rewards" className="hover:text-slate-900">Community Karma</Link>
-            <span className="text-slate-400">Independent Civic Tech</span>
+          <div className="flex items-center gap-5 text-slate-600 font-medium">
+            <Link to="/cases" className="hover:text-slate-900 transition-colors">
+              {t('landing.footer.publicCases', 'Public Cases')}
+            </Link>
+            <Link to="/rewards" className="hover:text-slate-900 transition-colors">
+              {t('landing.footer.communityKarma', 'Community Karma')}
+            </Link>
+            <Link to={user ? '/report' : '/login'} className="hover:text-emerald-800 transition-colors">
+              {t('landing.footer.reportIssue', 'Report an Issue')}
+            </Link>
+            <span className="text-slate-400 font-mono text-[11px] hidden md:inline">
+              {t('landing.footer.independent', 'Independent Civic Tech')}
+            </span>
           </div>
         </div>
       </footer>
