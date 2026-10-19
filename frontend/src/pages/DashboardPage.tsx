@@ -16,6 +16,7 @@ import {
   Folder,
   Landmark,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 import CaseStatusBadge from '../components/CaseStatusBadge';
@@ -33,11 +34,12 @@ interface AnalyticsData {
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [recentCases, setRecentCases] = useState<Case[]>([]);
   const [nearbyCases, setNearbyCases] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [points, setPoints] = useState<number>(350);
+  const [points, setPoints] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,60 +53,16 @@ export const DashboardPage: React.FC = () => {
       const casesUrl = user?.role === 'CITIZEN' ? '/cases/?scope=mine&page_size=8' : '/cases/?page_size=8';
       const casesRes = await apiClient.get<PaginatedResponse<Case>>(casesUrl).catch(() => ({ data: { results: [] } }));
       const fetchedCases = casesRes.data?.results || [];
-
-      const defaultMockCases: any[] = [
-        {
-          id: 'case-mock-1',
-          case_number: 'CC-20261019-6136',
-          status: 'SUBMITTED',
-          description: 'Problem Description: Stagnant Water and Poor Drainage Management The image shows an area filled with stagnant, murky water...',
-          landmark: 'hardaspur khair road aligarh post lodha',
-          created_at: new Date().toISOString(),
-          is_hotspot: false,
-          evidence: [{ file: '/assets/dash-case-1.jpg' }],
-        },
-        {
-          id: 'case-mock-2',
-          case_number: 'CC-20261015-D404',
-          status: 'IN_PROGRESS',
-          description: 'Chronic blackspot near stormwater drain culvert. Mixed wet and dry plastic waste.',
-          landmark: 'Stormwater Drain culvert, 100ft road junction',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          is_hotspot: true,
-          evidence: [{ file: '/assets/dash-case-2.jpg' }],
-        },
-        {
-          id: 'case-mock-3',
-          case_number: 'CC-20261017-C303',
-          status: 'REVIEWED',
-          description: 'Door-to-door green waste collection skipped for 3 consecutive days on 7th A Cross.',
-          landmark: '7th A Cross, near Mother Teresa Children Home',
-          created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-          is_hotspot: false,
-          evidence: [{ file: '/assets/dash-case-3.jpg' }],
-        },
-      ];
-
-      if (fetchedCases.length === 0) {
-        setRecentCases(defaultMockCases);
-      } else {
-        const merged = [...fetchedCases];
-        for (const mc of defaultMockCases) {
-          if (!merged.find((c) => c.case_number === mc.case_number)) {
-            merged.push(mc);
-          }
-        }
-        setRecentCases(merged.slice(0, 6));
-      }
+      setRecentCases(fetchedCases);
 
       // 2. Fetch personal karma points and nearby issues
       try {
         const [pointsRes, nearbyRes] = await Promise.all([
-          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 10 } })),
+          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 0 } })),
           apiClient.get('/cases/nearby/').catch(() => ({ data: [] })),
         ]);
         if (pointsRes.data?.total_points !== undefined && pointsRes.data?.total_points !== null) {
-          setPoints(pointsRes.data.total_points > 0 ? pointsRes.data.total_points : 10);
+          setPoints(pointsRes.data.total_points >= 0 ? pointsRes.data.total_points : 0);
         }
         if (Array.isArray(nearbyRes.data) && nearbyRes.data.length > 0) {
           setNearbyCases(nearbyRes.data.slice(0, 4));
@@ -132,20 +90,14 @@ export const DashboardPage: React.FC = () => {
   };
 
   // Metrics calculation
-  const activeCasesCount = recentCases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length || 1;
-  const verifiedResolvedCount = recentCases.filter((c) => c.status === 'VERIFIED_RESOLVED').length || 0;
+  const activeCasesCount = recentCases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length;
+  const verifiedResolvedCount = recentCases.filter((c) => c.status === 'VERIFIED_RESOLVED').length;
 
   // Filter queues for Operator and Moderator
   const operatorQueue = recentCases.filter((c) => ['FORWARDED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(c.status));
   const verificationQueue = recentCases.filter((c) => ['RESOLUTION_REPORTED', 'VERIFICATION_PENDING', 'DISPUTED_CLOSURE'].includes(c.status));
 
-  // Fallback nearby items matching exact values from Mockup Image 3 & 5
-  const displayNearby = nearbyCases.length > 0 ? nearbyCases : [
-    { id: 'nb-1', title: 'CC-20261015-D404', landmark: 'Stormwater Drain culvert, 100ft road junction', distance: '320 m', color: 'bg-rose-500' },
-    { id: 'nb-2', title: 'CC-20261017-C303', landmark: '7th A Cross, near Mother Teresa Children Home', distance: '480 m', color: 'bg-amber-500' },
-    { id: 'nb-3', title: 'CC-20261018-B202', landmark: 'Corner of 12th Main and 5th Cross, near BDA Complex', distance: '720 m', color: 'bg-emerald-500' },
-    { id: 'nb-4', title: 'CC-20261019-A101', landmark: 'Opposite Metro Pillar 45, CMH Road, Indiranagar', distance: '890 m', color: 'bg-blue-500' },
-  ];
+  const displayNearby = nearbyCases;
 
   if (loading) {
     return (
@@ -169,7 +121,7 @@ export const DashboardPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading">
-                Welcome back, {user?.display_name || 'shivam officer'} 👋
+                Welcome back, {user?.display_name || user?.email?.split('@')[0] || t('dashboard.officer', 'Citizen')} 👋
               </h1>
               <p className="text-sm font-medium text-slate-600 flex items-center gap-2 flex-wrap">
                 <span className="text-emerald-700 font-semibold">Cleaner Neighbourhoods</span>
@@ -592,21 +544,27 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Radar Active Markers List */}
-            <div className="space-y-2.5 divide-y divide-slate-100 text-xs">
-              {displayNearby.map((item: any, idx: number) => (
-                <div key={item.id || idx} className="pt-2 first:pt-0 flex items-center justify-between">
-                  <div className="flex items-center gap-2 truncate pr-2">
-                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${item.color || 'bg-emerald-500'}`} />
-                    <span className="font-semibold text-slate-800 truncate">
-                      {item.title || item.landmark || `Case #${item.case_number || idx + 1}`}
+            {displayNearby.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-400">
+                No active incidents reported within radar range.
+              </div>
+            ) : (
+              <div className="space-y-2.5 divide-y divide-slate-100 text-xs">
+                {displayNearby.map((item: any, idx: number) => (
+                  <div key={item.id || idx} className="pt-2 first:pt-0 flex items-center justify-between">
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${item.color || 'bg-emerald-500'}`} />
+                      <span className="font-semibold text-slate-800 truncate">
+                        {item.title || item.landmark || `Case #${item.case_number || idx + 1}`}
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-slate-500 shrink-0">
+                      {item.distance || '450m'}
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] font-bold text-slate-500 shrink-0">
-                    {item.distance || '450m'}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <Link
               to="/cases"

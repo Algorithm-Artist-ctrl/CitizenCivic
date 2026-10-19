@@ -49,7 +49,7 @@ interface LedgerEntry {
 
 export const RewardsPage: React.FC = () => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tabParam = searchParams.get('tab');
@@ -79,7 +79,7 @@ export const RewardsPage: React.FC = () => {
 
   const [citizenList, setCitizenList] = useState<LeaderboardCitizen[]>([]);
   const [officerList, setOfficerList] = useState<LeaderboardOfficer[]>([]);
-  const [totalPoints, setTotalPoints] = useState<number>(10);
+  const [totalPoints, setTotalPoints] = useState<number>(0);
   const [recentEntries, setRecentEntries] = useState<LedgerEntry[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -93,8 +93,8 @@ export const RewardsPage: React.FC = () => {
         const [areasRes, myPointsRes] = await Promise.all([
           apiClient.get('/areas/service-areas/').catch(() => ({ data: { results: [] } })),
           user
-            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 10, history: [] } }))
-            : Promise.resolve({ data: { total_points: 10, history: [] } }),
+            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 0, history: [] } }))
+            : Promise.resolve({ data: { total_points: 0, history: [] } }),
         ]);
 
         const areas = areasRes.data.results || areasRes.data || [];
@@ -103,7 +103,7 @@ export const RewardsPage: React.FC = () => {
         const mpData: any = myPointsRes.data;
         if (mpData) {
           if (mpData.total_points !== undefined && mpData.total_points !== null) {
-            setTotalPoints(mpData.total_points >= 0 ? mpData.total_points : 10);
+            setTotalPoints(mpData.total_points >= 0 ? mpData.total_points : 0);
           }
           const entries = Array.isArray(mpData.history)
             ? mpData.history
@@ -151,58 +151,12 @@ export const RewardsPage: React.FC = () => {
     fetchLeaderboard();
   }, [tab, selectedAreaId]);
 
-  // Rich fallback history matching mockup if user is new
-  const displayHistory = recentEntries.length > 0 ? recentEntries : [
-    {
-      id: 'h-1',
-      points: 10,
-      reason: 'Authentic Geo-Report (Case CC-20261019-6136)',
-      created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      type: 'REPORTS',
-      color: 'bg-emerald-500',
-    },
-    {
-      id: 'h-2',
-      points: 15,
-      reason: 'High-Accuracy Landmark Validation',
-      created_at: new Date(Date.now() - 86400000).toISOString(),
-      type: 'REPORTS',
-      color: 'bg-blue-500',
-    },
-    {
-      id: 'h-3',
-      points: 100,
-      reason: 'Verified Resolution Bonus (Case CC-20261017-C303)',
-      created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-      type: 'REPORTS',
-      color: 'bg-emerald-500',
-    },
-    {
-      id: 'h-4',
-      points: 75,
-      reason: '7-Day Hotspot Follow-up Clean Check',
-      created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-      type: 'AUDITS',
-      color: 'bg-amber-500',
-    },
-  ];
-
-  // Rich fallback citizens matching mockup
-  const displayCitizens: LeaderboardCitizen[] = citizenList.length > 0 ? citizenList : [
-    { rank: 1, user_id: 'c-1', display_name: 'Rahul Sharma', total_points: 1420, verified_reports: 14, karma_tier: 'City Champion' },
-    { rank: 2, user_id: user?.id || 'c-2', display_name: user?.display_name || 'shivam officer', total_points: totalPoints, verified_reports: 1, karma_tier: 'Neighborhood Sentinel' },
-    { rank: 3, user_id: 'c-3', display_name: 'Ram kumar', total_points: 980, verified_reports: 9, karma_tier: 'Active Auditor' },
-    { rank: 4, user_id: 'c-4', display_name: 'Ananya Iyer', total_points: 840, verified_reports: 8, karma_tier: 'Ward Sentinel' },
-    { rank: 5, user_id: 'c-5', display_name: 'Vikram Malhotra', total_points: 620, verified_reports: 6, karma_tier: 'Civic Scout' },
-  ];
-
-  // Rich fallback officers
-  const displayOfficers: LeaderboardOfficer[] = officerList.length > 0 ? officerList : [
-    { rank: 1, user_id: 'off-1', display_name: 'Inspector R. Deshmukh', role: 'SUPERVISOR', assigned_cases: 42, verified_resolved: 40, active_workload: 2, disputed_cases: 0, resolution_rate_pct: 95.2, avg_resolution_hours: 3.1 },
-    { rank: 2, user_id: 'off-2', display_name: 'Suresh Patil', role: 'OPERATOR', assigned_cases: 36, verified_resolved: 34, active_workload: 2, disputed_cases: 1, resolution_rate_pct: 94.4, avg_resolution_hours: 3.8 },
-    { rank: 3, user_id: 'off-3', display_name: 'Kavita Menon', role: 'OPERATOR', assigned_cases: 29, verified_resolved: 27, active_workload: 2, disputed_cases: 0, resolution_rate_pct: 93.1, avg_resolution_hours: 4.2 },
-    { rank: 4, user_id: 'off-4', display_name: 'Arjun Rao', role: 'MODERATOR', assigned_cases: 58, verified_resolved: 55, active_workload: 3, disputed_cases: 2, resolution_rate_pct: 94.8, avg_resolution_hours: 2.9 },
-  ];
+  const verifiedCasesCount = recentEntries.filter(
+    (e) => (e.reason || '').toLowerCase().includes('verif') || e.points >= 100
+  ).length;
+  const auditsCompletedCount = recentEntries.filter(
+    (e) => (e.reason || '').toLowerCase().includes('audit')
+  ).length;
 
   if (loading) {
     return (
@@ -342,7 +296,7 @@ export const RewardsPage: React.FC = () => {
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-mono font-bold text-rose-700 border border-rose-100">
-              4 Cases Verified
+              {verifiedCasesCount} {verifiedCasesCount === 1 ? 'Case Verified' : 'Cases Verified'}
             </span>
             <span className="text-[11px] font-mono text-slate-400">Anti-fraud verified</span>
           </div>
@@ -372,7 +326,7 @@ export const RewardsPage: React.FC = () => {
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-mono font-bold text-blue-700 border border-blue-100">
-              2 Audits Completed
+              {auditsCompletedCount} {auditsCompletedCount === 1 ? 'Audit Completed' : 'Audits Completed'}
             </span>
             <span className="text-[11px] font-mono text-slate-400">Prevents recurrence</span>
           </div>
@@ -387,7 +341,7 @@ export const RewardsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-emerald-700" />
               <h2 className="text-base font-bold text-slate-950 font-heading">
-                Reward History
+                {t('rewards.historyTitle')}
               </h2>
             </div>
 
@@ -398,72 +352,84 @@ export const RewardsPage: React.FC = () => {
                 onClick={() => setHistoryFilter('ALL')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                   historyFilter === 'ALL'
-                    ? 'bg-white text-slate-950 shadow-2xs'
+                    ? 'bg-white text-slate-950 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
-                All Transactions
+                {t('rewards.allTransactions')}
               </button>
               <button
                 type="button"
                 onClick={() => setHistoryFilter('REPORTS')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                   historyFilter === 'REPORTS'
-                    ? 'bg-white text-slate-950 shadow-2xs'
+                    ? 'bg-white text-slate-950 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
-                Reports
+                {t('rewards.reports')}
               </button>
               <button
                 type="button"
                 onClick={() => setHistoryFilter('AUDITS')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                   historyFilter === 'AUDITS'
-                    ? 'bg-white text-slate-950 shadow-2xs'
+                    ? 'bg-white text-slate-950 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
-                Audits
+                {t('rewards.audits')}
               </button>
             </div>
           </div>
 
           {/* Vertical Timeline */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-              {displayHistory
-                .filter((item) => {
-                  if (historyFilter === 'ALL') return true;
-                  return (item as any).type === historyFilter;
-                })
-                .map((item, idx) => (
-                  <div key={item.id || idx} className="relative group">
-                    {/* Circle Node */}
-                    <div className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs ring-2 ring-emerald-100" />
+            {recentEntries.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500">
+                {t('rewards.noHistory')}
+              </div>
+            ) : (
+              <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+                {recentEntries
+                  .filter((item) => {
+                    if (historyFilter === 'ALL') return true;
+                    if (historyFilter === 'REPORTS') {
+                      return (item.reason || '').toLowerCase().includes('report') || (item.reason || '').toLowerCase().includes('submit');
+                    }
+                    if (historyFilter === 'AUDITS') {
+                      return (item.reason || '').toLowerCase().includes('audit') || (item.reason || '').toLowerCase().includes('verif');
+                    }
+                    return true;
+                  })
+                  .map((item, idx) => (
+                    <div key={item.id || idx} className="relative group">
+                      {/* Circle Node */}
+                      <div className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs ring-2 ring-emerald-100" />
 
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                          {item.reason}
-                        </p>
-                        <p className="text-[11px] font-mono text-slate-400">
-                          {new Date(item.created_at).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                            {item.reason}
+                          </p>
+                          <p className="text-[11px] font-mono text-slate-400">
+                            {new Date(item.created_at).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+
+                        <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
+                          +{item.points} Pts
+                        </span>
                       </div>
-
-                      <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
-                        +{item.points} Pts
-                      </span>
                     </div>
-                  </div>
-                ))}
-            </div>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -473,7 +439,7 @@ export const RewardsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Award className="h-4 w-4 text-amber-600" />
               <h2 className="text-base font-bold text-slate-950 font-heading">
-                Top Civic Contributors
+                {t('rewards.leaderboardTitle')}
               </h2>
             </div>
 
@@ -485,7 +451,7 @@ export const RewardsPage: React.FC = () => {
                 onChange={(e) => setSelectedAreaId(e.target.value)}
                 className="rounded-lg border border-slate-200 bg-white py-1 px-2 text-[11px] font-medium text-slate-700 focus:outline-hidden cursor-pointer"
               >
-                <option value="">All Service Areas</option>
+                <option value="">{t('rewards.allAreas')}</option>
                 {serviceAreas.map((sa) => (
                   <option key={sa.id} value={sa.id}>
                     {i18n.language === 'hi' ? sa.name_hi : sa.name}
@@ -506,7 +472,7 @@ export const RewardsPage: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              Citizen Leaderboard
+              {t('rewards.tabCitizen')}
             </button>
             <button
               type="button"
@@ -517,7 +483,7 @@ export const RewardsPage: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              Officer Performance
+              {t('rewards.tabOfficer')}
             </button>
           </div>
 
@@ -528,95 +494,107 @@ export const RewardsPage: React.FC = () => {
                 <div className="h-7 w-7 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
               </div>
             ) : tab === 'citizen' ? (
-              <div className="divide-y divide-slate-100 space-y-2">
-                {displayCitizens.map((cit, idx) => {
-                  const isCurrent = user && cit.user_id === user.id;
-                  const rankIcons = ['🥇', '🥈', '🥉'];
-                  const rankBadge = idx < 3 ? rankIcons[idx] : `#${cit.rank || idx + 1}`;
+              citizenList.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-500">
+                  {t('rewards.noLeaderboard')}
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 space-y-2">
+                  {citizenList.map((cit, idx) => {
+                    const isCurrent = user && cit.user_id === user.id;
+                    const rankIcons = ['🥇', '🥈', '🥉'];
+                    const rankBadge = idx < 3 ? rankIcons[idx] : `#${cit.rank || idx + 1}`;
 
-                  return (
-                    <div
-                      key={cit.user_id || idx}
-                      className={`pt-2.5 first:pt-0 flex items-center justify-between p-2 rounded-xl transition-colors ${
-                        isCurrent ? 'bg-emerald-50/70 border border-emerald-200' : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-sm font-bold w-6 text-center text-slate-700">
-                          {rankBadge}
-                        </span>
+                    return (
+                      <div
+                        key={cit.user_id || idx}
+                        className={`pt-2.5 first:pt-0 flex items-center justify-between p-2 rounded-xl transition-colors ${
+                          isCurrent ? 'bg-emerald-50/70 border border-emerald-200' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm font-bold w-6 text-center text-slate-700">
+                            {rankBadge}
+                          </span>
 
-                        <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
-                          {cit.display_name ? cit.display_name.charAt(0).toUpperCase() : 'C'}
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-900">
-                              {cit.display_name}
-                            </span>
-                            {isCurrent && (
-                              <span className="text-[9px] font-mono uppercase bg-emerald-600 text-white px-1.5 py-0.2 rounded font-bold">
-                                You
-                              </span>
-                            )}
+                          <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
+                            {cit.display_name ? cit.display_name.charAt(0).toUpperCase() : 'C'}
                           </div>
-                          <p className="text-[10px] text-slate-500 font-medium">
-                            {cit.karma_tier || 'Active Sentinel'} · {cit.verified_reports} verified
-                          </p>
+
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-slate-900">
+                                {cit.display_name}
+                              </span>
+                              {isCurrent && (
+                                <span className="text-[9px] font-mono uppercase bg-emerald-600 text-white px-1.5 py-0.2 rounded font-bold">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              {cit.karma_tier || 'Active Sentinel'} · {cit.verified_reports} verified
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="font-mono text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80">
+                          {cit.total_points} Pts
                         </div>
                       </div>
-
-                      <div className="font-mono text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80">
-                        {cit.total_points} Pts
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
               /* Officer Performance Leaderboard */
-              <div className="divide-y divide-slate-100 space-y-2">
-                {displayOfficers.map((off, idx) => {
-                  const rankIcons = ['🥇', '🥈', '🥉'];
-                  const rankBadge = idx < 3 ? rankIcons[idx] : `#${off.rank || idx + 1}`;
+              officerList.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-500">
+                  {t('rewards.noOfficerLeaderboard')}
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 space-y-2">
+                  {officerList.map((off, idx) => {
+                    const rankIcons = ['🥇', '🥈', '🥉'];
+                    const rankBadge = idx < 3 ? rankIcons[idx] : `#${off.rank || idx + 1}`;
 
-                  return (
-                    <div
-                      key={off.user_id || idx}
-                      className="pt-2.5 first:pt-0 flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-sm font-bold w-6 text-center text-slate-700">
-                          {rankBadge}
-                        </span>
-
-                        <div className="h-9 w-9 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-xs text-blue-700 shrink-0">
-                          {off.display_name ? off.display_name.charAt(0).toUpperCase() : 'O'}
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-bold text-slate-900">
-                            {off.display_name}
+                    return (
+                      <div
+                        key={off.user_id || idx}
+                        className="pt-2.5 first:pt-0 flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm font-bold w-6 text-center text-slate-700">
+                            {rankBadge}
                           </span>
-                          <p className="text-[10px] text-slate-500 font-medium">
-                            {off.role} · {off.verified_resolved}/{off.assigned_cases} resolved ({off.resolution_rate_pct}%)
-                          </p>
+
+                          <div className="h-9 w-9 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-xs text-blue-700 shrink-0">
+                            {off.display_name ? off.display_name.charAt(0).toUpperCase() : 'O'}
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-bold text-slate-900">
+                              {off.display_name}
+                            </span>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              {off.role} · {off.verified_resolved}/{off.assigned_cases} resolved ({off.resolution_rate_pct}%)
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="font-mono text-xs font-bold text-emerald-700 block">
+                            {off.avg_resolution_hours}h avg
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {off.active_workload} active
+                          </span>
                         </div>
                       </div>
-
-                      <div className="text-right">
-                        <span className="font-mono text-xs font-bold text-emerald-700 block">
-                          {off.avg_resolution_hours}h avg
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {off.active_workload} active
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
         </div>

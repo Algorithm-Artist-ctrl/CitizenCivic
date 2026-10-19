@@ -51,6 +51,9 @@ export const CaseListPage: React.FC = () => {
     }
   };
 
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
   const fetchCases = async () => {
     setLoading(true);
     try {
@@ -60,101 +63,16 @@ export const CaseListPage: React.FC = () => {
       if (selectedCategory) url += `category=${selectedCategory}&`;
       if (searchQuery.trim()) url += `search=${encodeURIComponent(searchQuery.trim())}&`;
 
-      const res = await apiClient.get<PaginatedResponse<Case>>(url);
-      const fetched = res.data.results || [];
+      const [casesRes, analyticsRes] = await Promise.all([
+        apiClient.get<PaginatedResponse<Case>>(url),
+        apiClient.get('/cases/analytics/').catch(() => ({ data: null })),
+      ]);
 
-      // If database has fewer cases, supplement with genuine cases matching the mockup
-      if (fetched.length < 6 && activeScope !== 'mine') {
-        const fallbacks: any[] = [
-          {
-            id: 'fallback-1',
-            case_number: 'CC-20261019-6136',
-            created_at: new Date().toISOString(),
-            status: 'IN_PROGRESS',
-            category: { name_en: 'Garbage Accumulation', name_hi: 'कचरा संचय' },
-            description: 'Unattended municipal solid waste accumulation near street corner.',
-            landmark: '12th Main Road, HAL 2nd Stage, Indiranagar',
-            latitude: 12.9716,
-            longitude: 77.6412,
-            is_hotspot: true,
-            evidence: [{ file: '/assets/thumb-case-1.jpg' }],
-          },
-          {
-            id: 'fallback-2',
-            case_number: 'CC-20261019-5585',
-            created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
-            status: 'FORWARDED',
-            category: { name_en: 'Missed Waste Collection', name_hi: 'कचरा उठान छूटा' },
-            description: 'Morning collection vehicle missed scheduled sector 4 route.',
-            landmark: 'CMH Road, Indiranagar, Ward 82',
-            latitude: 12.9784,
-            longitude: 77.6408,
-            is_hotspot: false,
-            evidence: [{ file: '/assets/thumb-case-2.jpg' }],
-          },
-          {
-            id: 'fallback-3',
-            case_number: 'CC-20261018-B202',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            status: 'VERIFIED_RESOLVED',
-            category: { name_en: 'Broken / Missing Dustbin', name_hi: 'टूटा कचरा पात्र' },
-            description: 'Damaged commercial blue dustbin replaced by sanitation team.',
-            landmark: '100ft Road, Near Metro Station',
-            latitude: 12.9756,
-            longitude: 77.6410,
-            is_hotspot: false,
-            evidence: [{ file: '/assets/thumb-case-3.jpg' }],
-          },
-          {
-            id: 'fallback-4',
-            case_number: 'CC-20261017-C303',
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            status: 'VERIFIED_RESOLVED',
-            category: { name_en: 'Chronic Dumping Hotspot', name_hi: 'सदाबहार डंपिंग' },
-            description: 'Cleared chronic blackspot with tree sapling installation.',
-            landmark: 'Double Road Junction, Ward 82',
-            latitude: 12.9720,
-            longitude: 77.6425,
-            is_hotspot: true,
-            evidence: [{ file: '/assets/thumb-case-4.jpg' }],
-          },
-          {
-            id: 'fallback-5',
-            case_number: 'CC-20261015-D404',
-            created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
-            status: 'REVIEWED',
-            category: { name_en: 'Illegal Construction Debris Dumping', name_hi: 'अवैध मलबा' },
-            description: 'Unauthorized dumping of concrete rubble on pedestrian walkway.',
-            landmark: '5th Cross, Near Public Park',
-            latitude: 12.9690,
-            longitude: 77.6380,
-            is_hotspot: false,
-            evidence: [{ file: '/assets/thumb-case-5.jpg' }],
-          },
-          {
-            id: 'fallback-6',
-            case_number: 'CC-20261012-A101',
-            created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
-            status: 'ACKNOWLEDGED',
-            category: { name_en: 'Overflowing Public Bin', name_hi: 'भरा डस्टबिन' },
-            description: 'Public municipal green/blue segregated bins overflowing onto footpath.',
-            landmark: 'Defence Colony Park, Main Gate',
-            latitude: 12.9740,
-            longitude: 77.6395,
-            is_hotspot: false,
-            evidence: [{ file: '/assets/thumb-case-6.jpg' }],
-          },
-        ];
-
-        const merged = [...fetched];
-        for (const fb of fallbacks) {
-          if (!merged.find((c) => c.case_number === fb.case_number)) {
-            merged.push(fb);
-          }
-        }
-        setCases(merged);
-      } else {
-        setCases(fetched);
+      const fetched = casesRes.data.results || [];
+      setCases(fetched);
+      setTotalCount(casesRes.data.count ?? fetched.length);
+      if (analyticsRes.data) {
+        setAnalytics(analyticsRes.data);
       }
     } catch (err) {
       console.error('Failed to fetch cases', err);
@@ -220,20 +138,28 @@ export const CaseListPage: React.FC = () => {
               </p>
             </div>
 
-            {/* 3 Metric Pills */}
+            {/* 3 Metric Pills (100% Real Database Analytics) */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-slate-950">12,486</span>
+                <span className="font-mono text-sm font-extrabold text-slate-950">
+                  {analytics?.total_cases ?? totalCount}
+                </span>
                 <span className="text-[11px] font-semibold text-slate-600">Total Public Cases</span>
               </div>
 
               <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-emerald-800">7,892</span>
+                <span className="font-mono text-sm font-extrabold text-emerald-800">
+                  {analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter(c => c.status === 'VERIFIED_RESOLVED').length}
+                </span>
                 <span className="text-[11px] font-semibold text-emerald-700">Resolved Cases</span>
               </div>
 
               <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-amber-800">4,594</span>
+                <span className="font-mono text-sm font-extrabold text-amber-800">
+                  {analytics?.by_status
+                    ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
+                    : cases.filter(c => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length}
+                </span>
                 <span className="text-[11px] font-semibold text-amber-700">In Progress</span>
               </div>
             </div>
@@ -368,7 +294,7 @@ export const CaseListPage: React.FC = () => {
             className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition-colors"
           >
             <Filter className="h-3.5 w-3.5" />
-            <span>Filter</span>
+            <span>{t('common.filter')}</span>
           </button>
 
           {(selectedStatus || selectedCategory || searchQuery) && (
@@ -378,7 +304,7 @@ export const CaseListPage: React.FC = () => {
               className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Reset</span>
+              <span>{t('common.reset')}</span>
             </button>
           )}
         </form>

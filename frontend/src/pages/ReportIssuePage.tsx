@@ -95,7 +95,7 @@ const MOCKUP_CATEGORIES = [
 
 export const ReportIssuePage: React.FC = () => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Multi-step progress: 1: Category, 2: Location & Details, 3: Evidence, 4: Review
   const [step, setStep] = useState(1);
@@ -445,8 +445,8 @@ export const ReportIssuePage: React.FC = () => {
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Cancel and return</span>
           </Link>
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-mono text-[11px] text-slate-700 font-bold">
-            STEP {step} OF 4
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-mono text-[11px] text-slate-700 font-bold uppercase">
+            {t('report.stepCount', { current: step, total: 4 })}
           </span>
         </div>
 

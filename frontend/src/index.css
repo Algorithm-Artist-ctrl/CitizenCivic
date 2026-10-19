@@ -8,10 +8,18 @@
 
 @layer base {
   :root {
-    --civic-ink-950: #070B14;
-    --civic-ink-900: #0D1527;
-    --civic-ink-850: #121E36;
-    --civic-ink-800: #192A4A;
+    --civic-bg: #F5F8FC;
+    --civic-navy: #0B132B;
+    --civic-green: #00845A;
+    --civic-green-hover: #006C49;
+    --civic-green-light: #E6F5EF;
+    --civic-blue: #2563EB;
+    --civic-amber: #D97706;
+    --civic-border: #E2E8F0;
+    --civic-ink-950: #0B132B;
+    --civic-ink-900: #101B3B;
+    --civic-ink-850: #18264D;
+    --civic-ink-800: #1F3260;
     --civic-slate-700: #334155;
     --civic-slate-600: #475569;
     --civic-slate-500: #64748B;
@@ -19,19 +27,19 @@
     --civic-slate-300: #CBD5E1;
     --civic-slate-200: #E2E8F0;
     --civic-slate-100: #F1F5F9;
-    --civic-slate-50: #F8FAFC;
-    --civic-emerald-900: #064E3B;
-    --civic-emerald-700: #047857;
-    --civic-emerald-600: #059669;
+    --civic-slate-50: #F5F8FC;
+    --civic-emerald-900: #004D34;
+    --civic-emerald-700: #006C49;
+    --civic-emerald-600: #00845A;
     --civic-emerald-500: #10B981;
     --civic-emerald-100: #D1FAE5;
-    --civic-emerald-50: #ECFDF5;
+    --civic-emerald-50: #E6F5EF;
   }
 
   html, body {
     font-family: var(--font-sans);
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: #F5F8FC;
+    color: #0B132B;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;

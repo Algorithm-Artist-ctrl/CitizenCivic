@@ -245,6 +245,7 @@
   },
   "report": {
     "title": "Report a Civic Issue",
+    "stepCount": "Step {{current}} of {{total}}",
     "step1Title": "1. Select Civic Issue Category",
     "step1Subtitle": "Choose the category that best matches the on-ground problem.",
     "step2Title": "2. Incident Location & Details",
@@ -298,6 +299,13 @@
     }
   },
   "rewards": {
+    "historyTitle": "Reward History",
+    "leaderboardTitle": "Top Civic Contributors",
+    "contributor": "Civic Contributor",
+    "contributors": "Civic Contributors",
+    "allTransactions": "All Transactions",
+    "reports": "Reports",
+    "audits": "Audits",
     "masthead": "Civic Recognition & Performance Ledger",
     "title": "Community Karma & Officer Recognition",
     "subtitle": "Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.",
@@ -379,6 +387,10 @@
     "errorMessage": "An error occurred. Please try again.",
     "retry": "Retry",
     "empty": "Nothing here yet",
+    "filter": "Filter",
+    "all": "All",
+    "search": "Search",
+    "reset": "Reset",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
