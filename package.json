@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "CitizenCivic — Real-World Civic Resolution Engine",
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
     "build": "npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist ./dist",
     "dev": "npm --prefix frontend run dev",
