@@ -455,6 +455,37 @@ export const CaseDetailPage: React.FC = () => {
                 {caseData.description}
               </p>
             </div>
+
+            {/* Real Geographic Map Location */}
+            {caseData.latitude && caseData.longitude && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 block font-mono text-[11px]">VERIFIED GEOGRAPHIC LOCATION</span>
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${caseData.latitude}&mlon=${caseData.longitude}#map=17/${caseData.latitude}/${caseData.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 inline-flex items-center gap-1"
+                  >
+                    <span>Full OpenStreetMap</span> &rarr;
+                  </a>
+                </div>
+                <div className="h-44 w-full rounded-md border border-slate-200 overflow-hidden bg-slate-100 relative">
+                  <iframe
+                    title="Case Location Map"
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    scrolling="no"
+                    marginHeight={0}
+                    marginWidth={0}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${caseData.longitude - 0.004}%2C${caseData.latitude - 0.002}%2C${caseData.longitude + 0.004}%2C${caseData.latitude + 0.002}&layer=mapnik&marker=${caseData.latitude}%2C${caseData.longitude}`}
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Photographic Proof Gallery: Before vs After */}
