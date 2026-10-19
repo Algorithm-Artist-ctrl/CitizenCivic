@@ -83,14 +83,58 @@ router.get('/nearby', optionalAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/v1/cases/analytics
-router.get('/analytics', authenticateToken, async (_req: Request, res: Response) => {
+// Realtime SSE Clients registry
+const sseClients = new Set<Response>();
+
+export function broadcastCaseEvent(event: {
+  type: 'CASE_STATUS_CHANGED' | 'CASE_CREATED' | 'OBSERVATION_ADDED' | 'DISPUTE_RAISED';
+  case_id?: string;
+  case_number?: string;
+  new_status?: string;
+  actor_name?: string;
+  timestamp: string;
+}) {
+  const payload = `data: ${JSON.stringify(event)}\n\n`;
+  sseClients.forEach(client => {
+    try {
+      client.write(payload);
+    } catch {
+      sseClients.delete(client);
+    }
+  });
+}
+
+// GET /api/v1/cases/events — Realtime Server-Sent Events stream
+router.get('/events', optionalAuth, (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  sseClients.add(res);
+
+  // Send initial connection event
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: new Date().toISOString() })}\n\n`);
+
+  // Heartbeat ping every 25 seconds to keep connection alive
+  const pingTimer = setInterval(() => {
+    res.write(': ping\n\n');
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(pingTimer);
+    sseClients.delete(res);
+  });
+});
+
+// GET /api/v1/cases/analytics — 100% Real Database Analytics
+router.get('/analytics', optionalAuth, async (_req: Request, res: Response) => {
   try {
-    const totalResult = await query('SELECT count(*) FROM cases_case;');
+    const totalResult = await query('SELECT count(*) FROM cases_case WHERE status != \'DRAFT\';');
     const totalCases = parseInt(totalResult.rows[0].count, 10);
 
     const statusCountsResult = await query(
-      'SELECT status, count(*) AS count FROM cases_case GROUP BY status;'
+      "SELECT status, count(*) AS count FROM cases_case WHERE status != 'DRAFT' GROUP BY status;"
     );
     const byStatus: Record<string, number> = {};
     for (const row of statusCountsResult.rows) {
@@ -111,14 +155,24 @@ router.get('/analytics', authenticateToken, async (_req: Request, res: Response)
     const closedAttempts = resolvedCount + (byStatus['UNABLE_TO_RESOLVE'] || 0) + (byStatus['REJECTED'] || 0) + (byStatus['IN_PROGRESS'] || 0);
     const resolutionRate = closedAttempts > 0 ? Number(((resolvedCount / closedAttempts) * 100).toFixed(1)) : 0.0;
 
+    const citizensCountRes = await query("SELECT count(*) FROM accounts_user WHERE role = 'CITIZEN' AND is_active = true;");
+    const activeCitizens = parseInt(citizensCountRes.rows[0].count, 10);
+
+    const hotspotCountRes = await query("SELECT count(*) FROM cases_case WHERE is_hotspot = true;");
+    const hotspotCount = parseInt(hotspotCountRes.rows[0].count, 10);
+
+    const disputedCountRes = await query("SELECT count(*) FROM cases_case WHERE status = 'DISPUTED_CLOSURE';");
+    const disputedCount = parseInt(disputedCountRes.rows[0].count, 10);
+
     res.json({
       total_cases: totalCases,
       by_status: byStatus,
-      avg_acknowledgement_hours: avgAckHours,
-      avg_resolution_hours: avgResHours,
-      resolution_rate_percent: resolutionRate,
-      hotspot_count: byStatus['recurring-hotspot'] || 0,
-      active_volunteers: 48,
+      avg_ack_hours: avgAckHours,
+      avg_res_hours: avgResHours,
+      verified_resolution_rate: resolutionRate,
+      hotspots_count: hotspotCount,
+      disputed_count: disputedCount,
+      active_volunteers: activeCitizens,
     });
   } catch (err: any) {
     console.error('[cases/analytics] Error:', err);
@@ -349,6 +403,15 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       resource_id: caseId,
       changes: { case_number: caseNumber, status: 'SUBMITTED' },
       ip_address: req.ip,
+    });
+
+    broadcastCaseEvent({
+      type: 'CASE_CREATED',
+      case_id: caseId,
+      case_number: caseNumber,
+      new_status: 'SUBMITTED',
+      actor_name: user.display_name,
+      timestamp: now.toISOString(),
     });
 
     res.status(201).json(caseResult.rows[0]);
@@ -587,6 +650,15 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
       resource_id: caseId,
       changes: { from: currentStatus, to: new_status, reason },
       ip_address: req.ip,
+    });
+
+    broadcastCaseEvent({
+      type: 'CASE_STATUS_CHANGED',
+      case_id: caseId,
+      case_number: currentCase.case_number,
+      new_status,
+      actor_name: user.display_name,
+      timestamp: now.toISOString(),
     });
 
     res.json({

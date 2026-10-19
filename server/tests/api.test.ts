@@ -307,8 +307,45 @@ describe('5. Rewards & Karma Points', () => {
   });
 });
 
-describe('6. AI Civic Triage & Verification', () => {
-  it('POST /api/v1/ai/triage should return category suggestion and hazards', async () => {
+describe('6. Realtime Events & AI Civic Diagnostics', () => {
+  it('GET /api/v1/cases/events should expose SSE stream', async () => {
+    const http = await import('http');
+    const res = await new Promise<any>((resolve) => {
+      const server = app.listen(0, () => {
+        const port = (server.address() as any).port;
+        const clientReq = http.get(`http://127.0.0.1:${port}/api/v1/cases/events`, (res) => {
+          clientReq.destroy();
+          server.close(() => {
+            resolve(res);
+          });
+        });
+      });
+    });
+
+    expect(res.headers['content-type']).toContain('text/event-stream');
+  });
+
+  it('GET /api/v1/ai/status should return diagnostic health without exposing credentials', async () => {
+    const res = await request(app).get('/api/v1/ai/status');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('configured');
+    expect(res.body).toHaveProperty('model');
+    expect(res.body).toHaveProperty('status');
+    expect(res.body).toHaveProperty('checked_at');
+    // Ensure no secrets are leaked
+    expect(JSON.stringify(res.body)).not.toContain('sk-');
+  });
+
+  it('POST /api/v1/ai/triage should reject empty description', async () => {
+    const res = await request(app)
+      .post('/api/v1/ai/triage')
+      .send({ description: '' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toBeDefined();
+  });
+
+  it('POST /api/v1/ai/triage should handle unconfigured or configured OpenAI state honestly', async () => {
     const res = await request(app)
       .post('/api/v1/ai/triage')
       .set('Authorization', `Bearer ${testAccessToken}`)
@@ -317,13 +354,18 @@ describe('6. AI Civic Triage & Verification', () => {
         landmark: 'Near 100ft road junction',
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.suggested_category).toBeDefined();
-    expect(res.body.priority).toBeDefined();
-    expect(res.body.action_summary).toBeDefined();
+    // If OPENAI_API_KEY is not configured in test environment, it must return 503 (NEVER fake 200)
+    // If configured, it must return 200 with suggested category
+    if (res.status === 503) {
+      expect(res.body.detail).toContain('unavailable');
+    } else {
+      expect(res.status).toBe(200);
+      expect(res.body.suggested_category).toBeDefined();
+      expect(res.body.priority).toBeDefined();
+    }
   });
 
-  it('POST /api/v1/ai/verify should evaluate resolution notes', async () => {
+  it('POST /api/v1/ai/verify should handle unconfigured or configured OpenAI state honestly', async () => {
     const res = await request(app)
       .post('/api/v1/ai/verify')
       .set('Authorization', `Bearer ${testAccessToken}`)
@@ -332,8 +374,11 @@ describe('6. AI Civic Triage & Verification', () => {
         resolution_notes: 'Sanitation team emptied bin and swept 15m radius around the stop.',
       });
 
-    expect(res.status).toBe(200);
-    expect(typeof res.body.verification_passed).toBe('boolean');
-    expect(typeof res.body.confidence_score).toBe('number');
+    if (res.status === 503) {
+      expect(res.body.detail).toContain('unavailable');
+    } else {
+      expect(res.status).toBe(200);
+      expect(res.body.requires_human_verification).toBe(true);
+    }
   });
 });

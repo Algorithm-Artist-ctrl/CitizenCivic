@@ -1,13 +1,14 @@
 /**
- * Neon Realtime WebSocket Client for CitizenCivic.
- * Connects to the Neon Realtime WebSocket endpoint to provide live case status
- * updates, notifications, and instant workflow feedback.
+ * Realtime Event Client for CitizenCivic.
+ * Supports both standard Server-Sent Events (SSE) via the Express API (/api/v1/cases/events)
+ * and optional Neon WebSocket endpoints.
+ * Provides authentic, database-backed live event updates with zero simulated activity.
  */
 
 export type RealtimeStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
 
 export interface RealtimeMessage {
-  type: 'CASE_STATUS_CHANGED' | 'CASE_CREATED' | 'OBSERVATION_ADDED' | 'DISPUTE_RAISED' | 'PING';
+  type: 'CASE_STATUS_CHANGED' | 'CASE_CREATED' | 'OBSERVATION_ADDED' | 'DISPUTE_RAISED' | 'CONNECTED' | 'PING';
   case_id?: string;
   case_number?: string;
   new_status?: string;
@@ -18,9 +19,9 @@ export interface RealtimeMessage {
 
 export type RealtimeListener = (message: RealtimeMessage) => void;
 
-class NeonRealtimeClient {
+class RealtimeClient {
+  private eventSource: EventSource | null = null;
   private ws: WebSocket | null = null;
-  private url: string;
   private listeners: Set<RealtimeListener> = new Set();
   private statusListeners: Set<(status: RealtimeStatus) => void> = new Set();
   private status: RealtimeStatus = 'DISCONNECTED';
@@ -28,40 +29,70 @@ class NeonRealtimeClient {
   private maxReconnectAttempts = 5;
   private reconnectTimer: any = null;
 
-  constructor() {
-    const rawUrl =
-      import.meta.env.VITE_NEON_REALTIME_WS ||
-      import.meta.env.VITE_NEON_REALTIME_URL ||
-      '';
-
-    if (rawUrl) {
-      // Ensure wss:// scheme
-      this.url = rawUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
-      if (!this.url.endsWith('/')) {
-        this.url += '/';
-      }
-    } else {
-      this.url = '';
+  public connect(): void {
+    if (this.status === 'CONNECTED' || this.status === 'CONNECTING') {
+      return;
     }
+
+    const wsUrl = import.meta.env.VITE_NEON_REALTIME_WS || import.meta.env.VITE_NEON_REALTIME_URL;
+
+    // 1. If explicit WebSocket URL configured, connect via WebSocket
+    if (wsUrl) {
+      this.connectWebSocket(wsUrl);
+      return;
+    }
+
+    // 2. Otherwise connect via native HTTP Server-Sent Events (SSE)
+    this.connectSSE();
   }
 
-  public connect(): void {
-    if (!this.url) {
-      return;
-    }
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
+  private connectSSE(): void {
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/v1\/?$/, '');
+    const sseEndpoint = `${apiBase}/api/v1/cases/events`;
 
     this.setStatus(this.reconnectAttempts > 0 ? 'RECONNECTING' : 'CONNECTING');
 
     try {
-      this.ws = new WebSocket(this.url);
+      this.eventSource = new EventSource(sseEndpoint);
+
+      this.eventSource.onopen = () => {
+        this.reconnectAttempts = 0;
+        this.setStatus('CONNECTED');
+      };
+
+      this.eventSource.onmessage = (event: MessageEvent) => {
+        try {
+          const parsed: RealtimeMessage = JSON.parse(event.data);
+          this.notifyListeners(parsed);
+        } catch {
+          // Heartbeat or comment line
+        }
+      };
+
+      this.eventSource.onerror = () => {
+        this.setStatus('DISCONNECTED');
+        if (this.eventSource) {
+          this.eventSource.close();
+          this.eventSource = null;
+        }
+        this.scheduleReconnect();
+      };
+    } catch {
+      this.setStatus('DISCONNECTED');
+      this.scheduleReconnect();
+    }
+  }
+
+  private connectWebSocket(rawUrl: string): void {
+    const normalizedUrl = rawUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+    this.setStatus(this.reconnectAttempts > 0 ? 'RECONNECTING' : 'CONNECTING');
+
+    try {
+      this.ws = new WebSocket(normalizedUrl);
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
         this.setStatus('CONNECTED');
-        console.log('[Neon-Realtime] WebSocket connected to', this.url);
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
@@ -69,7 +100,7 @@ class NeonRealtimeClient {
           const parsed: RealtimeMessage = JSON.parse(event.data);
           this.notifyListeners(parsed);
         } catch {
-          // Non-JSON or protocol message
+          // Non-JSON protocol message
         }
       };
 
@@ -78,12 +109,10 @@ class NeonRealtimeClient {
         this.scheduleReconnect();
       };
 
-      this.ws.onerror = (err) => {
-        console.warn('[Neon-Realtime] Connection notice:', err);
-        // Browser WebSockets will call onclose next
+      this.ws.onerror = () => {
+        this.setStatus('DISCONNECTED');
       };
-    } catch (err) {
-      console.warn('[Neon-Realtime] Socket initialization:', err);
+    } catch {
       this.setStatus('DISCONNECTED');
       this.scheduleReconnect();
     }
@@ -92,7 +121,7 @@ class NeonRealtimeClient {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 15000);
+      const delay = Math.min(2000 * Math.pow(1.5, this.reconnectAttempts), 20000);
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = setTimeout(() => {
         this.connect();
@@ -102,6 +131,10 @@ class NeonRealtimeClient {
 
   public disconnect(): void {
     clearTimeout(this.reconnectTimer);
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -134,26 +167,18 @@ class NeonRealtimeClient {
       try {
         listener(message);
       } catch (err) {
-        console.error('[Neon-Realtime] Listener exception', err);
+        console.error('[Realtime] Listener exception', err);
       }
     });
   }
 
   /**
-   * Broadcast a local simulated transition event so other components
-   * on the page react instantly even in offline or fallback modes.
+   * Broadcast an event to local listeners
    */
   public broadcastLocalEvent(message: RealtimeMessage): void {
     this.notifyListeners(message);
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send(JSON.stringify(message));
-      } catch {
-        // Best effort
-      }
-    }
   }
 }
 
-export const realtimeClient = new NeonRealtimeClient();
+export const realtimeClient = new RealtimeClient();
 export default realtimeClient;

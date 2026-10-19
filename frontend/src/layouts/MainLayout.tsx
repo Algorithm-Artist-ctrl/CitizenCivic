@@ -41,26 +41,6 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased">
-      {/* Top Pilot & Realtime Status Masthead */}
-      <div className="border-b border-slate-200 bg-white px-4 py-1.5 text-xs text-slate-600">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-            <span className="font-semibold text-slate-900">Ward 82 Pilot:</span>
-            <span className="text-slate-600 hidden sm:inline">
-              Bengaluru Indiranagar & Koramangala 4th Block · Verified Ground-Truth Protocol
-            </span>
-            <span className="text-slate-600 sm:hidden">Ward 82 Pilot</span>
-          </div>
-          <div className="flex items-center gap-3 font-mono text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span>Realtime Live</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navigation Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -70,61 +50,61 @@ export const MainLayout: React.FC = () => {
               <ShieldAlert className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <span className="text-lg font-bold tracking-tight text-slate-950">
+              <span className="text-xl font-bold tracking-tight text-slate-950">
                 Citizen<span className="text-emerald-700">Civic</span>
               </span>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                Verified Civic Resolution
+              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
+                Civic Accountability Platform
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
+          <nav className="hidden md:flex items-center gap-1.5 text-[15px] font-medium text-slate-700">
             {user ? (
               <>
                 <Link
                   to="/dashboard"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
                     isActive('/dashboard') || isActive('/')
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'hover:bg-slate-100 text-slate-700'
+                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                      : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  <LayoutDashboard className="h-4 w-4" />
                   <span>{t('nav.dashboard', 'Dashboard')}</span>
                 </Link>
 
                 <Link
                   to="/cases"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
                     isActive('/cases')
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'hover:bg-slate-100 text-slate-700'
+                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                      : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <ClipboardList className="h-3.5 w-3.5" />
+                  <ClipboardList className="h-4 w-4" />
                   <span>{user.role === 'CITIZEN' ? t('nav.cases', 'My Reports') : t('cases.allCases', 'Cases Directory')}</span>
                 </Link>
 
                 <Link
                   to="/rewards"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
                     isActive('/rewards')
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'hover:bg-slate-100 text-slate-700'
+                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                      : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <Award className="h-3.5 w-3.5" />
+                  <Award className="h-4 w-4" />
                   <span>Community Karma</span>
                 </Link>
 
                 {user.role === 'CITIZEN' && (
                   <Link
                     to="/report"
-                    className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-3.5 py-2 text-white shadow-2xs hover:bg-emerald-800 transition-colors ml-2"
+                    className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-4 py-1.5 text-[15px] font-semibold text-white shadow-2xs hover:bg-emerald-800 transition-colors ml-2"
                   >
-                    <PlusCircle className="h-3.5 w-3.5" />
+                    <PlusCircle className="h-4 w-4" />
                     <span>{t('nav.report', 'Report Issue')}</span>
                   </Link>
                 )}
@@ -133,8 +113,8 @@ export const MainLayout: React.FC = () => {
               <>
                 <Link
                   to="/"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
-                    isActive('/') ? 'text-slate-950 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                    isActive('/') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
                   <span>Overview</span>
@@ -142,20 +122,20 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/cases"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
-                    isActive('/cases') ? 'text-slate-950 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                    isActive('/cases') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <span>Public Cases Directory</span>
+                  <span>Public Cases</span>
                 </Link>
 
                 <Link
                   to="/rewards"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-2 transition-colors ${
-                    isActive('/rewards') ? 'text-slate-950 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                    isActive('/rewards') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <span>Leaderboard</span>
+                  <span>Community Karma</span>
                 </Link>
               </>
             )}
@@ -340,26 +320,19 @@ export const MainLayout: React.FC = () => {
       )}
 
       {/* Institutional Civic Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-              <span>
-                <strong>CitizenCivic</strong> — Real-World Verified Civic Resolution Engine &copy; 2026.
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 text-slate-500 font-medium">
-              <Link to="/cases" className="hover:text-slate-900">Cases Directory</Link>
-              <Link to="/rewards" className="hover:text-slate-900">Community Karma</Link>
-              <span>Ground-Truth Verification Protocol</span>
-              <span>Hotspot Recurrence Protection</span>
-              <span>Tamper-evident Audit Trail</span>
-            </div>
+      <footer className="border-t border-slate-200 bg-white py-3">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+            <span>
+              <strong>CitizenCivic</strong> — Civic Accountability Platform &copy; {new Date().getFullYear()}.
+            </span>
           </div>
-          <p className="text-[11px] text-slate-400 text-center sm:text-left">
-            Active Pilot Jurisdiction: Bengaluru Ward 82 (Indiranagar) and Koramangala 4th Block. All complaint closures subject to mandatory on-ground photographic evidence and citizen confirmation.
-          </p>
+          <div className="flex items-center gap-4 text-slate-600 font-medium">
+            <Link to="/cases" className="hover:text-slate-900">Public Cases</Link>
+            <Link to="/rewards" className="hover:text-slate-900">Community Karma</Link>
+            <span className="text-slate-400">Independent Civic Tech</span>
+          </div>
         </div>
       </footer>
     </div>

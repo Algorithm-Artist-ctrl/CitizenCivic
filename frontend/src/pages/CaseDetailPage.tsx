@@ -597,19 +597,22 @@ export const CaseDetailPage: React.FC = () => {
                 <div className="text-xs space-y-1.5 bg-white p-2.5 rounded border border-indigo-100 text-slate-700">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
                         aiVerifyResult.verification_passed
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
                       }`}
                     >
-                      {aiVerifyResult.verification_passed ? '\u2713 VERIFICATION PASSED' : '\u26A0 REVIEW RECOMMENDED'}
+                      {aiVerifyResult.verification_passed ? 'AI Advisory: Notes Complete' : 'AI Advisory: Review Recommended'}
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono">
-                      {Math.round(aiVerifyResult.confidence_score * 100)}% Confidence
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      (Advisory Only)
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">{aiVerifyResult.assessment}</p>
+                  <p className="text-[10px] text-slate-400 italic">
+                    AI feedback is advisory. Official closure requires verified photographic evidence and citizen confirmation.
+                  </p>
                   {aiVerifyResult.deficiencies_found && aiVerifyResult.deficiencies_found.length > 0 && (
                     <ul className="list-disc list-inside text-[10px] text-amber-700 space-y-0.5">
                       {aiVerifyResult.deficiencies_found.map((def: string, idx: number) => (
