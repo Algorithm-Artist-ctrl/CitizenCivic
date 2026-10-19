@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "CitizenCivic — Real-World Civic Resolution Engine",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist ./dist",
     "dev": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview",
     "backend": "cd backend && source venv/bin/activate && python manage.py runserver 127.0.0.1:8000",
     "test": "cd backend && source venv/bin/activate && python manage.py test --keepdb"
