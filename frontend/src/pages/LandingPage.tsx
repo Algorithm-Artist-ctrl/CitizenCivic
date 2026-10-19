@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Camera,
@@ -11,9 +11,11 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
 import CaseStatusBadge from '../components/CaseStatusBadge';
+import CivicStreetGridFallback from '../components/CivicStreetGridFallback';
 import type { Case, PaginatedResponse } from '../types';
+
+const CivicStreetGrid3D = lazy(() => import('../components/CivicStreetGrid3D'));
 
 interface CaseAnalytics {
   total_cases: number;
@@ -29,6 +31,7 @@ export const LandingPage: React.FC = () => {
   // 100% Real Database State
   const [cases, setCases] = useState<Case[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'record' | '3d'>('record');
   const [analytics, setAnalytics] = useState<CaseAnalytics | null>(null);
   const [loadingCases, setLoadingCases] = useState(true);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
@@ -213,19 +216,36 @@ export const LandingPage: React.FC = () => {
         {/* RIGHT COLUMN: Elegant Compact Product Interface */}
         <div className="lg:col-span-6">
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            {/* Header & Case Switcher */}
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono uppercase font-bold text-slate-800">
-                  Live Case Record
-                </span>
-                <Badge variant="emerald" size="xs">
-                  Neon DB
-                </Badge>
+            {/* Header & View Switcher */}
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-4 py-2.5">
+              <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-slate-200/70 border border-slate-300/60">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('record')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    viewMode === 'record'
+                      ? 'bg-white text-slate-950 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Case Record
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('3d')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    viewMode === '3d'
+                      ? 'bg-white text-slate-950 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                  <span>3D Ward Grid</span>
+                </button>
               </div>
 
-              {/* Real Case Selector Pills if multiple cases exist */}
-              {cases.length > 1 && (
+              {/* Real Case Selector Pills if multiple cases exist and in record view */}
+              {cases.length > 1 && viewMode === 'record' && (
                 <div className="flex items-center gap-1 overflow-x-auto">
                   {cases.slice(0, 4).map((c) => (
                     <button
@@ -241,6 +261,12 @@ export const LandingPage: React.FC = () => {
                       {c.case_number.split('-').slice(-1)[0]}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {viewMode === '3d' && (
+                <div className="text-[11px] font-mono text-slate-500">
+                  {cases.length} Pins · Orbit & Drag
                 </div>
               )}
             </div>
@@ -263,7 +289,55 @@ export const LandingPage: React.FC = () => {
                     Retry Connection
                   </Button>
                 </div>
+              ) : cases.length === 0 ? (
+                /* Genuine Empty State */
+                <div className="py-12 text-center space-y-3">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    No active civic cases in this jurisdiction yet
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    All reports are backed by on-ground photographic evidence. Be the first to file a verified report in your ward.
+                  </p>
+                  <Link to={user ? '/report' : '/login'}>
+                    <Button variant="primary" size="sm" icon={<Camera className="h-3.5 w-3.5 text-emerald-400" />}>
+                      File the First Report
+                    </Button>
+                  </Link>
+                </div>
+              ) : viewMode === '3d' ? (
+                /* 3D Ward Grid Interactive View */
+                <div className="space-y-3">
+                  <Suspense fallback={<CivicStreetGridFallback className="h-72 w-full" />}>
+                    <CivicStreetGrid3D
+                      className="h-72 w-full"
+                      cases={cases}
+                      selectedCaseId={selectedCaseId}
+                      onSelectCase={(id) => setSelectedCaseId(id)}
+                    />
+                  </Suspense>
+
+                  {activeCase && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="font-mono font-bold text-slate-950 shrink-0">{activeCase.case_number}</span>
+                        <span className="text-slate-600 truncate">{activeCase.landmark || activeCase.category?.name_en}</span>
+                        <CaseStatusBadge status={activeCase.status} size="xs" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('record')}
+                        className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 shrink-0 cursor-pointer ml-2"
+                      >
+                        View Record &rarr;
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : activeCase ? (
+                /* Single Case Record View */
                 <div className="space-y-4">
                   {/* Case Identifiers */}
                   <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
@@ -351,25 +425,7 @@ export const LandingPage: React.FC = () => {
                     </Link>
                   </div>
                 </div>
-              ) : (
-                /* Genuine Empty State */
-                <div className="py-12 text-center space-y-3">
-                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    No active civic cases in this jurisdiction yet
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    All reports are backed by on-ground photographic evidence. Be the first to file a verified report in your ward.
-                  </p>
-                  <Link to={user ? '/report' : '/login'}>
-                    <Button variant="primary" size="sm" icon={<Camera className="h-3.5 w-3.5 text-emerald-400" />}>
-                      File the First Report
-                    </Button>
-                  </Link>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
