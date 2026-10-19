@@ -52,6 +52,7 @@ export const ReportIssuePage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [createdCaseNumber, setCreatedCaseNumber] = useState<string | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -77,6 +78,7 @@ export const ReportIssuePage: React.FC = () => {
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser.');
+      setManualCoordsOpen(true);
       return;
     }
     setLocationDetecting(true);
@@ -92,7 +94,8 @@ export const ReportIssuePage: React.FC = () => {
         console.warn('Geolocation notice:', err.message);
         setLocationDetecting(false);
         setLocationDetected(false);
-        setError('Device GPS was unavailable or permission denied. You can specify coordinates manually or use the street landmark.');
+        setManualCoordsOpen(true);
+        setError('Device GPS was unavailable or permission denied. Please enter coordinates manually or use the ward reference button.');
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -125,9 +128,20 @@ export const ReportIssuePage: React.FC = () => {
       setError('Please select an issue category to proceed.');
       return;
     }
-    if (step === 2 && (!description.trim() || !landmark.trim())) {
-      setError('Please provide a specific street landmark and problem description.');
-      return;
+    if (step === 2) {
+      if (!landmark.trim() || !description.trim()) {
+        setError('Please provide a specific street landmark and problem description.');
+        return;
+      }
+      if (description.trim().length < 10) {
+        setError('Problem description must be at least 10 characters long.');
+        return;
+      }
+      if (latitude === null || longitude === null) {
+        setError('Geotagged coordinates are required. Please click "Detect My GPS" or enter coordinates.');
+        setManualCoordsOpen(true);
+        return;
+      }
     }
     if (step === 3 && photos.length === 0) {
       setError('At least one clear photograph is required as verified proof of the blackspot.');
@@ -143,51 +157,92 @@ export const ReportIssuePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setUploadWarning(null);
+
     if (!declarationChecked) {
       setError('Please confirm the verification declaration checkbox before submitting.');
       return;
     }
 
+    if (latitude === null || longitude === null) {
+      setError('Geotagged coordinates are required. Please go back to Step 2 to detect GPS or set coordinates.');
+      return;
+    }
+
+    if (!selectedCategory) {
+      setError('Please select an issue category to proceed.');
+      return;
+    }
+
+    if (!description.trim() || description.trim().length < 10) {
+      setError('Problem description must be at least 10 characters long.');
+      return;
+    }
+
+    if (!landmark.trim() || landmark.trim().length < 2) {
+      setError('Street landmark is required (at least 2 characters).');
+      return;
+    }
+
     setSubmitting(true);
-    setError(null);
 
     try {
-      const finalLat = latitude ?? 12.9784;
-      const finalLng = longitude ?? 77.6408;
-
       const casePayload = {
+        category_id: selectedCategory,
         category: selectedCategory,
-        service_area: selectedArea || null,
-        description,
-        landmark,
-        latitude: finalLat,
-        longitude: finalLng,
+        service_area_id: selectedArea || undefined,
+        service_area: selectedArea || undefined,
+        description: description.trim(),
+        landmark: landmark.trim(),
+        latitude: Number(latitude),
+        longitude: Number(longitude),
       };
 
-      const caseRes = await apiClient.post('/cases/', casePayload);
+      const caseRes = await apiClient.post('/cases', casePayload);
       const caseData = caseRes.data;
 
-      // 2. Upload Evidence Photos
+      // 2. Upload Evidence Photos safely
+      let failedPhotosCount = 0;
       if (photos.length > 0) {
         for (const file of photos) {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('evidence_type', 'PHOTO');
-          await apiClient.post(`/cases/${caseData.id}/evidence/`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('evidence_type', 'PHOTO');
+            await apiClient.post(`/cases/${caseData.id}/evidence`, formData);
+          } catch (uploadErr) {
+            console.error('Evidence upload error:', uploadErr);
+            failedPhotosCount++;
+          }
         }
       }
 
       setCreatedCaseNumber(caseData.case_number);
       setCreatedCaseId(caseData.id);
+      if (failedPhotosCount > 0) {
+        setUploadWarning(`${failedPhotosCount} of ${photos.length} photo(s) failed to upload, but case ${caseData.case_number} was successfully recorded.`);
+      }
     } catch (err: any) {
       console.error('Case submission error', err);
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.description?.[0] ||
-          'Failed to submit report. Please check your network connection and retry.'
-      );
+      const data = err.response?.data;
+      let errorMsg = 'Failed to submit report. Please check your network connection and retry.';
+      if (typeof data === 'string') {
+        errorMsg = data;
+      } else if (data?.detail) {
+        errorMsg = data.detail;
+      } else if (data?.description?.[0]) {
+        errorMsg = data.description[0];
+      } else if (data?.errors) {
+        const errorKeys = Object.keys(data.errors).filter((k) => k !== '_errors');
+        if (errorKeys.length > 0) {
+          const firstErr = data.errors[errorKeys[0]];
+          if (firstErr?._errors?.[0]) {
+            errorMsg = `${errorKeys[0].replace(/_/g, ' ')}: ${firstErr._errors[0]}`;
+          }
+        }
+      }
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -221,6 +276,12 @@ export const ReportIssuePage: React.FC = () => {
               Your report has been logged with an immutable timestamp on the public ledger. You will be able to track status transitions and photographic evidence.
             </p>
           </div>
+
+          {uploadWarning && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 text-left">
+              ⚠️ {uploadWarning}
+            </div>
+          )}
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-left">
             <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
@@ -264,6 +325,8 @@ export const ReportIssuePage: React.FC = () => {
                 setDescription('');
                 setLandmark('');
                 setPhotos([]);
+                setDeclarationChecked(false);
+                setUploadWarning(null);
               }}
             >
               Report Another Issue
@@ -394,15 +457,15 @@ export const ReportIssuePage: React.FC = () => {
               <div className="space-y-0.5">
                 <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5 text-emerald-700" />
-                  <span>Geotag Coordinates</span>
+                  <span>Geotag Coordinates <span className="text-rose-600">*</span></span>
                 </span>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className={`text-[11px] font-mono ${latitude !== null && longitude !== null ? 'text-slate-700' : 'text-amber-700 font-semibold'}`}>
                   {latitude !== null && longitude !== null
-                    ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E ${locationDetected ? '(Device GPS)' : '(Manual)'}`
-                    : 'Coordinates not yet set (optional or manual)'}
+                    ? `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E ${locationDetected ? '(Device GPS)' : '(Manual Coordinates)'}`
+                    : 'Coordinates required for geotagged dispatch'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="secondary"
@@ -458,8 +521,22 @@ export const ReportIssuePage: React.FC = () => {
                     className="w-full rounded border border-slate-300 py-1.5 px-2 font-mono text-xs text-slate-900 bg-white"
                   />
                 </div>
-                <div className="col-span-2 text-[10px] text-slate-500">
-                  Browser GPS assists in geographic placement. You may adjust or input coordinates manually.
+                <div className="col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-1 border-t border-slate-200/60 text-[10px]">
+                  <span className="text-slate-500">
+                    If browser GPS is unavailable on your device, enter coordinates manually or choose ward center.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatitude(12.9784);
+                      setLongitude(77.6408);
+                      setLocationDetected(false);
+                      setError(null);
+                    }}
+                    className="font-semibold text-emerald-800 hover:underline shrink-0 text-left sm:text-right cursor-pointer"
+                  >
+                    Use Ward 82 Reference (12.9784, 77.6408)
+                  </button>
                 </div>
               </div>
             )}
@@ -621,9 +698,13 @@ export const ReportIssuePage: React.FC = () => {
             <div className="p-4 grid grid-cols-3 gap-2">
               <span className="font-semibold text-slate-500">Coordinates:</span>
               <span className="col-span-2 font-mono text-slate-700">
-                {latitude !== null && longitude !== null
-                  ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E ${locationDetected ? '(GPS)' : '(Manual)'}`
-                  : '12.9784° N, 77.6408° E (Ward Default)'}
+                {latitude !== null && longitude !== null ? (
+                  <span className="text-emerald-700 font-semibold">
+                    {latitude.toFixed(6)}° N, {longitude.toFixed(6)}° E {locationDetected ? '(GPS Geotagged)' : '(Manual Location)'}
+                  </span>
+                ) : (
+                  <span className="text-rose-600 font-medium">⚠️ No coordinates set (Return to Step 2)</span>
+                )}
               </span>
             </div>
 
@@ -639,14 +720,20 @@ export const ReportIssuePage: React.FC = () => {
           </div>
 
           {/* Citizen Certification */}
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3.5 flex items-start gap-3">
+          <div className={`rounded-md border p-3.5 flex items-start gap-3 transition-colors ${
+            !declarationChecked && error
+              ? 'border-rose-300 bg-rose-50/70'
+              : 'border-slate-200 bg-slate-50'
+          }`}>
             <input
               id="declaration-checkbox"
               type="checkbox"
-              required
               checked={declarationChecked}
-              onChange={(e) => setDeclarationChecked(e.target.checked)}
-              className="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+              onChange={(e) => {
+                setDeclarationChecked(e.target.checked);
+                if (error) setError(null);
+              }}
+              className="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer h-4 w-4"
             />
             <label htmlFor="declaration-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
               I certify that this report reflects a genuine civic issue observed in my locality, backed by photographic evidence I personally captured.
@@ -664,7 +751,7 @@ export const ReportIssuePage: React.FC = () => {
               loading={submitting}
               icon={<ShieldCheck className="h-4 w-4 text-emerald-400" />}
             >
-              Submit Case Report &rarr;
+              {submitting ? 'Submitting Geotagged Report...' : 'Submit Geotagged Report'}
             </Button>
           </div>
         </form>

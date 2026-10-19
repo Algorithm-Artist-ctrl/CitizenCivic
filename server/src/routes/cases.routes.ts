@@ -339,24 +339,32 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
 
 // POST /api/v1/cases/ — Create new case
 const CreateCaseSchema = z.object({
-  category_id: z.string().uuid(),
+  category_id: z.string().uuid().optional(),
+  category: z.string().uuid().optional(),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   landmark: z.string().min(2, 'Landmark is required.'),
-  latitude: z.number(),
-  longitude: z.number(),
+  latitude: z.number({ required_error: 'Latitude coordinate is required.' }),
+  longitude: z.number({ required_error: 'Longitude coordinate is required.' }),
   service_area_id: z.string().uuid().optional().nullable(),
+  service_area: z.string().uuid().optional().nullable(),
   is_hotspot: z.boolean().optional().default(false),
+}).refine(data => Boolean(data.category_id || data.category), {
+  message: 'Category is required.',
+  path: ['category_id'],
 });
 
 router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Response) => {
   const parseResult = CreateCaseSchema.safeParse(req.body);
   if (!parseResult.success) {
-    res.status(400).json(parseResult.error.format());
+    const firstIssue = parseResult.error.issues[0];
+    const message = firstIssue ? firstIssue.message : 'Invalid case submission data.';
+    res.status(400).json({ detail: message, errors: parseResult.error.format() });
     return;
   }
 
   const user = req.user!;
   const data = parseResult.data;
+  const categoryId = (data.category_id || data.category)!;
   const caseId = crypto.randomUUID();
   const caseNumber = generateCaseNumber();
   const transitionId = crypto.randomUUID();
@@ -366,8 +374,8 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
   try {
     await client.query('BEGIN');
 
-    // Default to first active service area if not specified
-    let serviceAreaId = data.service_area_id;
+    // Default to specified service area, or first active service area if not specified
+    let serviceAreaId = data.service_area_id || data.service_area || null;
     if (!serviceAreaId) {
       const saRes = await client.query('SELECT id FROM areas_servicearea WHERE is_active = true LIMIT 1;');
       if (saRes.rows.length > 0) {
@@ -392,7 +400,7 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       data.longitude,
       data.is_hotspot,
       user.id,
-      data.category_id,
+      categoryId,
       serviceAreaId || null,
       now,
     ]);

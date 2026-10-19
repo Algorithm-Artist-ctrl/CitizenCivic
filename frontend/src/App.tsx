@@ -63,7 +63,7 @@ export const App: React.FC = () => {
               <Route
                 path="/report"
                 element={
-                  <ProtectedRoute allowedRoles={['CITIZEN']}>
+                  <ProtectedRoute>
                     <ReportIssuePage />
                   </ProtectedRoute>
                 }
