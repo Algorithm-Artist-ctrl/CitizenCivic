@@ -16,6 +16,7 @@ const reportLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { detail: 'Reporting rate limit reached. Please wait before filing more reports.' },
   skip: () => process.env.NODE_ENV === 'test',
 });
@@ -26,6 +27,7 @@ const uploadLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { detail: 'Upload rate limit reached. Please wait before uploading more files.' },
   skip: () => process.env.NODE_ENV === 'test',
 });

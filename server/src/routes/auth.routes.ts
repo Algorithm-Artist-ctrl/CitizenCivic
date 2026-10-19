@@ -17,6 +17,7 @@ const authLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { detail: 'Too many authentication attempts. Please try again later.' },
   skip: () => process.env.NODE_ENV === 'test',
 });

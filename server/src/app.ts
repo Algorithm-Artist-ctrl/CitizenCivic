@@ -15,6 +15,9 @@ import aiRoutes from './routes/ai.routes';
 
 export const app = express();
 
+// Trust reverse proxy hops (Render, Cloudflare, AWS ELB, etc.)
+app.set('trust proxy', 1);
+
 // Security Headers
 app.use(
   helmet({
@@ -52,6 +55,7 @@ const limiter = rateLimit({
   max: 180, // max 180 requests per minute
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { detail: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);

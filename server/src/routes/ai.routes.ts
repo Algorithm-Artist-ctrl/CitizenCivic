@@ -17,6 +17,7 @@ const router = Router();
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  validate: { xForwardedForHeader: false },
   message: { detail: 'AI request limit reached for this session. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
