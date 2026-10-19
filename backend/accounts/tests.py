@@ -43,6 +43,31 @@ class AuthTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(email='citizen@example.com').exists())
 
+    def test_register_without_password_confirm_succeeds(self):
+        data = {
+            'email': 'noconfirm@example.com',
+            'password': 'StrongPass123!',
+            'display_name': 'No Confirm User',
+        }
+        response = self.client.post(self.register_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email='noconfirm@example.com').exists())
+
+    def test_register_email_case_insensitivity(self):
+        data = {
+            'email': 'UPPERCASE@EXAMPLE.COM',
+            'password': 'StrongPass123!',
+            'display_name': 'Upper User',
+        }
+        response = self.client.post(self.register_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email='uppercase@example.com').exists())
+
+        # Attempt duplicate with mixed case
+        data['email'] = 'UpperCase@example.com'
+        response2 = self.client.post(self.register_url, data, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_register_duplicate_email(self):
         self._create_user(email='citizen@example.com')
         response = self.client.post(self.register_url, self.user_data, format='json')

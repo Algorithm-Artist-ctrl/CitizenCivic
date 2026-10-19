@@ -12,7 +12,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True, validators=[validate_password], style={'input_type': 'password'},
     )
     password_confirm = serializers.CharField(
-        write_only=True, style={'input_type': 'password'},
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        style={'input_type': 'password'},
     )
 
     class Meta:
@@ -20,19 +23,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'password_confirm', 'display_name', 'preferred_language']
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        val = value.strip().lower()
+        if User.objects.filter(email__iexact=val).exists():
             raise serializers.ValidationError('A user with this email already exists.')
-        return value.lower()
+        return val
 
     def validate(self, attrs):
-        if attrs['password'] != attrs.pop('password_confirm'):
+        pass_confirm = attrs.pop('password_confirm', None)
+        if pass_confirm and attrs.get('password') != pass_confirm:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
         return attrs
 
     def create(self, validated_data):
+        email = validated_data['email'].strip().lower()
         user = User.objects.create_user(
-            username=validated_data['email'],
-            email=validated_data['email'],
+            username=email,
+            email=email,
             password=validated_data['password'],
             display_name=validated_data.get('display_name', ''),
             preferred_language=validated_data.get('preferred_language', 'en'),

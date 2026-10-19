@@ -45,19 +45,40 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await register({
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        display_name: displayName,
+        password_confirm: confirmPassword,
+        display_name: displayName.trim(),
         preferred_language: preferredLanguage,
       });
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      const msg =
-        err.response?.data?.email?.[0] ||
-        err.response?.data?.password?.[0] ||
-        err.response?.data?.detail ||
-        t('auth.registerError', 'Registration failed. Please check inputs and try again.');
-      setError(msg);
+      const data = err.response?.data;
+      let msg = '';
+      if (typeof data === 'string') {
+        msg = data;
+      } else if (data && typeof data === 'object') {
+        if (data.email) {
+          msg = Array.isArray(data.email) ? data.email[0] : data.email;
+        } else if (data.password_confirm) {
+          msg = Array.isArray(data.password_confirm) ? data.password_confirm[0] : data.password_confirm;
+        } else if (data.password) {
+          msg = Array.isArray(data.password) ? data.password[0] : data.password;
+        } else if (data.display_name) {
+          msg = Array.isArray(data.display_name) ? data.display_name[0] : data.display_name;
+        } else if (data.non_field_errors) {
+          msg = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors;
+        } else if (data.detail) {
+          msg = data.detail;
+        } else {
+          const firstKey = Object.keys(data)[0];
+          if (firstKey) {
+            const val = data[firstKey];
+            msg = Array.isArray(val) ? `${firstKey}: ${val[0]}` : String(val);
+          }
+        }
+      }
+      setError(msg || t('auth.registerError', 'Registration failed. Please check inputs and try again.'));
     } finally {
       setLoading(false);
     }
