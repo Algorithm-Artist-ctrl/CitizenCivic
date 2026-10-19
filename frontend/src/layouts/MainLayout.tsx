@@ -15,6 +15,8 @@ import {
   Bell,
   ChevronDown,
   Compass,
+  ShieldCheck,
+  KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -68,30 +70,79 @@ export const MainLayout: React.FC = () => {
           <nav className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-700">
             {user ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
-                    isActive('/dashboard') || isActive('/')
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'hover:bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  <span>{t('nav.dashboard', 'Dashboard')}</span>
-                </Link>
+                {/* Admin-specific links */}
+                {user.role === 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/admin"
+                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                        isActive('/admin') || isActive('/')
+                          ? 'bg-purple-900 text-white shadow-xs'
+                          : 'hover:bg-purple-50 text-purple-900 font-bold'
+                      }`}
+                    >
+                      <KeyRound className="h-3.5 w-3.5 text-purple-400" />
+                      <span>Admin Console</span>
+                    </Link>
+                    <Link
+                      to="/officer"
+                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                        isActive('/officer')
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+                      <span>Officer Queue</span>
+                    </Link>
+                  </>
+                )}
 
-                <Link
-                  to="/cases?scope=mine"
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
-                    isActive('/cases') && location.search.includes('scope=mine')
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'hover:bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  <ClipboardList className="h-3.5 w-3.5" />
-                  <span>{user.role === 'CITIZEN' ? t('nav.cases', 'My Reports') : t('cases.allCases', 'Cases Directory')}</span>
-                </Link>
+                {/* Officer-specific links */}
+                {['OPERATOR', 'MODERATOR', 'SUPERVISOR'].includes(user.role) && (
+                  <Link
+                    to="/officer"
+                    className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                      isActive('/officer') || isActive('/')
+                        ? 'bg-blue-900 text-white shadow-xs'
+                        : 'hover:bg-blue-50 text-blue-900 font-bold'
+                    }`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-blue-400" />
+                    <span>Officer Queue</span>
+                  </Link>
+                )}
 
+                {/* Citizen-specific links */}
+                {user.role === 'CITIZEN' && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                        isActive('/dashboard') || isActive('/')
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      <span>{t('nav.dashboard', 'Dashboard')}</span>
+                    </Link>
+
+                    <Link
+                      to="/cases?scope=mine"
+                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                        isActive('/cases') && location.search.includes('scope=mine')
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <ClipboardList className="h-3.5 w-3.5" />
+                      <span>{t('nav.cases', 'My Reports')}</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* Universal civic transparency links */}
                 <Link
                   to="/cases"
                   className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
@@ -101,7 +152,7 @@ export const MainLayout: React.FC = () => {
                   }`}
                 >
                   <Compass className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>{t('nav.publicCases', 'Public Cases')}</span>
+                  <span>{user.role === 'CITIZEN' ? t('nav.publicCases', 'Public Cases') : 'Cases Directory'}</span>
                 </Link>
 
                 <Link
@@ -221,13 +272,33 @@ export const MainLayout: React.FC = () => {
                       <p className="font-bold text-slate-900 truncate">{user.display_name}</p>
                       <p className="text-[10px] font-mono text-slate-400 truncate">{user.email}</p>
                     </div>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      Dashboard
-                    </Link>
+                    {user.role === 'ADMIN' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-purple-700 hover:bg-purple-50 transition-colors font-semibold"
+                      >
+                        ⚡ Admin Console
+                      </Link>
+                    )}
+                    {['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user.role) && (
+                      <Link
+                        to="/officer"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-blue-700 hover:bg-blue-50 transition-colors font-semibold"
+                      >
+                        🛡️ Officer Queue
+                      </Link>
+                    )}
+                    {user.role === 'CITIZEN' && (
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
                     <Link
                       to="/rewards"
                       onClick={() => setUserDropdownOpen(false)}
@@ -292,22 +363,67 @@ export const MainLayout: React.FC = () => {
                   </Badge>
                 </div>
 
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  <LayoutDashboard className="h-4 w-4 text-slate-500" />
-                  <span>{t('nav.dashboard', 'Dashboard')}</span>
-                </Link>
+                {user.role === 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 rounded-md bg-purple-50 px-3 py-2 text-xs font-bold text-purple-900"
+                    >
+                      <KeyRound className="h-4 w-4 text-purple-600" />
+                      <span>Admin Console</span>
+                    </Link>
+                    <Link
+                      to="/officer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-blue-600" />
+                      <span>Officer Queue</span>
+                    </Link>
+                  </>
+                )}
+
+                {['OPERATOR', 'MODERATOR', 'SUPERVISOR'].includes(user.role) && (
+                  <Link
+                    to="/officer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-bold text-blue-900"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-blue-600" />
+                    <span>Officer Queue</span>
+                  </Link>
+                )}
+
+                {user.role === 'CITIZEN' && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-slate-500" />
+                      <span>{t('nav.dashboard', 'Dashboard')}</span>
+                    </Link>
+
+                    <Link
+                      to="/cases?scope=mine"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <ClipboardList className="h-4 w-4 text-slate-500" />
+                      <span>{t('nav.cases', 'My Reports')}</span>
+                    </Link>
+                  </>
+                )}
 
                 <Link
                   to="/cases"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  <ClipboardList className="h-4 w-4 text-slate-500" />
-                  <span>{user.role === 'CITIZEN' ? t('nav.cases', 'My Reports') : t('cases.allCases', 'Cases Directory')}</span>
+                  <Compass className="h-4 w-4 text-slate-500" />
+                  <span>{user.role === 'CITIZEN' ? t('nav.publicCases', 'Public Cases') : 'Cases Directory'}</span>
                 </Link>
 
                 <Link

@@ -517,3 +517,155 @@ describe('7. Official Indian Municipal Data & Role Access', () => {
   });
 });
 
+describe('8. Role-Based Access Control, Officer Workflows & Administrative Security', () => {
+  let officerToken: string;
+  let adminToken: string;
+
+  it('Citizen registration must enforce CITIZEN role and reject role tampering', async () => {
+    const tamperedEmail = `tamper_${Date.now()}@example.com`;
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        email: tamperedEmail,
+        password: 'Password123!',
+        password_confirm: 'Password123!',
+        display_name: 'Tamper Attempt',
+        role: 'ADMIN', // Client attempting privilege escalation
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.role).toBe('CITIZEN'); // Strictly enforced as CITIZEN
+
+    // Clean up
+    await query('DELETE FROM core_auditlog WHERE actor_id = $1;', [res.body.id]);
+    await query('DELETE FROM accounts_user WHERE id = $1;', [res.body.id]);
+  });
+
+  it('Citizen cannot access officer-only queue (GET /api/v1/cases/officer/queue returns 403)', async () => {
+    const res = await request(app)
+      .get('/api/v1/cases/officer/queue')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.detail).toContain('permission');
+  });
+
+  it('Citizen cannot access admin-only users roster (GET /api/v1/auth/admin/users returns 403)', async () => {
+    const res = await request(app)
+      .get('/api/v1/auth/admin/users')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.detail).toContain('permission');
+  });
+
+  it('Citizen cannot perform official transition (POST /api/v1/cases/:id/transition with REVIEWED returns 403)', async () => {
+    const res = await request(app)
+      .post(`/api/v1/cases/${createdCaseId}/transition`)
+      .set('Authorization', `Bearer ${testAccessToken}`)
+      .send({
+        new_status: 'REVIEWED',
+        reason: 'Citizen attempting unauthorized moderator review',
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.detail).toContain('cannot perform transition');
+  });
+
+  it('Municipal Officer login works and accesses dedicated officer queue', async () => {
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'operator@example.com',
+        password: 'Operator123!',
+      });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.access).toBeDefined();
+    officerToken = loginRes.body.access;
+
+    const queueRes = await request(app)
+      .get('/api/v1/cases/officer/queue')
+      .set('Authorization', `Bearer ${officerToken}`);
+
+    expect(queueRes.status).toBe(200);
+    expect(queueRes.body.officer_role).toBe('OPERATOR');
+    expect(Array.isArray(queueRes.body.queue)).toBe(true);
+  });
+
+  it('Approved Officer can view Citizens Leaderboard and Officer Standings', async () => {
+    const citizenLbRes = await request(app)
+      .get('/api/v1/rewards/leaderboard?type=citizen')
+      .set('Authorization', `Bearer ${officerToken}`);
+
+    expect(citizenLbRes.status).toBe(200);
+    expect(Array.isArray(citizenLbRes.body.leaderboard)).toBe(true);
+
+    const officerLbRes = await request(app)
+      .get('/api/v1/rewards/leaderboard?type=officer')
+      .set('Authorization', `Bearer ${officerToken}`);
+
+    expect(officerLbRes.status).toBe(200);
+    expect(Array.isArray(officerLbRes.body.leaderboard)).toBe(true);
+  });
+
+  it('Public Officer profiles endpoint exposes approved fields and never leaks private data', async () => {
+    const res = await request(app).get('/api/v1/auth/officers');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.officers)).toBe(true);
+
+    if (res.body.officers.length > 0) {
+      const off = res.body.officers[0];
+      expect(off.id).toBeDefined();
+      expect(off.display_name).toBeDefined();
+      expect(off.role).toBeDefined();
+      expect(off.is_verified).toBe(true);
+      // Ensure private credentials are never exposed
+      expect(off.password).toBeUndefined();
+      expect(off.email).toBeUndefined();
+      expect(off.phone_hash).toBeUndefined();
+
+      // Check single officer detail
+      const singleRes = await request(app).get(`/api/v1/auth/officers/${off.id}`);
+      expect(singleRes.status).toBe(200);
+      expect(singleRes.body.display_name).toBe(off.display_name);
+      expect(singleRes.body.password).toBeUndefined();
+      expect(singleRes.body.email).toBeUndefined();
+    }
+
+    // Checking citizen ID on officer endpoint returns 404
+    const citizenCheckRes = await request(app).get(`/api/v1/auth/officers/${testUserId}`);
+    expect(citizenCheckRes.status).toBe(404);
+  });
+
+  it('Admin login works and accesses admin-only users roster', async () => {
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'admin@example.com',
+        password: 'Admin123!',
+      });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.access).toBeDefined();
+    adminToken = loginRes.body.access;
+
+    const usersRes = await request(app)
+      .get('/api/v1/auth/admin/users')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(usersRes.status).toBe(200);
+    expect(usersRes.body.total_users).toBeGreaterThan(0);
+    expect(usersRes.body.role_counts).toBeDefined();
+  });
+
+  it('GET /api/v1/areas/categories includes the Other complaint category', async () => {
+    const res = await request(app).get('/api/v1/areas/categories');
+    expect(res.status).toBe(200);
+    const categories = res.body.results || res.body;
+    const otherCat = categories.find((c: any) => c.slug === 'other' || c.name_en.toLowerCase().includes('other'));
+    expect(otherCat).toBeDefined();
+  });
+});
+
+

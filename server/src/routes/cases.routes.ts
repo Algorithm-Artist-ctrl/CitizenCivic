@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { query, getClient } from '../db';
-import { authenticateToken, optionalAuth } from '../auth/middleware';
+import { authenticateToken, optionalAuth, requireRole } from '../auth/middleware';
 import { upload, saveFile, getFileViewUrl } from '../services/storage.service';
 import { logAudit } from '../services/audit.service';
 import { CaseStatus, UserRole } from '../types';
@@ -325,6 +325,70 @@ router.get('/analytics', optionalAuth, async (_req: Request, res: Response) => {
     res.status(500).json({ detail: 'Failed to compute analytics.' });
   }
 });
+
+// GET /api/v1/cases/officer/queue — Dedicated officer action queue (strictly role-gated)
+router.get(
+  '/officer/queue',
+  authenticateToken,
+  requireRole('OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'),
+  async (req: Request, res: Response) => {
+    const user = req.user!;
+
+    try {
+      let statusList: string[] = [];
+      let queryFilter = '';
+      const params: any[] = [];
+
+      if (user.role === 'OPERATOR') {
+        // Field operator queue: tickets requiring acknowledgement, in-progress action, or resolution proof
+        statusList = ['FORWARDED', 'ACKNOWLEDGED', 'IN_PROGRESS'];
+        queryFilter = `(c.assigned_operator_id = $1 OR c.assigned_operator_id IS NULL) AND c.status = ANY($2::text[])`;
+        params.push(user.id, statusList);
+      } else if (user.role === 'MODERATOR') {
+        // Verification & audit queue: newly submitted tickets, reports claimed resolved awaiting audit, or disputed closures
+        statusList = ['SUBMITTED', 'RESOLUTION_REPORTED', 'VERIFICATION_PENDING', 'DISPUTED_CLOSURE'];
+        queryFilter = `c.status = ANY($1::text[])`;
+        params.push(statusList);
+      } else {
+        // Supervisor or Admin: complete operational oversight
+        statusList = ['SUBMITTED', 'FORWARDED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLUTION_REPORTED', 'VERIFICATION_PENDING', 'DISPUTED_CLOSURE', 'ESCALATED'];
+        queryFilter = `c.status = ANY($1::text[])`;
+        params.push(statusList);
+      }
+
+      const queueQuery = `
+        SELECT 
+          c.id, c.case_number, c.status, c.description, c.landmark, c.latitude, c.longitude,
+          c.is_hotspot, c.location_source, c.created_at, c.updated_at, c.acknowledged_at, c.resolved_at,
+          cat.name_en AS category_name,
+          sa.name AS service_area_name,
+          u.display_name AS reporter_name,
+          op.display_name AS operator_name
+        FROM cases_case c
+        JOIN areas_category cat ON c.category_id = cat.id
+        LEFT JOIN areas_servicearea sa ON c.service_area_id = sa.id
+        JOIN accounts_user u ON c.primary_reporter_id = u.id
+        LEFT JOIN accounts_user op ON c.assigned_operator_id = op.id
+        WHERE ${queryFilter}
+        ORDER BY c.created_at ASC
+        LIMIT 50;
+      `;
+
+      const result = await query(queueQuery, params);
+
+      res.json({
+        officer_role: user.role,
+        officer_name: user.display_name,
+        is_verified: user.is_verified,
+        count: result.rows.length,
+        queue: result.rows,
+      });
+    } catch (err: any) {
+      console.error('[cases/officer/queue] Error:', err);
+      res.status(500).json({ detail: 'Failed to retrieve officer queue.' });
+    }
+  }
+);
 
 // GET /api/v1/cases/
 router.get('/', optionalAuth, async (req: Request, res: Response) => {
@@ -847,6 +911,15 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
       await client.query('ROLLBACK');
       res.status(403).json({
         detail: `User with role ${user.role} cannot perform transition to ${new_status}.`,
+      });
+      return;
+    }
+
+    // Verify officer approval status for official transitions
+    if (!user.is_superuser && ['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user.role) && !user.is_verified) {
+      await client.query('ROLLBACK');
+      res.status(403).json({
+        detail: 'Officer account is pending authorization and municipal verification.',
       });
       return;
     }

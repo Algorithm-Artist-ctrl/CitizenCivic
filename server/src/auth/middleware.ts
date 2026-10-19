@@ -78,6 +78,14 @@ export async function optionalAuth(
   next();
 }
 
+export function isApprovedOfficer(user: DbUser): boolean {
+  return (
+    user.is_active &&
+    (user.is_superuser ||
+      (['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user.role) && user.is_verified))
+  );
+}
+
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -85,10 +93,25 @@ export function requireRole(...roles: UserRole[]) {
       return;
     }
 
-    if (req.user.is_superuser || roles.includes(req.user.role)) {
-      return next();
+    if (!req.user.is_active) {
+      res.status(403).json({ detail: 'User account is deactivated.' });
+      return;
     }
 
-    res.status(403).json({ detail: 'You do not have permission to perform this action.' });
+    // Role membership check
+    const hasRole = req.user.is_superuser || roles.includes(req.user.role);
+    if (!hasRole) {
+      res.status(403).json({ detail: 'You do not have permission to perform this action.' });
+      return;
+    }
+
+    // For official municipal & administrative roles, verify backend approval status
+    const isOfficialRole = ['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(req.user.role);
+    if (isOfficialRole && !req.user.is_superuser && !req.user.is_verified) {
+      res.status(403).json({ detail: 'Official account pending municipal authorization and verification.' });
+      return;
+    }
+
+    next();
   };
 }

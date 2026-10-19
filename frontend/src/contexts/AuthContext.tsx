@@ -5,7 +5,7 @@ import type { User, LoginCredentials, RegisterData } from '../types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
@@ -17,14 +17,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (): Promise<User | null> => {
     try {
       const { data } = await apiClient.get<User>('/auth/profile/');
       setUser(data);
+      return data;
     } catch {
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
+      return null;
     }
   }, []);
 
@@ -49,11 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchProfile]);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: LoginCredentials): Promise<User> => {
     const { data } = await apiClient.post('/auth/token/', credentials);
     setAccessToken(data.access);
     setRefreshToken(data.refresh);
-    await fetchProfile();
+    const profile = await fetchProfile();
+    if (!profile) {
+      throw new Error('Failed to retrieve user profile after authentication.');
+    }
+    return profile;
   };
 
   const register = async (registerData: RegisterData) => {

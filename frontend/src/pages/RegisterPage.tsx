@@ -9,6 +9,8 @@ import {
   AlertCircle,
   ArrowLeft,
   Globe,
+  Info,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -110,19 +112,41 @@ export const RegisterPage: React.FC = () => {
 
       {/* Main Container */}
       <main className="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-5">
+          {/* Masthead */}
           <div className="text-center space-y-2">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-2xs border border-slate-800">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-white shadow-2xs border border-slate-800">
               <ShieldCheck className="h-6 w-6 text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950">
               Create Citizen Account
             </h1>
-            <p className="text-xs text-slate-500">
-              Join the verified municipal resolution network for Bengaluru Ward 82
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              Join the verified resident network for reporting and tracking civic resolutions in Bengaluru Ward 82
             </p>
           </div>
 
+          {/* Official Officer Notice Callout */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold">
+              <Info className="h-4 w-4 text-blue-600 shrink-0" />
+              <span>Are you a Municipal Officer or Administrator?</span>
+            </div>
+            <p className="text-[11px] text-blue-800/90 leading-relaxed">
+              Official municipal and staff accounts cannot be self-registered. They are provisioned and authorized by city administration.
+            </p>
+            <div className="pt-0.5">
+              <Link
+                to="/login?portal=officer"
+                className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-950 underline text-[11px]"
+              >
+                <Shield className="h-3 w-3" />
+                Sign into Municipal Officer Portal &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Citizen Registration Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
             {error && (
               <div
@@ -232,7 +256,7 @@ export const RegisterPage: React.FC = () => {
                   htmlFor="register-language"
                   className="block text-xs font-semibold text-slate-800"
                 >
-                  Notification Language
+                  Preferred Language
                 </label>
                 <div className="relative">
                   <Globe className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -255,9 +279,9 @@ export const RegisterPage: React.FC = () => {
                   variant="primary"
                   size="lg"
                   loading={loading}
-                  className="w-full py-2.5"
+                  className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800"
                 >
-                  Complete Registration &rarr;
+                  Create Citizen Account &rarr;
                 </Button>
               </div>
             </form>

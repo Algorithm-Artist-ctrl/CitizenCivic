@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { query } from '../db';
 import { hashPassword, verifyPassword } from '../auth/hash';
 import { generateTokens, verifyRefreshToken } from '../auth/jwt';
-import { authenticateToken } from '../auth/middleware';
+import { authenticateToken, requireRole, optionalAuth } from '../auth/middleware';
 import { logAudit } from '../services/audit.service';
 import { DbUser } from '../types';
 
@@ -227,6 +227,139 @@ router.patch('/profile', authenticateToken, async (req: Request, res: Response) 
     res.json(result.rows[0]);
   } catch (err: any) {
     res.status(500).json({ detail: 'Failed to update profile.' });
+  }
+});
+
+// GET /api/v1/auth/officers/ — Public listing of approved municipal officers
+router.get('/officers', optionalAuth, async (_req: Request, res: Response) => {
+  try {
+    const result = await query(`
+      SELECT 
+        u.id, 
+        u.display_name, 
+        u.role, 
+        u.is_verified, 
+        u.created_at,
+        COUNT(c.id)::int AS assigned_cases_count,
+        COUNT(CASE WHEN c.status = 'VERIFIED_RESOLVED' THEN 1 END)::int AS verified_resolved_count
+      FROM accounts_user u
+      LEFT JOIN cases_case c ON u.id = c.assigned_operator_id
+      WHERE u.is_active = true 
+        AND u.is_verified = true
+        AND u.role IN ('OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN')
+      GROUP BY u.id, u.display_name, u.role, u.is_verified, u.created_at
+      ORDER BY verified_resolved_count DESC, u.created_at ASC;
+    `);
+
+    res.json({
+      count: result.rows.length,
+      officers: result.rows.map(row => ({
+        id: row.id,
+        display_name: row.display_name,
+        role: row.role,
+        is_verified: row.is_verified,
+        assigned_cases_count: row.assigned_cases_count,
+        verified_resolved_count: row.verified_resolved_count,
+        created_at: row.created_at,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[auth/officers] Error:', err);
+    res.status(500).json({ detail: 'Failed to retrieve public officer profiles.' });
+  }
+});
+
+// GET /api/v1/auth/officers/:id — Single approved public officer dossier
+router.get('/officers/:id', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await query(`
+      SELECT 
+        u.id, 
+        u.display_name, 
+        u.role, 
+        u.is_verified, 
+        u.created_at,
+        COUNT(c.id)::int AS assigned_cases_count,
+        COUNT(CASE WHEN c.status = 'VERIFIED_RESOLVED' THEN 1 END)::int AS verified_resolved_count,
+        ROUND(
+          COALESCE(
+            AVG(
+              CASE 
+                WHEN c.status = 'VERIFIED_RESOLVED' AND (c.resolved_at IS NOT NULL OR c.verified_at IS NOT NULL)
+                THEN EXTRACT(EPOCH FROM (COALESCE(c.resolved_at, c.verified_at) - COALESCE(c.acknowledged_at, c.created_at))) / 3600.0 
+                ELSE NULL 
+              END
+            ), 
+            0
+          )::numeric, 
+          1
+        )::float AS avg_resolution_hours
+      FROM accounts_user u
+      LEFT JOIN cases_case c ON u.id = c.assigned_operator_id
+      WHERE u.id::text = $1 
+        AND u.is_active = true 
+        AND u.is_verified = true
+        AND u.role IN ('OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN')
+      GROUP BY u.id, u.display_name, u.role, u.is_verified, u.created_at
+      LIMIT 1;
+    `, [req.params.id]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ detail: 'Officer profile not found or not authorized for public display.' });
+      return;
+    }
+
+    const row = result.rows[0];
+    res.json({
+      id: row.id,
+      display_name: row.display_name,
+      role: row.role,
+      is_verified: row.is_verified,
+      assigned_cases_count: row.assigned_cases_count,
+      verified_resolved_count: row.verified_resolved_count,
+      avg_resolution_hours: row.avg_resolution_hours,
+      created_at: row.created_at,
+    });
+  } catch (err: any) {
+    console.error('[auth/officers/:id] Error:', err);
+    res.status(500).json({ detail: 'Failed to retrieve officer profile.' });
+  }
+});
+
+// GET /api/v1/auth/admin/users — Admin-only user management roster
+router.get('/admin/users', authenticateToken, requireRole('ADMIN'), async (_req: Request, res: Response) => {
+  try {
+    const result = await query(`
+      SELECT 
+        id, email, username, display_name, role, is_verified, is_active, is_staff, is_superuser,
+        date_joined, last_login, created_at, updated_at
+      FROM accounts_user
+      ORDER BY date_joined DESC;
+    `);
+
+    // Aggregate counts
+    const roleCounts: Record<string, number> = {};
+    for (const u of result.rows) {
+      roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
+    }
+
+    res.json({
+      total_users: result.rows.length,
+      role_counts: roleCounts,
+      users: result.rows.map(u => ({
+        id: u.id,
+        email: u.email,
+        display_name: u.display_name,
+        role: u.role,
+        is_verified: u.is_verified,
+        is_active: u.is_active,
+        date_joined: u.date_joined,
+        last_login: u.last_login,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[auth/admin/users] Error:', err);
+    res.status(500).json({ detail: 'Failed to retrieve admin user roster.' });
   }
 });
 

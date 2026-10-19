@@ -9,6 +9,8 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import OfficerPortalPage from './pages/OfficerPortalPage';
+import AdminPortalPage from './pages/AdminPortalPage';
 import ReportIssuePage from './pages/ReportIssuePage';
 import CaseListPage from './pages/CaseListPage';
 import CaseDetailPage from './pages/CaseDetailPage';
@@ -20,7 +22,10 @@ import './i18n';
 
 /**
  * Intelligent Root Route:
- * - When authenticated: displays the user's role-based operational dashboard.
+ * - When authenticated: displays the user's role-based operational portal:
+ *   - ADMIN -> AdminPortalPage
+ *   - OPERATOR / MODERATOR / SUPERVISOR -> OfficerPortalPage
+ *   - CITIZEN -> DashboardPage
  * - When unauthenticated: displays the public GovTech landing page with full civic resolution lifecycle.
  */
 const RootHandler: React.FC = () => {
@@ -34,7 +39,11 @@ const RootHandler: React.FC = () => {
     );
   }
 
-  return user ? <DashboardPage /> : <LandingPage />;
+  if (!user) return <LandingPage />;
+
+  if (user.role === 'ADMIN') return <AdminPortalPage />;
+  if (['OPERATOR', 'MODERATOR', 'SUPERVISOR'].includes(user.role)) return <OfficerPortalPage />;
+  return <DashboardPage />;
 };
 
 export const App: React.FC = () => {
@@ -56,6 +65,26 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Dedicated Municipal Officer Workspace */}
+              <Route
+                path="/officer"
+                element={
+                  <ProtectedRoute allowedRoles={['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN']}>
+                    <OfficerPortalPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Dedicated Platform Governance Admin Console */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminPortalPage />
                   </ProtectedRoute>
                 }
               />

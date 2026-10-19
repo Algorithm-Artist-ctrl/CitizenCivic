@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ShieldCheck,
@@ -9,16 +9,29 @@ import {
   EyeOff,
   AlertCircle,
   ArrowLeft,
+  Users,
+  Shield,
+  KeyRound,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Button from '../components/ui/Button';
+
+export type PortalType = 'citizen' | 'officer' | 'admin';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Active portal tab: 'citizen' | 'officer' | 'admin'
+  const initialPortal = (searchParams.get('portal') as PortalType) || 'citizen';
+  const [activePortal, setActivePortal] = useState<PortalType>(
+    ['citizen', 'officer', 'admin'].includes(initialPortal) ? initialPortal : 'citizen'
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +39,28 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  useEffect(() => {
+    const p = searchParams.get('portal') as PortalType;
+    if (p && ['citizen', 'officer', 'admin'].includes(p)) {
+      setActivePortal(p);
+    }
+  }, [searchParams]);
+
+  const handlePortalChange = (portal: PortalType) => {
+    setActivePortal(portal);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('portal', portal);
+      return next;
+    });
+    setError(null);
+  };
+
+  const handleFillCredentials = (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +73,22 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await login({ email, password });
-      navigate(from, { replace: true });
+      const authUser = await login({ email: email.trim(), password });
+
+      // Authoritative Role Redirection based on verified server role
+      const requestedFrom = (location.state as { from?: { pathname: string } })?.from?.pathname;
+
+      if (authUser.role === 'ADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (['OPERATOR', 'MODERATOR', 'SUPERVISOR'].includes(authUser.role)) {
+        navigate('/officer', { replace: true });
+      } else {
+        // Citizen redirect
+        const target = requestedFrom && !requestedFrom.includes('/login') && !requestedFrom.includes('/officer') && !requestedFrom.includes('/admin')
+          ? requestedFrom
+          : '/dashboard';
+        navigate(target, { replace: true });
+      }
     } catch (err: any) {
       console.error('Login error', err);
       setError(
@@ -66,30 +114,105 @@ export const LoginPage: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-            <Link
-              to="/register"
-              className="text-xs font-semibold text-slate-900 hover:text-emerald-700 transition-colors"
-            >
-              Need an account? <span className="underline">Register</span>
-            </Link>
+            {activePortal === 'citizen' ? (
+              <Link
+                to="/register"
+                className="text-xs font-semibold text-slate-900 hover:text-emerald-700 transition-colors"
+              >
+                Need a Citizen account? <span className="underline">Register</span>
+              </Link>
+            ) : (
+              <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                Authorized Personnel Only
+              </span>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-6">
+      <main className="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-lg space-y-6">
           {/* Brand & Masthead */}
           <div className="text-center space-y-2">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-2xs border border-slate-800">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-slate-950 text-white shadow-2xs border border-slate-800">
               <ShieldCheck className="h-6 w-6 text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
-              Sign in to CitizenCivic
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950">
+              Sign In to CitizenCivic
             </h1>
-            <p className="text-xs text-slate-500">
-              Authorized municipal officers, field operators, and registered residents
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Select your authorized access portal to enter your dedicated operational workspace
             </p>
+          </div>
+
+          {/* 3 Portal Selector Tabs */}
+          <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/70 rounded-xl border border-slate-300/80 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => handlePortalChange('citizen')}
+              className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg transition-all cursor-pointer ${
+                activePortal === 'citizen'
+                  ? 'bg-white text-emerald-900 shadow-xs border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <Users className={`h-4 w-4 ${activePortal === 'citizen' ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <span className="font-bold">Citizen</span>
+              <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">Public Resident</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handlePortalChange('officer')}
+              className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg transition-all cursor-pointer ${
+                activePortal === 'officer'
+                  ? 'bg-white text-blue-900 shadow-xs border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <Shield className={`h-4 w-4 ${activePortal === 'officer' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span className="font-bold">Officer</span>
+              <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">Field & Triage</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handlePortalChange('admin')}
+              className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg transition-all cursor-pointer ${
+                activePortal === 'admin'
+                  ? 'bg-white text-purple-900 shadow-xs border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <KeyRound className={`h-4 w-4 ${activePortal === 'admin' ? 'text-purple-600' : 'text-slate-400'}`} />
+              <span className="font-bold">Admin</span>
+              <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">Governance</span>
+            </button>
+          </div>
+
+          {/* Selected Portal Banner */}
+          <div
+            className={`rounded-xl p-3.5 border text-xs flex items-center justify-between ${
+              activePortal === 'citizen'
+                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+                : activePortal === 'officer'
+                ? 'bg-blue-50/70 border-blue-200 text-blue-950'
+                : 'bg-purple-50/70 border-purple-200 text-purple-950'
+            }`}
+          >
+            <div>
+              <div className="font-bold flex items-center gap-1.5">
+                {activePortal === 'citizen' && '👤 Citizen Portal — Public Reporting'}
+                {activePortal === 'officer' && '🛡️ Municipal Officer Portal — Field Operations'}
+                {activePortal === 'admin' && '⚡ Administrator Portal — System Governance'}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                {activePortal === 'citizen' && 'Report civic issues, track ward resolution progress, and earn verified karma.'}
+                {activePortal === 'officer' && 'For authorized field operators, review moderators, and ward supervisors.'}
+                {activePortal === 'admin' && 'System administration, user roster management, and operational auditing.'}
+              </div>
+            </div>
           </div>
 
           {/* Form Card */}
@@ -111,7 +234,7 @@ export const LoginPage: React.FC = () => {
                   htmlFor="email-address"
                   className="block text-xs font-semibold text-slate-800"
                 >
-                  Email Address
+                  {activePortal === 'citizen' ? 'Registered Citizen Email' : 'Official Email Address'}
                 </label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -122,7 +245,13 @@ export const LoginPage: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    placeholder={
+                      activePortal === 'citizen'
+                        ? 'citizen@example.com'
+                        : activePortal === 'officer'
+                        ? 'operator@example.com'
+                        : 'admin@example.com'
+                    }
                     className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
                   />
                 </div>
@@ -148,7 +277,7 @@ export const LoginPage: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Enter account password"
                     className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
                   />
                   <button
@@ -169,17 +298,82 @@ export const LoginPage: React.FC = () => {
                   variant="primary"
                   size="lg"
                   loading={loading}
-                  className="w-full py-2.5"
+                  className={`w-full py-2.5 ${
+                    activePortal === 'officer'
+                      ? 'bg-blue-700 hover:bg-blue-800'
+                      : activePortal === 'admin'
+                      ? 'bg-purple-700 hover:bg-purple-800'
+                      : 'bg-emerald-700 hover:bg-emerald-800'
+                  }`}
                 >
-                  Sign In &rarr;
+                  Sign In to {activePortal === 'citizen' ? 'Citizen Portal' : activePortal === 'officer' ? 'Officer Portal' : 'Admin Portal'} &rarr;
                 </Button>
               </div>
             </form>
+
+            {/* Quick 1-Click Demo Evaluation Fillers */}
+            <div className="border-t border-slate-100 pt-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <Sparkles className="h-3 w-3 text-amber-500" />
+                <span>Quick Demo Fill for Evaluation</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {activePortal === 'citizen' && (
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('citizen@example.com', 'Citizen123!')}
+                    className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100 transition-colors cursor-pointer"
+                  >
+                    👤 Citizen (citizen@example.com)
+                  </button>
+                )}
+
+                {activePortal === 'officer' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleFillCredentials('operator@example.com', 'Operator123!')}
+                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      🔧 Field Operator
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFillCredentials('moderator@example.com', 'Moderator123!')}
+                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      🔍 Review Moderator
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFillCredentials('supervisor@example.com', 'Supervisor123!')}
+                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      🛡️ Ward Supervisor
+                    </button>
+                  </>
+                )}
+
+                {activePortal === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('admin@example.com', 'Admin123!')}
+                    className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-900 hover:bg-purple-100 transition-colors cursor-pointer"
+                  >
+                    ⚡ System Admin (admin@example.com)
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Privacy footnote */}
-          <div className="text-center text-[11px] text-slate-400">
-            Protected by end-to-end token encryption and role-based session auditing.
+          {/* Informational security footnote */}
+          <div className="text-center text-[11px] text-slate-500">
+            {activePortal === 'citizen' ? (
+              <span>Public accounts strictly operate as verified residents. No staff privileges.</span>
+            ) : (
+              <span>Official accounts require cryptographic server verification before access is granted.</span>
+            )}
           </div>
         </div>
       </main>
