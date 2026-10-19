@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   CheckCircle2,
   AlertCircle,
-  ArrowRight,
   ArrowLeft,
   Navigation,
   MapPin,
@@ -45,26 +44,29 @@ const MOCKUP_CATEGORIES = [
   {
     id: 'cat-garbage',
     slug: 'garbage',
-    title: 'Garbage Dump / Overflowing Waste Bin',
-    subtitle_hi: 'कचरा डंप / ओवरफ्लो बिन',
+    title: 'Garbage Accumulation',
+    title_hi: 'कचरा संचय',
+    subtitle_hi: 'कचरा संचय',
     color_hi: 'text-amber-700 bg-amber-50 border-amber-200',
-    desc: 'Unattended municipal waste, overflowing street bins, or scattered neighborhood litter.',
+    desc: 'Unaddressed municipal blackspots requiring field intervention.',
     image: '/assets/cat-garbage.jpg',
   },
   {
     id: 'cat-truck',
     slug: 'missed-collection',
-    title: 'Waste Collection Truck Missed',
-    subtitle_hi: 'कचरा गाड़ी नहीं आई',
+    title: 'Missed Waste Collection',
+    title_hi: 'कचरा उठान छूटा',
+    subtitle_hi: 'कचरा उठान छूटा',
     color_hi: 'text-blue-700 bg-blue-50 border-blue-200',
-    desc: 'Daily door-to-door solid waste collection vehicle missed scheduled morning collection.',
+    desc: 'Scheduled door-to-door solid waste pickup missed on daily route.',
     image: '/assets/cat-truck.jpg',
   },
   {
     id: 'cat-hotspot',
     slug: 'chronic-hotspot',
-    title: 'Chronic Dumping Hotspot',
-    subtitle_hi: 'सदाबहार कचरा डंपिंग पॉइंट',
+    title: 'Recurring Garbage Hotspot',
+    title_hi: 'आवर्ती कचरा स्थल',
+    subtitle_hi: 'आवर्ती कचरा स्थल',
     color_hi: 'text-rose-700 bg-rose-50 border-rose-200',
     desc: 'Persistent recurring blackspot requiring dedicated clearance and barricading.',
     image: '/assets/cat-hotspot.jpg',
@@ -72,19 +74,21 @@ const MOCKUP_CATEGORIES = [
   {
     id: 'cat-bin',
     slug: 'damaged-bin',
-    title: 'Damaged / Missing Dustbin',
-    subtitle_hi: 'टूटा या गायब कचरा पात्र',
+    title: 'Overflowing Public Bin',
+    title_hi: 'भरा हुआ सार्वजनिक डस्टबिन',
+    subtitle_hi: 'भरा डस्टबिन',
     color_hi: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    desc: 'Broken municipal green/blue segregated bins or missing public waste receptacles.',
+    desc: 'Public municipal green/blue segregated bins overflowing or damaged.',
     image: '/assets/cat-bin.jpg',
   },
   {
     id: 'cat-dumping',
     slug: 'construction-debris',
-    title: 'Illegal Construction Debris Dumping',
-    subtitle_hi: 'अवैध मलबा डंपिंग',
+    title: 'Illegal Dumping',
+    title_hi: 'अवैध कचरा फेंकना',
+    subtitle_hi: 'अवैध डंपिंग',
     color_hi: 'text-purple-700 bg-purple-50 border-purple-200',
-    desc: 'Unauthorized dumping of construction debris, bricks, concrete, and industrial waste.',
+    desc: 'Unauthorized dumping of debris, industrial or commercial waste.',
     image: '/assets/cat-dumping.jpg',
   },
 ];
@@ -542,69 +546,79 @@ export const ReportIssuePage: React.FC = () => {
       {/* STEP 1: CATEGORY SELECTION (PIXEL-PERFECT MOCKUP 3) */}
       {step === 1 && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: 5 Category Cards */}
-          <div className="lg:col-span-8 space-y-3">
-            {MOCKUP_CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
+          {/* Left: 5 Category Cards in 2-column grid */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {MOCKUP_CATEGORIES.map((cat, idx) => {
+                const isSelected = selectedCategory === cat.id;
 
-              return (
-                <div
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setError(null);
-                  }}
-                  className={`group relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-emerald-600 bg-emerald-50/30 ring-2 ring-emerald-500/30 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    {/* 3D Illustration Thumbnail */}
-                    <div className="h-16 w-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
-                      <img
-                        src={cat.image}
-                        alt={cat.title}
-                        className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-extrabold text-slate-950 font-heading">
-                          {cat.title}
-                        </h3>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${cat.color_hi}`}>
-                          {cat.subtitle_hi}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 line-clamp-2 max-w-xl leading-relaxed">
-                        {cat.desc}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Selection Indicator Circle */}
-                  <div className="pl-3 shrink-0">
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                return (
+                  <div
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setError(null);
+                    }}
+                    className={`group relative flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
+                      idx === 4 ? 'md:col-span-2' : ''
+                    } ${
                       isSelected
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'border border-slate-300 bg-slate-50 text-slate-400 group-hover:border-slate-400'
-                    }`}>
-                      {isSelected ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                        ? 'border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/30 shadow-xs'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {/* 3D Illustration Thumbnail */}
+                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                        <img
+                          src={cat.image}
+                          alt={cat.title}
+                          className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-1.5">
+                          <div>
+                            <h3 className="text-xs sm:text-sm font-extrabold text-slate-950 font-heading leading-snug">
+                              {i18n.language === 'hi' ? cat.title_hi : cat.title}
+                            </h3>
+                            <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded border ${cat.color_hi}`}>
+                              {cat.subtitle_hi}
+                            </span>
+                          </div>
+                          <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'border border-slate-300 bg-slate-50 text-slate-300 group-hover:border-slate-400'
+                          }`}>
+                            {isSelected ? <Check className="h-3 w-3" /> : null}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed pt-1">
+                          {cat.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           {/* Right: 3D Mascot Billboard Banner */}
           <div className="lg:col-span-4 space-y-4">
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
+              {/* Speech Bubble */}
+              <div className="relative rounded-xl bg-emerald-50 border border-emerald-200/80 p-3 text-center shadow-2xs">
+                <p className="text-xs font-bold text-emerald-950 leading-snug">
+                  "Cleaner Neighbourhoods, Happier Communities"
+                </p>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-emerald-200/80" />
+              </div>
+
               {/* 3D Mascot Image */}
-              <div className="relative h-48 w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+              <div className="relative h-56 w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
                 <img
                   src="/assets/report-mascot.jpg"
                   alt="Clean Cities Brighter India"
@@ -612,30 +626,29 @@ export const ReportIssuePage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-bold block">
+              <div className="space-y-1.5 text-center">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-extrabold block">
                   CLEAN CITIES · BRIGHTER INDIA
                 </span>
                 <h4 className="text-sm font-extrabold text-slate-950 font-heading">
                   Verified Geotagged Civic Dispatch
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Your report automatically alerts the nearest municipal supervisor with GPS verification and photographic evidence.
+                  Your report alerts the nearest municipal supervisor with GPS verification and photographic evidence.
                 </p>
               </div>
 
               <div className="pt-2 border-t border-slate-100 space-y-2 text-[11px] text-slate-500">
-                <div className="flex items-center gap-1.5 text-emerald-800 font-semibold">
+                <div className="flex items-center justify-center gap-1.5 text-emerald-800 font-semibold">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                   <span>+25 Karma points upon verified submission</span>
                 </div>
-                <p>Every report is timestamped on the public ledger.</p>
               </div>
 
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 active:scale-95 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 active:scale-95 transition-all cursor-pointer"
               >
                 <span>Continue to Location →</span>
               </button>

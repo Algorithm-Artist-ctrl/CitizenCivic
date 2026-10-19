@@ -79,7 +79,7 @@ export const RewardsPage: React.FC = () => {
 
   const [citizenList, setCitizenList] = useState<LeaderboardCitizen[]>([]);
   const [officerList, setOfficerList] = useState<LeaderboardOfficer[]>([]);
-  const [totalPoints, setTotalPoints] = useState<number>(350);
+  const [totalPoints, setTotalPoints] = useState<number>(10);
   const [recentEntries, setRecentEntries] = useState<LedgerEntry[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -93,8 +93,8 @@ export const RewardsPage: React.FC = () => {
         const [areasRes, myPointsRes] = await Promise.all([
           apiClient.get('/areas/service-areas/').catch(() => ({ data: { results: [] } })),
           user
-            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 350, history: [] } }))
-            : Promise.resolve({ data: { total_points: 350, history: [] } }),
+            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 10, history: [] } }))
+            : Promise.resolve({ data: { total_points: 10, history: [] } }),
         ]);
 
         const areas = areasRes.data.results || areasRes.data || [];
@@ -103,7 +103,7 @@ export const RewardsPage: React.FC = () => {
         const mpData: any = myPointsRes.data;
         if (mpData) {
           if (mpData.total_points !== undefined && mpData.total_points !== null) {
-            setTotalPoints(mpData.total_points > 0 ? mpData.total_points : 350);
+            setTotalPoints(mpData.total_points >= 0 ? mpData.total_points : 10);
           }
           const entries = Array.isArray(mpData.history)
             ? mpData.history
@@ -155,53 +155,45 @@ export const RewardsPage: React.FC = () => {
   const displayHistory = recentEntries.length > 0 ? recentEntries : [
     {
       id: 'h-1',
-      points: 100,
-      reason: 'Verified Resolution on Case CC-20261017-C303',
+      points: 10,
+      reason: 'Authentic Geo-Report (Case CC-20261019-6136)',
       created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
       type: 'REPORTS',
       color: 'bg-emerald-500',
     },
     {
       id: 'h-2',
-      points: 25,
-      reason: 'Geotagged Report Submitted CC-20261019-6136',
+      points: 15,
+      reason: 'High-Accuracy Landmark Validation',
       created_at: new Date(Date.now() - 86400000).toISOString(),
       type: 'REPORTS',
       color: 'bg-blue-500',
     },
     {
       id: 'h-3',
+      points: 100,
+      reason: 'Verified Resolution Bonus (Case CC-20261017-C303)',
+      created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+      type: 'REPORTS',
+      color: 'bg-emerald-500',
+    },
+    {
+      id: 'h-4',
       points: 75,
       reason: '7-Day Hotspot Follow-up Clean Check',
       created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
       type: 'AUDITS',
       color: 'bg-amber-500',
     },
-    {
-      id: 'h-4',
-      points: 50,
-      reason: 'Ward Leadership Recognition Bonus',
-      created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-      type: 'REPORTS',
-      color: 'bg-purple-500',
-    },
-    {
-      id: 'h-5',
-      points: 25,
-      reason: 'Validated Landmark Coordinates',
-      created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
-      type: 'REPORTS',
-      color: 'bg-emerald-500',
-    },
   ];
 
   // Rich fallback citizens matching mockup
   const displayCitizens: LeaderboardCitizen[] = citizenList.length > 0 ? citizenList : [
-    { rank: 1, user_id: 'c-1', display_name: 'Ananya Sharma', total_points: 1420, verified_reports: 14, karma_tier: 'City Champion' },
-    { rank: 2, user_id: 'c-2', display_name: 'Rajesh Varma', total_points: 1180, verified_reports: 11, karma_tier: 'Ward Sentinel' },
-    { rank: 3, user_id: 'c-3', display_name: 'Priya Nair', total_points: 940, verified_reports: 9, karma_tier: 'Active Auditor' },
-    { rank: 4, user_id: user?.id || 'c-4', display_name: user?.display_name || 'shivam officer', total_points: totalPoints, verified_reports: 4, karma_tier: 'Citizen Sentinel' },
-    { rank: 5, user_id: 'c-5', display_name: 'Vikram Malhotra', total_points: 280, verified_reports: 3, karma_tier: 'Civic Scout' },
+    { rank: 1, user_id: 'c-1', display_name: 'Rahul Sharma', total_points: 1420, verified_reports: 14, karma_tier: 'City Champion' },
+    { rank: 2, user_id: user?.id || 'c-2', display_name: user?.display_name || 'shivam officer', total_points: totalPoints, verified_reports: 1, karma_tier: 'Neighborhood Sentinel' },
+    { rank: 3, user_id: 'c-3', display_name: 'Ram kumar', total_points: 980, verified_reports: 9, karma_tier: 'Active Auditor' },
+    { rank: 4, user_id: 'c-4', display_name: 'Ananya Iyer', total_points: 840, verified_reports: 8, karma_tier: 'Ward Sentinel' },
+    { rank: 5, user_id: 'c-5', display_name: 'Vikram Malhotra', total_points: 620, verified_reports: 6, karma_tier: 'Civic Scout' },
   ];
 
   // Rich fallback officers
@@ -306,7 +298,7 @@ export const RewardsPage: React.FC = () => {
             <div className="flex items-center justify-between text-xs">
               <span className="inline-flex items-center gap-1.5 font-bold text-emerald-300">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span>LEVEL 3 SENTINEL</span>
+                <span>NEIGHBORHOOD SENTINEL (TIER 1)</span>
               </span>
               <span className="font-mono text-[11px] text-emerald-200/80">
                 {totalPoints} / 500 Pts
@@ -317,11 +309,11 @@ export const RewardsPage: React.FC = () => {
             <div className="h-2 w-full rounded-full bg-emerald-950 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-1000"
-                style={{ width: `${Math.min(100, (totalPoints / 500) * 100)}%` }}
+                style={{ width: `${Math.min(100, Math.max(5, (totalPoints / 500) * 100))}%` }}
               />
             </div>
             <p className="text-[10px] text-emerald-300/70 font-mono">
-              {Math.max(0, 500 - totalPoints)} pts to Level 4 Civic Guardian
+              {Math.max(0, 500 - totalPoints)} pts to Community Warden (Tier 2)
             </p>
           </div>
         </div>

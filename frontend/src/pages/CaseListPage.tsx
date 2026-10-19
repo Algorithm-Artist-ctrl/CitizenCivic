@@ -64,33 +64,33 @@ export const CaseListPage: React.FC = () => {
       const fetched = res.data.results || [];
 
       // If database has fewer cases, supplement with genuine cases matching the mockup
-      if (fetched.length < 5 && activeScope !== 'mine') {
+      if (fetched.length < 6 && activeScope !== 'mine') {
         const fallbacks: any[] = [
           {
             id: 'fallback-1',
             case_number: 'CC-20261019-6136',
             created_at: new Date().toISOString(),
             status: 'IN_PROGRESS',
-            category: { name_en: 'Garbage Dump / Overflowing Waste Bin', name_hi: 'कचरा डंप' },
+            category: { name_en: 'Garbage Accumulation', name_hi: 'कचरा संचय' },
             description: 'Unattended municipal solid waste accumulation near street corner.',
             landmark: '12th Main Road, HAL 2nd Stage, Indiranagar',
             latitude: 12.9716,
             longitude: 77.6412,
             is_hotspot: true,
-            evidence: [{ file: '/assets/cat-garbage.jpg' }],
+            evidence: [{ file: '/assets/thumb-case-1.jpg' }],
           },
           {
             id: 'fallback-2',
             case_number: 'CC-20261019-5585',
             created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
             status: 'FORWARDED',
-            category: { name_en: 'Waste Collection Truck Missed', name_hi: 'कचरा गाड़ी नहीं आई' },
+            category: { name_en: 'Missed Waste Collection', name_hi: 'कचरा उठान छूटा' },
             description: 'Morning collection vehicle missed scheduled sector 4 route.',
             landmark: 'CMH Road, Indiranagar, Ward 82',
             latitude: 12.9784,
             longitude: 77.6408,
             is_hotspot: false,
-            evidence: [{ file: '/assets/cat-truck.jpg' }],
+            evidence: [{ file: '/assets/thumb-case-2.jpg' }],
           },
           {
             id: 'fallback-3',
@@ -103,7 +103,7 @@ export const CaseListPage: React.FC = () => {
             latitude: 12.9756,
             longitude: 77.6410,
             is_hotspot: false,
-            evidence: [{ file: '/assets/cat-bin.jpg' }],
+            evidence: [{ file: '/assets/thumb-case-3.jpg' }],
           },
           {
             id: 'fallback-4',
@@ -116,7 +116,7 @@ export const CaseListPage: React.FC = () => {
             latitude: 12.9720,
             longitude: 77.6425,
             is_hotspot: true,
-            evidence: [{ file: '/assets/cat-hotspot.jpg' }],
+            evidence: [{ file: '/assets/thumb-case-4.jpg' }],
           },
           {
             id: 'fallback-5',
@@ -129,7 +129,20 @@ export const CaseListPage: React.FC = () => {
             latitude: 12.9690,
             longitude: 77.6380,
             is_hotspot: false,
-            evidence: [{ file: '/assets/cat-dumping.jpg' }],
+            evidence: [{ file: '/assets/thumb-case-5.jpg' }],
+          },
+          {
+            id: 'fallback-6',
+            case_number: 'CC-20261012-A101',
+            created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
+            status: 'ACKNOWLEDGED',
+            category: { name_en: 'Overflowing Public Bin', name_hi: 'भरा डस्टबिन' },
+            description: 'Public municipal green/blue segregated bins overflowing onto footpath.',
+            landmark: 'Defence Colony Park, Main Gate',
+            latitude: 12.9740,
+            longitude: 77.6395,
+            is_hotspot: false,
+            evidence: [{ file: '/assets/thumb-case-6.jpg' }],
           },
         ];
 

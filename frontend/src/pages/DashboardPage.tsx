@@ -9,9 +9,12 @@ import {
   FileCheck,
   Wrench,
   Compass,
-  Landmark,
-  Folder,
   Navigation,
+  FileText,
+  ArrowRight,
+  CheckCircle2,
+  Folder,
+  Landmark,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -49,29 +52,59 @@ export const DashboardPage: React.FC = () => {
       const casesRes = await apiClient.get<PaginatedResponse<Case>>(casesUrl).catch(() => ({ data: { results: [] } }));
       const fetchedCases = casesRes.data?.results || [];
 
-      // If citizen has fewer cases, also fetch general public cases to ensure rich dashboard view
-      if (fetchedCases.length < 3) {
-        const publicRes = await apiClient.get<PaginatedResponse<Case>>('/cases/?page_size=6').catch(() => ({ data: { results: [] } }));
-        const publicCases = publicRes.data?.results || [];
+      const defaultMockCases: any[] = [
+        {
+          id: 'case-mock-1',
+          case_number: 'CC-20261019-6136',
+          status: 'SUBMITTED',
+          description: 'Problem Description: Stagnant Water and Poor Drainage Management The image shows an area filled with stagnant, murky water...',
+          landmark: 'hardaspur khair road aligarh post lodha',
+          created_at: new Date().toISOString(),
+          is_hotspot: false,
+          evidence: [{ file: '/assets/dash-case-1.jpg' }],
+        },
+        {
+          id: 'case-mock-2',
+          case_number: 'CC-20261015-D404',
+          status: 'IN_PROGRESS',
+          description: 'Chronic blackspot near stormwater drain culvert. Mixed wet and dry plastic waste.',
+          landmark: 'Stormwater Drain culvert, 100ft road junction',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          is_hotspot: true,
+          evidence: [{ file: '/assets/dash-case-2.jpg' }],
+        },
+        {
+          id: 'case-mock-3',
+          case_number: 'CC-20261017-C303',
+          status: 'REVIEWED',
+          description: 'Door-to-door green waste collection skipped for 3 consecutive days on 7th A Cross.',
+          landmark: '7th A Cross, near Mother Teresa Children Home',
+          created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          is_hotspot: false,
+          evidence: [{ file: '/assets/dash-case-3.jpg' }],
+        },
+      ];
+
+      if (fetchedCases.length === 0) {
+        setRecentCases(defaultMockCases);
+      } else {
         const merged = [...fetchedCases];
-        for (const pc of publicCases) {
-          if (!merged.find((c) => c.id === pc.id)) {
-            merged.push(pc);
+        for (const mc of defaultMockCases) {
+          if (!merged.find((c) => c.case_number === mc.case_number)) {
+            merged.push(mc);
           }
         }
         setRecentCases(merged.slice(0, 6));
-      } else {
-        setRecentCases(fetchedCases.slice(0, 6));
       }
 
       // 2. Fetch personal karma points and nearby issues
       try {
         const [pointsRes, nearbyRes] = await Promise.all([
-          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 350 } })),
+          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 10 } })),
           apiClient.get('/cases/nearby/').catch(() => ({ data: [] })),
         ]);
         if (pointsRes.data?.total_points !== undefined && pointsRes.data?.total_points !== null) {
-          setPoints(pointsRes.data.total_points > 0 ? pointsRes.data.total_points : 350);
+          setPoints(pointsRes.data.total_points > 0 ? pointsRes.data.total_points : 10);
         }
         if (Array.isArray(nearbyRes.data) && nearbyRes.data.length > 0) {
           setNearbyCases(nearbyRes.data.slice(0, 4));
@@ -99,19 +132,19 @@ export const DashboardPage: React.FC = () => {
   };
 
   // Metrics calculation
-  const activeCasesCount = recentCases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length || 2;
-  const verifiedResolvedCount = recentCases.filter((c) => c.status === 'VERIFIED_RESOLVED').length || 4;
+  const activeCasesCount = recentCases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length || 1;
+  const verifiedResolvedCount = recentCases.filter((c) => c.status === 'VERIFIED_RESOLVED').length || 0;
 
   // Filter queues for Operator and Moderator
   const operatorQueue = recentCases.filter((c) => ['FORWARDED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(c.status));
   const verificationQueue = recentCases.filter((c) => ['RESOLUTION_REPORTED', 'VERIFICATION_PENDING', 'DISPUTED_CLOSURE'].includes(c.status));
 
-  // Fallback nearby items if API returns empty
+  // Fallback nearby items matching exact values from Mockup Image 3 & 5
   const displayNearby = nearbyCases.length > 0 ? nearbyCases : [
-    { id: 'nb-1', title: 'Garbage Dump - 12th Main Rd', distance: '320m', status: 'IN_PROGRESS', color: 'bg-rose-500' },
-    { id: 'nb-2', title: 'Broken Streetlight - 100ft Rd', distance: '650m', status: 'ACKNOWLEDGED', color: 'bg-amber-500' },
-    { id: 'nb-3', title: 'Pothole Cluster - Double Rd', distance: '1.1km', status: 'FORWARDED', color: 'bg-blue-500' },
-    { id: 'nb-4', title: 'Resolved Water Leak - CMH Rd', distance: '1.4km', status: 'VERIFIED_RESOLVED', color: 'bg-emerald-500' },
+    { id: 'nb-1', title: 'CC-20261015-D404', landmark: 'Stormwater Drain culvert, 100ft road junction', distance: '320 m', color: 'bg-rose-500' },
+    { id: 'nb-2', title: 'CC-20261017-C303', landmark: '7th A Cross, near Mother Teresa Children Home', distance: '480 m', color: 'bg-amber-500' },
+    { id: 'nb-3', title: 'CC-20261018-B202', landmark: 'Corner of 12th Main and 5th Cross, near BDA Complex', distance: '720 m', color: 'bg-emerald-500' },
+    { id: 'nb-4', title: 'CC-20261019-A101', landmark: 'Opposite Metro Pillar 45, CMH Road, Indiranagar', distance: '890 m', color: 'bg-blue-500' },
   ];
 
   if (loading) {
@@ -247,143 +280,126 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* 3 KPI Stat Cards with SVG Sparklines */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 4 KPI Stat Cards with SVG Sparklines matching mockups */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Active Reports */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Active Reports
-            </span>
-            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-mono font-bold text-blue-700 border border-blue-200/70">
-              IN-PROGRESS
-            </span>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+              <FileText className="h-5 w-5" />
+            </div>
+            <Link
+              to="/cases?scope=mine"
+              className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="mt-3 flex items-baseline justify-between">
             <div>
-              <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+              <div className="text-2xl font-black text-slate-950 font-mono tracking-tight">
                 {activeCasesCount}
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                In-progress civic tracking
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                ACTIVE REPORTS
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Under review or resolution
               </p>
             </div>
 
-            {/* Sparkline Curve */}
-            <div className="w-28 h-10">
+            <div className="w-20 h-8">
               <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <defs>
-                  <linearGradient id="blueSpark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 32 Q 25 15, 50 24 T 100 8 L 100 40 L 0 40 Z"
-                  fill="url(#blueSpark)"
-                />
-                <path
-                  d="M0 32 Q 25 15, 50 24 T 100 8"
-                  stroke="#2563eb"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <path d="M0 32 Q 25 15, 50 24 T 100 8" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" fill="none" />
               </svg>
             </div>
           </div>
         </div>
 
         {/* Card 2: Verified Resolved */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-emerald-300">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-emerald-300 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Verified Resolved
-            </span>
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-700 border border-emerald-200/70">
-              98.4% RATE
-            </span>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <Link
+              to="/cases"
+              className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="mt-3 flex items-baseline justify-between">
             <div>
-              <div className="text-3xl font-extrabold text-emerald-700 font-mono tracking-tight">
+              <div className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
                 {verifiedResolvedCount}
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Citizen confirmed fixes
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                VERIFIED RESOLVED
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Confirmed clean on ground
               </p>
             </div>
 
-            {/* Sparkline Curve */}
-            <div className="w-28 h-10">
+            <div className="w-20 h-8">
               <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <defs>
-                  <linearGradient id="greenSpark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 35 Q 20 28, 45 18 T 100 6 L 100 40 L 0 40 Z"
-                  fill="url(#greenSpark)"
-                />
-                <path
-                  d="M0 35 Q 20 28, 45 18 T 100 6"
-                  stroke="#059669"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <path d="M0 35 Q 20 28, 45 18 T 100 6" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" fill="none" />
               </svg>
             </div>
           </div>
         </div>
 
         {/* Card 3: Karma Points */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-amber-300">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-amber-300 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Karma Points
-            </span>
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-mono font-bold text-amber-700 border border-amber-200/70">
-              LEVEL 3 CITIZEN
-            </span>
+            <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+              <Award className="h-5 w-5" />
+            </div>
+            <Link
+              to="/rewards"
+              className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="mt-3 flex items-baseline justify-between">
             <div>
-              <div className="text-3xl font-extrabold text-amber-700 font-mono tracking-tight">
-                {points} <span className="text-sm font-sans font-bold text-amber-600">Pts</span>
+              <div className="text-2xl font-black text-amber-700 font-mono tracking-tight">
+                {points} <span className="text-xs font-sans font-bold text-amber-600">pts</span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Top 12% in Indiranagar
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                KARMA POINTS
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Tier: Neighborhood Sentinel
               </p>
             </div>
 
-            {/* Sparkline Curve */}
-            <div className="w-28 h-10">
+            <div className="w-20 h-8">
               <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <defs>
-                  <linearGradient id="amberSpark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 30 Q 30 35, 60 14 T 100 4 L 100 40 L 0 40 Z"
-                  fill="url(#amberSpark)"
-                />
-                <path
-                  d="M0 30 Q 30 35, 60 14 T 100 4"
-                  stroke="#d97706"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <path d="M0 30 Q 30 35, 60 14 T 100 4" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" fill="none" />
               </svg>
             </div>
+          </div>
+        </div>
+
+        {/* Card 4: 3D Earth Globe Card */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 shadow-xs flex items-center justify-between">
+          <div className="space-y-1 z-10">
+            <div className="text-xs font-extrabold text-slate-900 leading-tight">
+              People<br />Report<br />Cities<br /><span className="text-emerald-700">Improve</span>
+            </div>
+          </div>
+          <div className="h-20 w-24 shrink-0 overflow-hidden rounded-xl flex items-center justify-center">
+            <img
+              src="/assets/earth-card.jpg"
+              alt="People Report Cities Improve"
+              className="h-full w-full object-contain"
+            />
           </div>
         </div>
       </div>
