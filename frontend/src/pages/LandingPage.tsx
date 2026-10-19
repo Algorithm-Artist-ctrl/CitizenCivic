@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Camera,
   ArrowRight,
@@ -27,6 +28,7 @@ interface CaseAnalytics {
 
 export const LandingPage: React.FC = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   // 100% Real Database State
   const [cases, setCases] = useState<Case[]>([]);
@@ -109,25 +111,34 @@ export const LandingPage: React.FC = () => {
   const activeStep = activeCase ? getWorkflowStep(activeCase.status) : 1;
 
   return (
-    <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto w-full">
+    <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto w-full font-sans">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* LEFT COLUMN: Value Proposition, CTAs, Real Grounded Metrics */}
         <div className="lg:col-span-6 space-y-6">
           {/* Eyebrow Label */}
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-emerald-600" />
-            <span className="tracking-wide">Independent Civic Accountability Initiative</span>
+            <span className="tracking-wide">{t('landing.badge') || 'Independent Civic Accountability Initiative'}</span>
           </div>
 
           {/* Main Headline (44–54px scale) */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[46px] xl:text-[50px] font-extrabold tracking-tight text-slate-950 leading-[1.12]">
-            Report civic issues.{' '}
-            <span className="text-emerald-700 block sm:inline">Track real resolution.</span>
+          <h1 className="text-4xl sm:text-5xl lg:text-[46px] xl:text-[50px] font-extrabold tracking-tight text-slate-950 leading-[1.12] font-heading">
+            {i18n.language === 'hi' ? (
+              <>
+                नागरिक समस्याएं दर्ज करें।{' '}
+                <span className="text-emerald-700 block sm:inline">सत्यापित समाधान ट्रैक करें।</span>
+              </>
+            ) : (
+              <>
+                Report civic issues.{' '}
+                <span className="text-emerald-700 block sm:inline">Track real resolution.</span>
+              </>
+            )}
           </h1>
 
           {/* Supporting Paragraph (18–20px scale) */}
           <p className="text-lg sm:text-[19px] text-slate-600 leading-relaxed max-w-xl">
-            Report neighbourhood problems, follow progress, and review real resolution evidence — all in one place.
+            {t('landing.subheadline') || 'Report neighbourhood problems, follow progress, and review real resolution evidence — all in one place.'}
           </p>
 
           {/* Primary Action Buttons (16–18px scale) */}
@@ -139,7 +150,7 @@ export const LandingPage: React.FC = () => {
                 className="text-base sm:text-[17px] font-semibold px-6 py-3.5 shadow-sm"
                 icon={<Camera className="h-5 w-5 text-emerald-400" />}
               >
-                Report an Issue
+                {t('landing.reportIssue') || 'Report an Issue'}
               </Button>
             </Link>
 
@@ -150,7 +161,7 @@ export const LandingPage: React.FC = () => {
                 className="text-base sm:text-[17px] font-semibold px-6 py-3.5"
                 icon={<ArrowRight className="h-5 w-5" />}
               >
-                Explore Public Cases
+                {t('landing.exploreCases') || 'Explore Public Cases'}
               </Button>
             </Link>
           </div>
@@ -160,7 +171,7 @@ export const LandingPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-6 max-w-md">
               <div>
                 <span className="text-xs font-mono uppercase tracking-wider text-slate-500 block">
-                  Total Cases
+                  {t('landing.metrics.totalCases') || 'Total Cases'}
                 </span>
                 <div className="text-2xl font-black font-tabular font-mono text-slate-950 mt-1">
                   {loadingAnalytics ? (
@@ -175,7 +186,7 @@ export const LandingPage: React.FC = () => {
 
               <div>
                 <span className="text-xs font-mono uppercase tracking-wider text-amber-700 block">
-                  In Progress
+                  {t('landing.metrics.inProgress') || 'In Progress'}
                 </span>
                 <div className="text-2xl font-black font-tabular font-mono text-amber-800 mt-1">
                   {loadingAnalytics ? (
@@ -192,7 +203,7 @@ export const LandingPage: React.FC = () => {
 
               <div>
                 <span className="text-xs font-mono uppercase tracking-wider text-emerald-700 block">
-                  Verified Closed
+                  {t('landing.metrics.verifiedClosed') || 'Verified Closed'}
                 </span>
                 <div className="text-2xl font-black font-tabular font-mono text-emerald-800 mt-1">
                   {loadingAnalytics ? (
@@ -208,7 +219,7 @@ export const LandingPage: React.FC = () => {
 
             <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
               <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
-              <span>Calculated directly from live platform database records</span>
+              <span>{t('landing.metrics.liveDatabase') || 'Calculated directly from live platform database records'}</span>
             </p>
           </div>
         </div>
@@ -228,7 +239,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Case Record
+                  {t('landing.viewRecord') || 'Case Record'}
                 </button>
                 <button
                   type="button"
@@ -240,7 +251,7 @@ export const LandingPage: React.FC = () => {
                   }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                  <span>3D Ward Grid</span>
+                  <span>{t('landing.view3d') || '3D Ward Grid'}</span>
                 </button>
               </div>
 
@@ -283,7 +294,7 @@ export const LandingPage: React.FC = () => {
               ) : loadError ? (
                 <div className="py-12 text-center space-y-3">
                   <AlertCircle className="h-8 w-8 text-rose-500 mx-auto" />
-                  <h3 className="text-sm font-bold text-slate-900">Database Connection Notice</h3>
+                  <h3 className="text-sm font-bold text-slate-900 font-heading">Database Connection Notice</h3>
                   <p className="text-xs text-slate-600 max-w-sm mx-auto">{loadError}</p>
                   <Button variant="secondary" size="sm" onClick={fetchRealData} icon={<RotateCw className="h-3.5 w-3.5" />}>
                     Retry Connection
@@ -295,15 +306,15 @@ export const LandingPage: React.FC = () => {
                   <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    No active civic cases in this jurisdiction yet
+                  <h3 className="text-sm font-bold text-slate-900 font-heading">
+                    {t('landing.noCasesTitle') || 'No active civic cases in this jurisdiction yet'}
                   </h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    All reports are backed by on-ground photographic evidence. Be the first to file a verified report in your ward.
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    {t('landing.noCasesDesc') || 'All reports are backed by on-ground photographic evidence. Be the first to file a verified report in your ward.'}
                   </p>
                   <Link to={user ? '/report' : '/login'}>
                     <Button variant="primary" size="sm" icon={<Camera className="h-3.5 w-3.5 text-emerald-400" />}>
-                      File the First Report
+                      {t('landing.fileFirst') || 'File the First Report'}
                     </Button>
                   </Link>
                 </div>
@@ -323,7 +334,9 @@ export const LandingPage: React.FC = () => {
                     <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs">
                       <div className="flex items-center gap-2 truncate">
                         <span className="font-mono font-bold text-slate-950 shrink-0">{activeCase.case_number}</span>
-                        <span className="text-slate-600 truncate">{activeCase.landmark || activeCase.category?.name_en}</span>
+                        <span className="text-slate-600 truncate">
+                          {activeCase.landmark || (i18n.language === 'hi' ? activeCase.category?.name_hi : activeCase.category?.name_en)}
+                        </span>
                         <CaseStatusBadge status={activeCase.status} size="xs" />
                       </div>
                       <button
@@ -331,7 +344,7 @@ export const LandingPage: React.FC = () => {
                         onClick={() => setViewMode('record')}
                         className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 shrink-0 cursor-pointer ml-2"
                       >
-                        View Record &rarr;
+                        {t('dashboard.reviewDetails') || 'View Record'} &rarr;
                       </button>
                     </div>
                   )}
@@ -349,7 +362,9 @@ export const LandingPage: React.FC = () => {
                         <CaseStatusBadge status={activeCase.status} size="xs" />
                       </div>
                       <p className="text-xs font-semibold text-emerald-800 mt-0.5">
-                        {activeCase.category?.name_en || 'Municipal Issue'}
+                        {i18n.language === 'hi'
+                          ? (activeCase.category?.name_hi || activeCase.category?.name_en)
+                          : (activeCase.category?.name_en || 'Municipal Issue')}
                       </p>
                     </div>
 
@@ -365,7 +380,7 @@ export const LandingPage: React.FC = () => {
                   {/* Real Description */}
                   <div className="space-y-1">
                     <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-                      Citizen Issue Report
+                      {t('cases.table.category') || 'Citizen Issue Report'}
                     </span>
                     <p className="text-sm sm:text-[15px] text-slate-800 leading-relaxed line-clamp-3">
                       {activeCase.description}
@@ -386,9 +401,11 @@ export const LandingPage: React.FC = () => {
                   {/* 4-Step Resolution Progress Indicator */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                      <span>Verification Pipeline</span>
+                      <span>{t('landing.pipeline') || 'Verification Pipeline'}</span>
                       <span>
-                        {activeStep === 4 ? 'Resolved & Verified' : `Milestone 0${activeStep} of 04`}
+                        {activeStep === 4
+                          ? (t('landing.pipelineResolved') || 'Resolved & Verified')
+                          : (t('landing.pipelineMilestone', { current: activeStep, total: 4 }) || `Milestone 0${activeStep} of 04`)}
                       </span>
                     </div>
 
@@ -400,10 +417,18 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-4 text-[10px] text-slate-500 font-mono pt-0.5">
-                      <span className={activeStep >= 1 ? 'text-slate-900 font-semibold' : ''}>Report</span>
-                      <span className={activeStep >= 2 ? 'text-slate-900 font-semibold' : ''}>Dispatch</span>
-                      <span className={activeStep >= 3 ? 'text-slate-900 font-semibold' : ''}>Evidence</span>
-                      <span className={activeStep >= 4 ? 'text-emerald-700 font-bold' : ''}>Verified</span>
+                      <span className={activeStep >= 1 ? 'text-slate-900 font-semibold' : ''}>
+                        {t('landing.pipelineSteps.report') || 'Report'}
+                      </span>
+                      <span className={activeStep >= 2 ? 'text-slate-900 font-semibold' : ''}>
+                        {t('landing.pipelineSteps.dispatch') || 'Dispatch'}
+                      </span>
+                      <span className={activeStep >= 3 ? 'text-slate-900 font-semibold' : ''}>
+                        {t('landing.pipelineSteps.evidence') || 'Evidence'}
+                      </span>
+                      <span className={activeStep >= 4 ? 'text-emerald-700 font-bold' : ''}>
+                        {t('landing.pipelineSteps.verified') || 'Verified'}
+                      </span>
                     </div>
                   </div>
 
@@ -413,7 +438,7 @@ export const LandingPage: React.FC = () => {
                       to={`/cases/${activeCase.id}`}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 transition-colors"
                     >
-                      <span>Explore Case Timeline & Evidence</span>
+                      <span>{t('landing.exploreTimeline') || 'Explore Case Timeline & Evidence'}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
 
@@ -421,7 +446,7 @@ export const LandingPage: React.FC = () => {
                       to="/cases"
                       className="text-[11px] font-mono text-slate-500 hover:text-slate-800"
                     >
-                      Directory ({cases.length} loaded) &rarr;
+                      {t('landing.directoryLoaded', { count: cases.length }) || `Directory (${cases.length} loaded) →`}
                     </Link>
                   </div>
                 </div>

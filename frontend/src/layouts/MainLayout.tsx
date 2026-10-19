@@ -96,7 +96,7 @@ export const MainLayout: React.FC = () => {
                   }`}
                 >
                   <Award className="h-4 w-4" />
-                  <span>Community Karma</span>
+                  <span>{t('nav.karma', 'Community Karma')}</span>
                 </Link>
 
                 {user.role === 'CITIZEN' && (
@@ -117,7 +117,7 @@ export const MainLayout: React.FC = () => {
                     isActive('/') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <span>Overview</span>
+                  <span>{t('nav.overview', 'Overview')}</span>
                 </Link>
 
                 <Link
@@ -126,7 +126,7 @@ export const MainLayout: React.FC = () => {
                     isActive('/cases') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <span>Public Cases</span>
+                  <span>{t('nav.publicCases', 'Public Cases')}</span>
                 </Link>
 
                 <Link
@@ -135,7 +135,7 @@ export const MainLayout: React.FC = () => {
                     isActive('/rewards') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <span>Community Karma</span>
+                  <span>{t('nav.karma', 'Community Karma')}</span>
                 </Link>
               </>
             )}
@@ -263,21 +263,21 @@ export const MainLayout: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  Home / Overview
+                  {t('nav.overview', 'Overview')}
                 </Link>
                 <Link
                   to="/cases"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  Public Cases Directory
+                  {t('nav.publicCases', 'Public Cases')}
                 </Link>
                 <Link
                   to="/rewards"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
-                  Community Karma Leaderboard
+                  {t('nav.karma', 'Community Karma')}
                 </Link>
                 <div className="pt-2 border-t border-slate-100 flex gap-2">
                   <Link
@@ -285,14 +285,14 @@ export const MainLayout: React.FC = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 rounded-md border border-slate-300 py-2 text-center text-xs font-semibold text-slate-800"
                   >
-                    Sign In
+                    {t('nav.login', 'Sign In')}
                   </Link>
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 rounded-md bg-slate-900 py-2 text-center text-xs font-semibold text-white"
                   >
-                    Register
+                    {t('nav.register', 'Register')}
                   </Link>
                 </div>
               </div>

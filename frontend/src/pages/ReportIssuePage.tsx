@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle2,
   AlertCircle,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../api/client';
 import ImageUpload from '../components/ImageUpload';
+import GoogleMapView from '../components/GoogleMapView';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import type { Category } from '../types';
@@ -28,6 +30,7 @@ interface AITriageData {
 
 export const ReportIssuePage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   // Multi-step progress: 1: Category, 2: Location & Details, 3: Evidence, 4: Review
   const [step, setStep] = useState(1);
@@ -267,13 +270,13 @@ export const ReportIssuePage: React.FC = () => {
 
           <div className="space-y-2">
             <Badge variant="emerald" size="sm">
-              Verified Case Report Registered
+              {t('report.success.badge') || 'Verified Case Report Registered'}
             </Badge>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
-              Civic Report Successfully Submitted
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 font-heading">
+              {t('report.success.title') || 'Civic Report Successfully Submitted'}
             </h1>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto">
-              Your report has been logged with an immutable timestamp on the public ledger. You will be able to track status transitions and photographic evidence.
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+              {t('report.success.subtitle') || 'Your report has been logged with an immutable timestamp on the public ledger. You will be able to track status transitions and photographic evidence.'}
             </p>
           </div>
 
@@ -285,22 +288,22 @@ export const ReportIssuePage: React.FC = () => {
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-left">
             <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
-              <span>CASE REFERENCE NUMBER</span>
+              <span>{t('report.success.refNumber') || 'CASE REFERENCE NUMBER'}</span>
               <button
                 type="button"
                 onClick={handleCopyCaseNumber}
-                className="flex items-center gap-1 text-slate-700 hover:text-slate-950 cursor-pointer"
+                className="flex items-center gap-1 text-slate-700 hover:text-slate-950 cursor-pointer font-sans"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
+                <span>{copied ? (t('report.success.copied') || 'Copied') : (t('report.success.copy') || 'Copy')}</span>
               </button>
             </div>
             <div className="text-xl font-bold font-mono text-slate-950 tracking-wider">
               {createdCaseNumber}
             </div>
             <div className="pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Reward Credited: <strong className="text-emerald-700">+10 Pts</strong></span>
-              <span>Status: <strong className="text-slate-800">Submitted</strong></span>
+              <span>{t('report.success.rewardCredited') || 'Reward Credited:'} <strong className="text-emerald-700 font-mono">+10 Pts</strong></span>
+              <span>{t('cases.table.status') || 'Status'}: <strong className="text-slate-800">{t('case.status.SUBMITTED') || 'Submitted'}</strong></span>
             </div>
           </div>
 
@@ -312,7 +315,7 @@ export const ReportIssuePage: React.FC = () => {
               className="flex-1"
               onClick={() => navigate(`/cases/${createdCaseId}`)}
             >
-              Track Case Status & Evidence &rarr;
+              {t('report.success.trackCase') || 'Track Case Status & Evidence →'}
             </Button>
             <Button
               type="button"
@@ -329,7 +332,7 @@ export const ReportIssuePage: React.FC = () => {
                 setUploadWarning(null);
               }}
             >
-              Report Another Issue
+              {t('report.success.reportAnother') || 'Report Another Issue'}
             </Button>
           </div>
         </div>
@@ -346,22 +349,25 @@ export const ReportIssuePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/dashboard"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Cancel and return</span>
+            <span>{t('report.back') || 'Cancel and return'}</span>
           </Link>
           <span className="font-mono text-xs text-slate-500 font-semibold">
-            Step {step} of 4
+            {t('report.stepCount', { current: step, total: 4 }) || `Step ${step} of 4`}
           </span>
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950">
-            Report a Local Civic Issue
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 font-heading">
+            {t('report.title') || 'Report a Civic Issue'}
           </h1>
-          <p className="text-xs text-slate-600 mt-0.5">
-            Citizen issue reporting and transparent verification tracking.
+          <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+            {step === 1 && (t('report.step1Subtitle') || 'Choose the category that best matches the on-ground problem.')}
+            {step === 2 && (t('report.step2Subtitle') || 'Provide exact landmarks and coordinates so field teams can locate and clear the spot without delay.')}
+            {step === 3 && (t('report.step3Subtitle') || 'Clear on-ground proof is mandatory to prevent spurious claims and allow verified before-and-after audit.')}
+            {step === 4 && (t('report.step4Subtitle') || 'Review your report summary. Once submitted, an official case tracking number is generated.')}
           </p>
         </div>
 
@@ -389,15 +395,20 @@ export const ReportIssuePage: React.FC = () => {
       {step === 1 && (
         <div className="space-y-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">1. Select Issue Category</h2>
+            <h2 className="text-base font-bold text-slate-900 font-heading">
+              {t('report.step1Title') || '1. Select Civic Issue Category'}
+            </h2>
             <p className="text-xs text-slate-500">
-              Categorization organizes reports and assigns them to the appropriate tracking workflow.
+              {t('report.step1Subtitle') || 'Categorization organizes reports and assigns them to the appropriate tracking workflow.'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.id;
+              const primaryName = i18n.language === 'hi' ? (cat.name_hi || cat.name_en) : cat.name_en;
+              const secondaryName = i18n.language === 'hi' ? cat.name_en : cat.name_hi;
+
               return (
                 <div
                   key={cat.id}
@@ -409,18 +420,20 @@ export const ReportIssuePage: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">{cat.name_en}</span>
-                    <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-300' : 'text-slate-400'}`}>
-                      {cat.name_hi}
-                    </span>
+                    <span className="text-xs font-bold">{primaryName}</span>
+                    {secondaryName && (
+                      <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {secondaryName}
+                      </span>
+                    )}
                   </div>
                   <p className={`mt-1.5 text-[11px] leading-relaxed ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
-                    {cat.slug === 'garbage' && 'Roadside waste dumps, mixed garbage piles, and organic refuse.'}
-                    {cat.slug === 'construction-debris' && 'Concrete rubble, sand bags, and building material obstruction.'}
-                    {cat.slug === 'overflowing-bins' && 'Public bins overflowing onto pavement or footpaths.'}
-                    {cat.slug === 'drainage' && 'Stormwater drains clogged with solid waste risking flooding.'}
+                    {cat.slug === 'garbage' && (i18n.language === 'hi' ? 'सड़क किनारे कचरे के ढेर, मिश्रित कचरा और कार्बनिक अवशेष।' : 'Roadside waste dumps, mixed garbage piles, and organic refuse.')}
+                    {cat.slug === 'construction-debris' && (i18n.language === 'hi' ? 'कंक्रीट का मलबा, रेत की बोरियां और निर्माण सामग्री अवरोध।' : 'Concrete rubble, sand bags, and building material obstruction.')}
+                    {cat.slug === 'overflowing-bins' && (i18n.language === 'hi' ? 'फुटपाथ पर खुलेआम ओवरफ्लो होते सार्वजनिक कूड़ेदान।' : 'Public bins overflowing onto pavement or footpaths.')}
+                    {cat.slug === 'drainage' && (i18n.language === 'hi' ? 'ठोस कचरे से अवरुद्ध नालियां, जिससे जलभराव का खतरा हो।' : 'Stormwater drains clogged with solid waste risking flooding.')}
                     {!['garbage', 'construction-debris', 'overflowing-bins', 'drainage'].includes(cat.slug) &&
-                      'Unaddressed municipal blackspots requiring field intervention.'}
+                      (i18n.language === 'hi' ? 'नगरपालिका ब्लैकस्पॉट जिसके लिए फील्ड हस्तक्षेप की आवश्यकता है।' : 'Unaddressed municipal blackspots requiring field intervention.')}
                   </p>
                 </div>
               );
@@ -435,7 +448,7 @@ export const ReportIssuePage: React.FC = () => {
               onClick={handleNextStep}
               icon={<ArrowRight className="h-3.5 w-3.5" />}
             >
-              Continue to Location
+              {t('report.continuePhotos') ? t('report.continuePhotos').replace('Photos', 'Location') : 'Continue to Location'}
             </Button>
           </div>
         </div>
@@ -445,9 +458,11 @@ export const ReportIssuePage: React.FC = () => {
       {step === 2 && (
         <div className="space-y-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">2. Location & Description</h2>
+            <h2 className="text-base font-bold text-slate-900 font-heading">
+              {t('report.step2Title') || '2. Location & Description'}
+            </h2>
             <p className="text-xs text-slate-500">
-              Provide exact landmarks so field teams can locate and clear the spot without delay.
+              {t('report.step2Subtitle') || 'Provide exact landmarks so field teams can locate and clear the spot without delay.'}
             </p>
           </div>
 
@@ -457,12 +472,12 @@ export const ReportIssuePage: React.FC = () => {
               <div className="space-y-0.5">
                 <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5 text-emerald-700" />
-                  <span>Geotag Coordinates <span className="text-rose-600">*</span></span>
+                  <span>{t('report.geotagCoords') || 'Geotag Coordinates'} <span className="text-rose-600">*</span></span>
                 </span>
                 <span className={`text-[11px] font-mono ${latitude !== null && longitude !== null ? 'text-slate-700' : 'text-amber-700 font-semibold'}`}>
                   {latitude !== null && longitude !== null
-                    ? `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E ${locationDetected ? '(Device GPS)' : '(Manual Coordinates)'}`
-                    : 'Coordinates required for geotagged dispatch'}
+                    ? `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E ${locationDetected ? '(Device GPS)' : '(Interactive Pin)'}`
+                    : (t('report.coordsRequired') || 'Coordinates required for geotagged dispatch')}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -474,14 +489,14 @@ export const ReportIssuePage: React.FC = () => {
                   onClick={handleDetectLocation}
                   icon={<Navigation className="h-3 w-3 text-emerald-700" />}
                 >
-                  {locationDetected ? '✓ GPS Acquired' : 'Detect My GPS'}
+                  {locationDetected ? (t('report.gpsAcquired') || '✓ GPS Acquired') : (t('report.detectGps') || 'Detect My GPS')}
                 </Button>
                 <button
                   type="button"
                   onClick={() => setManualCoordsOpen(!manualCoordsOpen)}
                   className="text-[11px] font-medium text-slate-600 hover:text-slate-900 underline cursor-pointer"
                 >
-                  {manualCoordsOpen ? 'Hide Manual' : 'Manual Coordinates'}
+                  {manualCoordsOpen ? (t('report.hideManual') || 'Hide Manual') : (t('report.manualCoords') || 'Manual Coordinates')}
                 </button>
               </div>
             </div>
@@ -490,7 +505,9 @@ export const ReportIssuePage: React.FC = () => {
             {manualCoordsOpen && (
               <div className="p-3 bg-slate-50 rounded-md border border-slate-200 grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label htmlFor="lat-input" className="block text-[11px] font-medium text-slate-600 mb-1">Latitude</label>
+                  <label htmlFor="lat-input" className="block text-[11px] font-medium text-slate-600 mb-1">
+                    {t('report.latitude') || 'Latitude'}
+                  </label>
                   <input
                     id="lat-input"
                     type="number"
@@ -506,7 +523,9 @@ export const ReportIssuePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="lng-input" className="block text-[11px] font-medium text-slate-600 mb-1">Longitude</label>
+                  <label htmlFor="lng-input" className="block text-[11px] font-medium text-slate-600 mb-1">
+                    {t('report.longitude') || 'Longitude'}
+                  </label>
                   <input
                     id="lng-input"
                     type="number"
@@ -523,7 +542,7 @@ export const ReportIssuePage: React.FC = () => {
                 </div>
                 <div className="col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-1 border-t border-slate-200/60 text-[10px]">
                   <span className="text-slate-500">
-                    If browser GPS is unavailable on your device, enter coordinates manually or choose ward center.
+                    {t('report.manualHelp') || 'If browser GPS is unavailable on your device, click on the map, enter coordinates manually, or choose ward center.'}
                   </span>
                   <button
                     type="button"
@@ -535,16 +554,40 @@ export const ReportIssuePage: React.FC = () => {
                     }}
                     className="font-semibold text-emerald-800 hover:underline shrink-0 text-left sm:text-right cursor-pointer"
                   >
-                    Use Ward 82 Reference (12.9784, 77.6408)
+                    {t('report.useWardRef') || 'Use Ward 82 Reference (12.9784, 77.6408)'}
                   </button>
                 </div>
               </div>
             )}
 
+            {/* Interactive Google Map Pinpoint */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-700" />
+                  <span>{t('report.mapPinpoint') || 'Interactive Map Pinpoint'}</span>
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  {t('report.mapPinpointHelp') || '(Click or drag pin to position)'}
+                </span>
+              </div>
+              <GoogleMapView
+                selectedLocation={latitude !== null && longitude !== null ? { lat: latitude, lng: longitude } : null}
+                onLocationSelect={(loc) => {
+                  setLatitude(loc.lat);
+                  setLongitude(loc.lng);
+                  setLocationDetected(false);
+                  setError(null);
+                }}
+                interactive={true}
+                height="260px"
+              />
+            </div>
+
             {/* Landmark / Street Input */}
             <div className="space-y-1.5">
               <label htmlFor="landmark-input" className="block text-xs font-semibold text-slate-800">
-                Street Landmark or Address <span className="text-rose-600">*</span>
+                {t('report.landmark') || 'Street Landmark or Address'} <span className="text-rose-600">*</span>
               </label>
               <input
                 id="landmark-input"
@@ -552,7 +595,7 @@ export const ReportIssuePage: React.FC = () => {
                 required
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
-                placeholder="e.g. Opposite Metro Pillar 104, near 12th Main crossroad"
+                placeholder={t('report.landmarkPlaceholder') || 'e.g. Opposite Metro Pillar 104, near 12th Main crossroad'}
                 className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
               />
             </div>
@@ -560,7 +603,7 @@ export const ReportIssuePage: React.FC = () => {
             {/* Detailed Description */}
             <div className="space-y-1.5">
               <label htmlFor="description-input" className="block text-xs font-semibold text-slate-800">
-                Detailed Problem Description <span className="text-rose-600">*</span>
+                {t('report.description') || 'Detailed Problem Description'} <span className="text-rose-600">*</span>
               </label>
               <textarea
                 id="description-input"
@@ -568,7 +611,7 @@ export const ReportIssuePage: React.FC = () => {
                 required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the nature of the waste accumulation, estimated volume, and any immediate hazard..."
+                placeholder={t('report.descriptionPlaceholder') || 'Describe the nature of the waste accumulation, estimated volume, and any immediate hazard...'}
                 className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
               />
 
@@ -582,11 +625,11 @@ export const ReportIssuePage: React.FC = () => {
                   onClick={handleAITriage}
                   icon={<Sparkles className="h-3.5 w-3.5 text-emerald-600" />}
                 >
-                  Run Civic AI Triage & Hazard Scan
+                  {t('report.aiTriage') || 'Run Civic AI Triage & Hazard Scan'}
                 </Button>
                 {aiTriageResult && (
                   <span className="text-[11px] text-emerald-700 font-medium">
-                    ✓ AI analysis complete
+                    {t('report.aiTriageDone') || '✓ AI analysis complete'}
                   </span>
                 )}
               </div>
@@ -622,7 +665,7 @@ export const ReportIssuePage: React.FC = () => {
 
           <div className="pt-4 flex items-center justify-between">
             <Button type="button" variant="subtle" size="md" onClick={handlePrevStep}>
-              &larr; Back
+              {t('report.back') || '← Back'}
             </Button>
             <Button
               type="button"
@@ -631,7 +674,7 @@ export const ReportIssuePage: React.FC = () => {
               onClick={handleNextStep}
               icon={<ArrowRight className="h-3.5 w-3.5" />}
             >
-              Continue to Photos
+              {t('report.continuePhotos') || 'Continue to Photos'}
             </Button>
           </div>
         </div>
@@ -641,9 +684,11 @@ export const ReportIssuePage: React.FC = () => {
       {step === 3 && (
         <div className="space-y-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">3. Photographic Evidence</h2>
+            <h2 className="text-base font-bold text-slate-900 font-heading">
+              {t('report.step3Title') || '3. Photographic Evidence'}
+            </h2>
             <p className="text-xs text-slate-500">
-              Clear on-ground proof is mandatory to prevent spurious claims and allow verified before-and-after audit.
+              {t('report.step3Subtitle') || 'Clear on-ground proof is mandatory to prevent spurious claims and allow verified before-and-after audit.'}
             </p>
           </div>
 
@@ -652,14 +697,14 @@ export const ReportIssuePage: React.FC = () => {
               onFilesSelected={(f) => setPhotos(f)}
               maxFiles={3}
               maxSizeMB={10}
-              label="Capture or upload photo of the blackspot"
-              helperText="Take clear wide-angle photos showing the scale of waste accumulation and nearby landmarks."
+              label={i18n.language === 'hi' ? 'ब्लैकस्पॉट की तस्वीर लें या अपलोड करें' : 'Capture or upload photo of the blackspot'}
+              helperText={i18n.language === 'hi' ? 'कचरे के ढेर का पैमाना और नजदीकी लैंडमार्क दिखाने वाली स्पष्ट तस्वीरें लें।' : 'Take clear wide-angle photos showing the scale of waste accumulation and nearby landmarks.'}
             />
           </div>
 
           <div className="pt-4 flex items-center justify-between">
             <Button type="button" variant="subtle" size="md" onClick={handlePrevStep}>
-              &larr; Back
+              {t('report.back') || '← Back'}
             </Button>
             <Button
               type="button"
@@ -668,7 +713,7 @@ export const ReportIssuePage: React.FC = () => {
               onClick={handleNextStep}
               icon={<ArrowRight className="h-3.5 w-3.5" />}
             >
-              Review & Submit
+              {t('report.reviewSubmit') || 'Review & Submit'}
             </Button>
           </div>
         </div>
@@ -678,25 +723,31 @@ export const ReportIssuePage: React.FC = () => {
       {step === 4 && (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <h2 className="text-base font-bold text-slate-900">4. Final Verification & Submit</h2>
+            <h2 className="text-base font-bold text-slate-900 font-heading">
+              {t('report.step4Title') || '4. Final Verification & Submit'}
+            </h2>
             <p className="text-xs text-slate-500">
-              Review your report summary. Once submitted, an official case tracking number is generated and recorded on the public timeline.
+              {t('report.step4Subtitle') || 'Review your report summary. Once submitted, an official case tracking number is generated and recorded on the public timeline.'}
             </p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden text-xs">
             <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-semibold text-slate-500">Category:</span>
-              <span className="col-span-2 font-bold text-slate-900">{selectedCategoryObj?.name_en || 'General Garbage'}</span>
+              <span className="font-semibold text-slate-500">{t('report.category') || 'Category'}:</span>
+              <span className="col-span-2 font-bold text-slate-900">
+                {selectedCategoryObj
+                  ? (i18n.language === 'hi' ? selectedCategoryObj.name_hi : selectedCategoryObj.name_en)
+                  : 'General Garbage'}
+              </span>
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-semibold text-slate-500">Landmark:</span>
+              <span className="font-semibold text-slate-500">{t('case.landmarkLabel') || 'Landmark'}:</span>
               <span className="col-span-2 font-medium text-slate-900">{landmark}</span>
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-semibold text-slate-500">Coordinates:</span>
+              <span className="font-semibold text-slate-500">{t('caseDetail.gpsCoordinates') || 'Coordinates'}:</span>
               <span className="col-span-2 font-mono text-slate-700">
                 {latitude !== null && longitude !== null ? (
                   <span className="text-emerald-700 font-semibold">
@@ -709,13 +760,15 @@ export const ReportIssuePage: React.FC = () => {
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-semibold text-slate-500">Description:</span>
+              <span className="font-semibold text-slate-500">{t('caseDetail.description') || 'Description'}:</span>
               <span className="col-span-2 text-slate-700">{description}</span>
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-semibold text-slate-500">Evidence Attached:</span>
-              <span className="col-span-2 font-mono text-emerald-800 font-semibold">{photos.length} photograph(s) attached</span>
+              <span className="font-semibold text-slate-500">{t('report.evidenceAttached') || 'Evidence Attached:'}</span>
+              <span className="col-span-2 font-mono text-emerald-800 font-semibold">
+                {t('report.photosAttached', { count: photos.length }) || `${photos.length} photograph(s) attached`}
+              </span>
             </div>
           </div>
 
@@ -736,13 +789,13 @@ export const ReportIssuePage: React.FC = () => {
               className="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer h-4 w-4"
             />
             <label htmlFor="declaration-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
-              I certify that this report reflects a genuine civic issue observed in my locality, backed by photographic evidence I personally captured.
+              {t('report.declaration') || 'I certify that this report reflects a genuine civic issue observed in my locality, backed by photographic evidence I personally captured.'}
             </label>
           </div>
 
           <div className="pt-4 flex items-center justify-between">
             <Button type="button" variant="subtle" size="md" onClick={handlePrevStep} disabled={submitting}>
-              &larr; Back
+              {t('report.back') || '← Back'}
             </Button>
             <Button
               type="submit"
@@ -751,7 +804,7 @@ export const ReportIssuePage: React.FC = () => {
               loading={submitting}
               icon={<ShieldCheck className="h-4 w-4 text-emerald-400" />}
             >
-              {submitting ? 'Submitting Geotagged Report...' : 'Submit Geotagged Report'}
+              {submitting ? (t('report.submittingGeotagged') || 'Submitting Geotagged Report...') : (t('report.submitGeotagged') || 'Submit Geotagged Report')}
             </Button>
           </div>
         </form>

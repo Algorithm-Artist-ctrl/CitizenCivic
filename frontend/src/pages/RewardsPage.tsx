@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Award,
   ShieldCheck,
@@ -25,6 +26,7 @@ interface LedgerEntry {
 
 export const RewardsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [totalPoints, setTotalPoints] = useState<number>(0);
@@ -85,13 +87,13 @@ export const RewardsPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-700">
             <Award className="h-4 w-4" />
-            <span>Civic Recognition & Karma Ledger</span>
+            <span>{t('rewards.masthead') || 'Civic Recognition & Karma Ledger'}</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
-            Community Karma & Recognition
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1 font-heading">
+            {t('rewards.title') || 'Community Karma & Recognition'}
           </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+            {t('rewards.subtitle') || 'Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.'}
           </p>
         </div>
 
@@ -100,7 +102,7 @@ export const RewardsPage: React.FC = () => {
           className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
         >
           <PlusCircle className="h-4 w-4 text-emerald-400" />
-          <span>Report Issue (+10 Pts)</span>
+          <span>{t('rewards.reportIssue') || 'Report Issue (+10 Pts)'}</span>
         </Link>
       </div>
 
@@ -109,15 +111,15 @@ export const RewardsPage: React.FC = () => {
         <div className="rounded-xl border border-slate-900 bg-slate-950 text-white p-6 shadow-md flex flex-col justify-between">
           <div>
             <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-              Personal Balance
+              {t('rewards.myScore') || 'Personal Balance'}
             </span>
-            <div className="mt-2 text-4xl font-extrabold font-tabular text-white">
-              {totalPoints} <span className="text-sm font-normal text-slate-400">pts</span>
+            <div className="mt-2 text-4xl font-extrabold font-tabular text-white font-mono">
+              {totalPoints} <span className="text-sm font-normal text-slate-400 font-sans">pts</span>
             </div>
             {!user ? (
               <div className="mt-2 text-xs text-slate-400">
                 <Link to="/login" className="text-emerald-400 underline hover:text-emerald-300 font-medium">
-                  Sign in
+                  {t('nav.login') || 'Sign in'}
                 </Link>{' '}
                 to view and track your verified points
               </div>
@@ -135,11 +137,13 @@ export const RewardsPage: React.FC = () => {
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-3">
           <span className="text-xs font-mono uppercase tracking-wider text-slate-500">
-            Verified Resolution Bonus
+            {i18n.language === 'hi' ? 'सत्यापित समाधान बोनस' : 'Verified Resolution Bonus'}
           </span>
-          <div className="text-2xl font-bold text-slate-900">+100 Pts / Case</div>
+          <div className="text-2xl font-bold text-slate-900 font-heading">+100 Pts / Case</div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            When your reported issue is cleared and confirmed with on-ground photographic evidence.
+            {i18n.language === 'hi'
+              ? 'जब आपके द्वारा रिपोर्ट की गई समस्या साफ हो जाती है और जमीनी तस्वीर से पुष्टि हो जाती है।'
+              : 'When your reported issue is cleared and confirmed with on-ground photographic evidence.'}
           </p>
           <div className="text-[11px] font-mono text-emerald-700 font-medium">
             Strict anti-duplicate fraud filters applied
@@ -148,11 +152,13 @@ export const RewardsPage: React.FC = () => {
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-3">
           <span className="text-xs font-mono uppercase tracking-wider text-slate-500">
-            Hotspot Follow-Up Audit
+            {i18n.language === 'hi' ? 'हॉटस्पॉट फॉलो-अप ऑडिट' : 'Hotspot Follow-Up Audit'}
           </span>
-          <div className="text-2xl font-bold text-slate-900">+75 Pts / Audit</div>
+          <div className="text-2xl font-bold text-slate-900 font-heading">+75 Pts / Audit</div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Verify that a previously resolved blackspot has remained clean during 7-day and 30-day checks.
+            {i18n.language === 'hi'
+              ? 'सत्यापित करें कि 7-दिन और 30-दिन के ऑडिट के दौरान पहले से सुलझाया गया ब्लैकस्पॉट साफ रहा है।'
+              : 'Verify that a previously resolved blackspot has remained clean during 7-day and 30-day checks.'}
           </p>
           <div className="text-[11px] font-mono text-emerald-700 font-medium">
             Prevents recurring illegal waste accumulation
@@ -165,9 +171,9 @@ export const RewardsPage: React.FC = () => {
         {/* Left: User's Recent Ledger Entries */}
         <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 font-heading">
               <Clock className="h-4 w-4 text-emerald-700" />
-              <span>Your Verified Karma Activity</span>
+              <span>{t('rewards.historyTitle') || 'Your Verified Karma Activity'}</span>
             </h2>
             <span className="text-xs text-slate-500">Latest 20 records</span>
           </div>
@@ -175,15 +181,17 @@ export const RewardsPage: React.FC = () => {
           {recentEntries.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center space-y-3">
               <Award className="mx-auto h-8 w-8 text-slate-300" />
-              <h3 className="text-sm font-bold text-slate-800">No karma points recorded yet</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <h3 className="text-sm font-bold text-slate-800 font-heading">
+                {t('rewards.noTransactions') || 'No karma points recorded yet'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
                 Submit your first verified civic report or audit an existing case to begin building your community standing.
               </p>
               <Link
                 to="/report"
                 className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800"
               >
-                Report an Issue
+                {t('landing.reportIssue') || 'Report an Issue'}
               </Link>
             </div>
           ) : (
@@ -214,26 +222,28 @@ export const RewardsPage: React.FC = () => {
         {/* Right: Ward 82 Community Leaderboard */}
         <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 font-heading">
               <TrendingUp className="h-4 w-4 text-emerald-700" />
-              <span>Ward 82 Community Leaderboard</span>
+              <span>{t('rewards.leaderboardTitle') || 'Ward 82 Community Leaderboard'}</span>
             </h2>
             <span className="text-xs font-mono text-slate-500">Live Pilot Roster</span>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white shadow-2xs overflow-hidden">
             <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 text-[11px] font-mono uppercase tracking-wider text-slate-500 grid grid-cols-12 gap-2">
-              <div className="col-span-2">Rank</div>
-              <div className="col-span-7">Citizen / Contributor</div>
-              <div className="col-span-3 text-right">Points</div>
+              <div className="col-span-2">{t('rewards.rank') || 'Rank'}</div>
+              <div className="col-span-7">{t('rewards.contributor') || 'Citizen / Contributor'}</div>
+              <div className="col-span-3 text-right">{t('rewards.points') || 'Points'}</div>
             </div>
 
             <div className="divide-y divide-slate-100">
               {leaderboard.length === 0 ? (
                 <div className="p-8 text-center space-y-2">
                   <Award className="mx-auto h-6 w-6 text-slate-300" />
-                  <p className="text-xs font-semibold text-slate-800">No community contributors recorded yet</p>
-                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                  <p className="text-xs font-semibold text-slate-800 font-heading">
+                    {t('rewards.noLeaderboard') || 'No community contributors recorded yet'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed">
                     Verified civic points are credited dynamically upon approved resolution and on-ground audits.
                   </p>
                 </div>
@@ -264,7 +274,7 @@ export const RewardsPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div className="col-span-3 text-right font-mono font-bold text-slate-900">
+                    <div className="col-span-3 text-right font-mono font-bold text-slate-950">
                       {entry.total_points} pts
                     </div>
                   </div>

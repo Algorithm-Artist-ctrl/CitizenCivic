@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   PlusCircle,
@@ -19,6 +20,11 @@ import type { Case, Category, PaginatedResponse } from '../types';
 
 export const CaseListPage: React.FC = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Active scope tab: 'mine' or 'all'
+  const activeScope = searchParams.get('scope') || (user?.role === 'CITIZEN' ? 'mine' : 'all');
 
   const [cases, setCases] = useState<Case[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,7 +40,7 @@ export const CaseListPage: React.FC = () => {
 
   useEffect(() => {
     fetchCases();
-  }, [selectedStatus, selectedCategory]);
+  }, [selectedStatus, selectedCategory, activeScope]);
 
   const loadCategories = async () => {
     try {
@@ -49,6 +55,7 @@ export const CaseListPage: React.FC = () => {
     setLoading(true);
     try {
       let url = '/cases/?';
+      if (activeScope === 'mine') url += 'scope=mine&';
       if (selectedStatus) url += `status=${selectedStatus}&`;
       if (selectedCategory) url += `category=${selectedCategory}&`;
       if (searchQuery.trim()) url += `search=${encodeURIComponent(searchQuery.trim())}&`;
@@ -60,6 +67,16 @@ export const CaseListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleScopeChange = (scope: 'mine' | 'all') => {
+    const newParams = new URLSearchParams(searchParams);
+    if (scope === 'mine') {
+      newParams.set('scope', 'mine');
+    } else {
+      newParams.delete('scope');
+    }
+    setSearchParams(newParams);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -94,19 +111,49 @@ export const CaseListPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-slate-500">
-            <span className="font-bold text-slate-900">PUBLIC REGISTRY</span>
+            <span className="font-bold text-slate-900">{t('cases.publicRegistry') || 'PUBLIC REGISTRY'}</span>
             <span>·</span>
-            <span>PUBLIC CIVIC DIRECTORY</span>
+            <span>{t('cases.directorySubtitle') || 'PUBLIC CIVIC DIRECTORY'}</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
-            {user?.role === 'CITIZEN' ? 'My Reported Cases' : 'Municipal Cases Directory'}
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1 font-heading">
+            {activeScope === 'mine'
+              ? (t('cases.myReportsTab') || 'My Reported Cases')
+              : (t('cases.title') || 'Civic Resolution Directory')}
           </h1>
-          <p className="text-xs text-slate-600 mt-1">
-            Full audit log of civic complaints, photographic evidence milestones, and verification status.
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+            {t('cases.subtitle') || 'Transparent public ledger of reported municipal issues, operational dispatch states, and photographic resolution evidence.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Scope Toggle for logged-in citizens */}
+          {user && (
+            <div className="flex rounded-md border border-slate-200 bg-slate-100 p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => handleScopeChange('mine')}
+                className={`px-3 py-1.5 rounded transition-all cursor-pointer ${
+                  activeScope === 'mine'
+                    ? 'bg-white text-slate-950 font-bold shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                {t('cases.myReportsTab') || 'My Reports'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScopeChange('all')}
+                className={`px-3 py-1.5 rounded transition-all cursor-pointer ${
+                  activeScope !== 'mine'
+                    ? 'bg-white text-slate-950 font-bold shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                {t('cases.allPublicTab') || 'All Public Cases'}
+              </button>
+            </div>
+          )}
+
           {/* View Mode Toggle */}
           <div className="hidden sm:flex rounded-md border border-slate-200 bg-white p-1">
             <button
@@ -137,7 +184,7 @@ export const CaseListPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
             >
               <PlusCircle className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Report Issue</span>
+              <span>{t('cases.reportIssue') || 'Report Issue'}</span>
             </Link>
           )}
         </div>
@@ -152,7 +199,7 @@ export const CaseListPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by case number or street landmark..."
+              placeholder={t('cases.searchPlaceholder') || 'Search by case #, landmark, or description...'}
               className="w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
             />
           </div>
@@ -163,10 +210,10 @@ export const CaseListPage: React.FC = () => {
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="rounded-md border border-slate-300 bg-white py-2 px-3 text-xs text-slate-800 focus:border-slate-900 focus:outline-hidden cursor-pointer"
           >
-            <option value="">All Statuses ({cases.length})</option>
+            <option value="">{t('cases.allStatuses') || 'All Statuses'} ({cases.length})</option>
             {statuses.map((st) => (
               <option key={st} value={st}>
-                {st.replace(/_/g, ' ')}
+                {t(`case.status.${st}`) || st.replace(/_/g, ' ')}
               </option>
             ))}
           </select>
@@ -177,16 +224,16 @@ export const CaseListPage: React.FC = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="rounded-md border border-slate-300 bg-white py-2 px-3 text-xs text-slate-800 focus:border-slate-900 focus:outline-hidden cursor-pointer"
           >
-            <option value="">All Categories</option>
+            <option value="">{t('cases.allCategories') || 'All Categories'}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name_en}
+                {i18n.language === 'hi' ? (c.name_hi || c.name_en) : c.name_en}
               </option>
             ))}
           </select>
 
           <Button type="submit" variant="primary" size="md">
-            Filter
+            {t('common.filter') || 'Filter'}
           </Button>
 
           {(selectedStatus || selectedCategory || searchQuery) && (
@@ -197,7 +244,7 @@ export const CaseListPage: React.FC = () => {
               onClick={handleResetFilters}
               icon={<RotateCcw className="h-3 w-3" />}
             >
-              Reset
+              {t('cases.resetFilters') || 'Reset'}
             </Button>
           )}
         </form>
@@ -212,15 +259,17 @@ export const CaseListPage: React.FC = () => {
         /* Empty Results State */
         <div className="rounded-lg border border-dashed border-slate-200 bg-white p-12 text-center space-y-3">
           <Layers className="mx-auto h-8 w-8 text-slate-300" />
-          <h3 className="text-sm font-bold text-slate-900">No matching cases found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-sm font-bold text-slate-900 font-heading">
+            {t('cases.noCasesFound') || 'No matching cases found'}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
             {selectedStatus || selectedCategory || searchQuery
-              ? 'Try adjusting your search criteria or resetting the active filters above.'
+              ? (t('cases.noCasesDesc') || 'Try adjusting your search criteria or resetting the active filters above.')
               : 'There are currently no recorded cases in this jurisdiction.'}
           </p>
           {(selectedStatus || selectedCategory || searchQuery) && (
             <Button type="button" variant="outline" size="sm" onClick={handleResetFilters}>
-              Clear Active Filters
+              {t('cases.resetFilters') || 'Clear Active Filters'}
             </Button>
           )}
         </div>
@@ -231,12 +280,12 @@ export const CaseListPage: React.FC = () => {
             <table className="w-full text-left text-xs text-slate-800">
               <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-mono uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-semibold">Case Reference</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Category</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Landmark / Grid</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Status</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Evidence</th>
-                  <th scope="col" className="px-4 py-3 font-semibold text-right">Action</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">{t('cases.table.caseNumber') || 'Case Reference'}</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">{t('cases.table.category') || 'Category'}</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">{t('cases.table.landmark') || 'Landmark / Grid'}</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">{t('cases.table.status') || 'Status'}</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">{t('cases.table.evidence') || 'Evidence'}</th>
+                  <th scope="col" className="px-4 py-3 font-semibold text-right">{t('cases.table.action') || 'Action'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -254,11 +303,13 @@ export const CaseListPage: React.FC = () => {
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <span className="font-medium text-slate-900">{c.category?.name_en || 'General'}</span>
+                      <span className="font-medium text-slate-900">
+                        {i18n.language === 'hi' ? (c.category?.name_hi || c.category?.name_en) : (c.category?.name_en || 'General')}
+                      </span>
                       {c.is_hotspot && (
                         <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">
                           <Flame className="h-2.5 w-2.5" />
-                          <span>Hotspot</span>
+                          <span>{t('dashboard.hotspot') || 'Hotspot'}</span>
                         </span>
                       )}
                     </td>
@@ -283,7 +334,7 @@ export const CaseListPage: React.FC = () => {
                         to={`/cases/${c.id}`}
                         className="rounded border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors inline-flex items-center gap-1"
                       >
-                        <span>Audit Case</span>
+                        <span>{t('dashboard.reviewDetails') || 'Audit Case'}</span>
                         <ArrowRight className="h-3 w-3 text-slate-400" />
                       </Link>
                     </td>
@@ -307,7 +358,9 @@ export const CaseListPage: React.FC = () => {
                   <CaseStatusBadge status={c.status} size="xs" />
                 </div>
 
-                <div className="text-xs font-bold text-slate-800">{c.category?.name_en}</div>
+                <div className="text-xs font-bold text-slate-800">
+                  {i18n.language === 'hi' ? (c.category?.name_hi || c.category?.name_en) : c.category?.name_en}
+                </div>
 
                 <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{c.description}</p>
               </div>
@@ -321,7 +374,7 @@ export const CaseListPage: React.FC = () => {
                   to={`/cases/${c.id}`}
                   className="font-semibold text-slate-900 hover:text-emerald-700 inline-flex items-center gap-1"
                 >
-                  <span>Review &rarr;</span>
+                  <span>{t('dashboard.reviewDetails') || 'Review'} &rarr;</span>
                 </Link>
               </div>
             </div>

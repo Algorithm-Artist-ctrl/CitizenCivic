@@ -28,7 +28,7 @@
     --civic-emerald-50: #ECFDF5;
   }
 
-  body {
+  html, body {
     font-family: var(--font-sans);
     background-color: #F8FAFC;
     color: #0F172A;
@@ -38,9 +38,14 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
+    font-weight: 700;
   }
 }
 

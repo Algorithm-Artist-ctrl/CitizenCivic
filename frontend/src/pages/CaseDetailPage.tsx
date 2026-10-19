@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Clock,
@@ -19,6 +20,7 @@ import apiClient, { getMediaUrl } from '../api/client';
 import CaseStatusBadge from '../components/CaseStatusBadge';
 import CaseTimeline from '../components/CaseTimeline';
 import ImageUpload from '../components/ImageUpload';
+import GoogleMapView from '../components/GoogleMapView';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import type { Case } from '../types';
@@ -33,6 +35,7 @@ interface AIVerifyResult {
 export const CaseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [loading, setLoading] = useState(true);
@@ -284,15 +287,15 @@ export const CaseDetailPage: React.FC = () => {
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
           <span className="text-xs font-semibold text-slate-900">
-            Available Role Actions ({user?.role})
+            {t('caseDetail.roleActions', { role: user?.role }) || `Available Role Actions (${user?.role})`}
           </span>
           <p className="text-[11px] text-slate-500">
-            {caseData.status === 'VERIFIED_RESOLVED' && 'Case is marked verified resolved with closed audit trail.'}
-            {caseData.status === 'VERIFICATION_PENDING' && 'Field resolution claimed. Awaiting citizen confirmation or supervisor verification.'}
-            {caseData.status === 'IN_PROGRESS' && 'Municipal response team actively assigned on-ground.'}
-            {caseData.status === 'FORWARDED' && 'Dispatched to concessionaire. Awaiting acknowledgement.'}
-            {caseData.status === 'SUBMITTED' && 'Report registered. Awaiting initial triage.'}
-            {caseData.status === 'DISPUTED_CLOSURE' && 'Citizen disputed claimed closure. Inadequate resolution flagged.'}
+            {caseData.status === 'VERIFIED_RESOLVED' && (t('case.status.VERIFIED_RESOLVED') + ': Case is marked verified resolved with closed audit trail.')}
+            {caseData.status === 'VERIFICATION_PENDING' && (t('case.status.VERIFICATION_PENDING') + ': Field resolution claimed. Awaiting citizen confirmation or supervisor verification.')}
+            {caseData.status === 'IN_PROGRESS' && (t('case.status.IN_PROGRESS') + ': Municipal response team actively assigned on-ground.')}
+            {caseData.status === 'FORWARDED' && (t('case.status.FORWARDED') + ': Dispatched to concessionaire. Awaiting acknowledgement.')}
+            {caseData.status === 'SUBMITTED' && (t('case.status.SUBMITTED') + ': Report registered. Awaiting initial triage.')}
+            {caseData.status === 'DISPUTED_CLOSURE' && (t('case.status.DISPUTED_CLOSURE') + ': Citizen disputed claimed closure. Inadequate resolution flagged.')}
           </p>
         </div>
 
@@ -307,7 +310,7 @@ export const CaseDetailPage: React.FC = () => {
                   size="sm"
                   onClick={() => handleOpenTransition('ACKNOWLEDGED')}
                 >
-                  Acknowledge SLA Dispatch
+                  {t('caseDetail.operator.ackSla') || 'Acknowledge SLA Dispatch'}
                 </Button>
               )}
 
@@ -318,7 +321,7 @@ export const CaseDetailPage: React.FC = () => {
                   size="sm"
                   onClick={() => handleOpenTransition('IN_PROGRESS')}
                 >
-                  Start On-Ground Work
+                  {t('caseDetail.operator.startWork') || 'Start On-Ground Work'}
                 </Button>
               )}
 
@@ -330,7 +333,7 @@ export const CaseDetailPage: React.FC = () => {
                   onClick={() => handleOpenTransition('RESOLUTION_REPORTED')}
                   icon={<Camera className="h-3.5 w-3.5" />}
                 >
-                  Submit Resolution Claim + Photo
+                  {t('caseDetail.operator.submitClaim') || 'Submit Resolution Claim + Photo'}
                 </Button>
               )}
             </>
@@ -346,7 +349,7 @@ export const CaseDetailPage: React.FC = () => {
                   size="sm"
                   onClick={() => handleOpenTransition('REVIEWED')}
                 >
-                  Mark Reviewed
+                  {t('caseDetail.moderator.markReviewed') || 'Mark Reviewed'}
                 </Button>
               )}
 
@@ -357,7 +360,7 @@ export const CaseDetailPage: React.FC = () => {
                   size="sm"
                   onClick={() => handleOpenTransition('FORWARDED')}
                 >
-                  Forward to Operator Team
+                  {t('caseDetail.moderator.forward') || 'Forward to Operator Team'}
                 </Button>
               )}
 
@@ -369,7 +372,7 @@ export const CaseDetailPage: React.FC = () => {
                   onClick={() => handleOpenTransition('VERIFIED_RESOLVED')}
                   icon={<ShieldCheck className="h-3.5 w-3.5" />}
                 >
-                  Confirm Verified Resolved
+                  {t('caseDetail.moderator.confirmResolved') || 'Confirm Verified Resolved'}
                 </Button>
               )}
             </>
@@ -390,7 +393,7 @@ export const CaseDetailPage: React.FC = () => {
                     }}
                     icon={<CheckCircle2 className="h-3.5 w-3.5" />}
                   >
-                    Confirm Clean (Accept Resolution)
+                    {t('caseDetail.citizen.acceptResolution') || 'Confirm Clean (Accept Resolution)'}
                   </Button>
 
                   <Button
@@ -403,7 +406,7 @@ export const CaseDetailPage: React.FC = () => {
                     }}
                     icon={<AlertTriangle className="h-3.5 w-3.5" />}
                   >
-                    Dispute Closure
+                    {t('caseDetail.citizen.disputeClosure') || 'Dispute Closure'}
                   </Button>
                 </>
               )}
@@ -419,30 +422,30 @@ export const CaseDetailPage: React.FC = () => {
           {/* Incident Overview Card */}
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
             <h2 className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">
-              Incident Metadata
+              {t('caseDetail.incidentMetadata') || 'Incident Metadata'}
             </h2>
 
             <div className="grid grid-cols-2 gap-4 text-xs border-b border-slate-100 pb-4">
               <div>
-                <span className="text-slate-400 block font-mono text-[11px]">CATEGORY</span>
+                <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.category') || 'CATEGORY'}</span>
                 <span className="font-semibold text-slate-900 mt-0.5 block">
-                  {caseData.category?.name_en || 'Municipal Issue'}
+                  {i18n.language === 'hi' ? (caseData.category?.name_hi || caseData.category?.name_en) : (caseData.category?.name_en || 'Municipal Issue')}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block font-mono text-[11px]">SERVICE AREA</span>
+                <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.serviceArea') || 'SERVICE AREA'}</span>
                 <span className="font-semibold text-slate-900 mt-0.5 block">
-                  {caseData.service_area?.name || 'Bengaluru Ward 82'}
+                  {i18n.language === 'hi' ? (caseData.service_area?.name_hi || caseData.service_area?.name) : (caseData.service_area?.name || 'Bengaluru Ward 82')}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block font-mono text-[11px]">STREET LANDMARK</span>
+                <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.streetLandmark') || 'STREET LANDMARK'}</span>
                 <span className="font-semibold text-slate-900 mt-0.5 block">
                   {caseData.landmark || 'Not specified'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block font-mono text-[11px]">GPS GRID COORDINATES</span>
+                <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.gpsCoordinates') || 'GPS GRID COORDINATES'}</span>
                 <span className="font-mono text-slate-700 mt-0.5 block">
                   {caseData.latitude?.toFixed(4)}° N, {caseData.longitude?.toFixed(4)}° E
                 </span>
@@ -450,7 +453,7 @@ export const CaseDetailPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <span className="text-slate-400 block font-mono text-[11px]">PROBLEM DESCRIPTION</span>
+              <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.description') || 'PROBLEM DESCRIPTION'}</span>
               <p className="text-xs text-slate-800 leading-relaxed bg-slate-50/70 p-3 rounded border border-slate-100">
                 {caseData.description}
               </p>
@@ -460,28 +463,24 @@ export const CaseDetailPage: React.FC = () => {
             {caseData.latitude && caseData.longitude && (
               <div className="space-y-1.5 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 block font-mono text-[11px]">VERIFIED GEOGRAPHIC LOCATION</span>
+                  <span className="text-slate-400 block font-mono text-[11px]">
+                    {t('caseDetail.verifiedLocation') || 'VERIFIED GEOGRAPHIC LOCATION'}
+                  </span>
                   <a
-                    href={`https://www.openstreetmap.org/?mlat=${caseData.latitude}&mlon=${caseData.longitude}#map=17/${caseData.latitude}/${caseData.longitude}`}
+                    href={`https://maps.google.com/?q=${caseData.latitude},${caseData.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 inline-flex items-center gap-1"
+                    className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 inline-flex items-center gap-1 transition-colors"
                   >
-                    <span>Full OpenStreetMap</span> &rarr;
+                    <span>Google Maps</span> &rarr;
                   </a>
                 </div>
-                <div className="h-44 w-full rounded-md border border-slate-200 overflow-hidden bg-slate-100 relative">
-                  <iframe
-                    title="Case Location Map"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    scrolling="no"
-                    marginHeight={0}
-                    marginWidth={0}
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${caseData.longitude - 0.004}%2C${caseData.latitude - 0.002}%2C${caseData.longitude + 0.004}%2C${caseData.latitude + 0.002}&layer=mapnik&marker=${caseData.latitude}%2C${caseData.longitude}`}
-                    className="w-full h-full border-0"
-                    loading="lazy"
+                <div className="rounded-md border border-slate-200 overflow-hidden shadow-2xs">
+                  <GoogleMapView
+                    center={{ lat: caseData.latitude, lng: caseData.longitude }}
+                    selectedLocation={{ lat: caseData.latitude, lng: caseData.longitude }}
+                    interactive={false}
+                    height="200px"
                   />
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../db';
 import { Category, ServiceArea } from '../types';
+import { config } from '../config';
 
 const router = Router();
 
@@ -73,6 +74,13 @@ router.get('/service-areas/:id', async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ detail: 'Error fetching service area.' });
   }
+});
+
+// GET /api/v1/areas/config/maps — Get public Google Maps API Key
+router.get('/config/maps', async (_req: Request, res: Response) => {
+  res.json({
+    mapsApiKey: config.googleMapsApiKey || '',
+  });
 });
 
 export default router;
