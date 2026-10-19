@@ -1,59 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
   ArrowLeft,
   Navigation,
-  AlertTriangle,
+  MapPin,
+  ShieldCheck,
+  Copy,
+  Check,
 } from 'lucide-react';
 import apiClient from '../api/client';
 import ImageUpload from '../components/ImageUpload';
-import type { Category, ServiceArea } from '../types';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
+import type { Category } from '../types';
 
 export const ReportIssuePage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Multi-step progress: 1: Category, 2: Details & Location, 3: Evidence, 4: Review
+  // Multi-step progress: 1: Category, 2: Location & Details, 3: Evidence, 4: Review
   const [step, setStep] = useState(1);
 
   // Form State
   const [categories, setCategories] = useState<Category[]>([]);
-  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [description, setDescription] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [latitude, setLatitude] = useState<number>(12.9784); // Default to Indiranagar
+  const [latitude, setLatitude] = useState<number>(12.9784); // Default to Indiranagar Ward 82
   const [longitude, setLongitude] = useState<number>(77.6408);
   const [locationDetecting, setLocationDetecting] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
-  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [declarationChecked, setDeclarationChecked] = useState(false);
 
   // Submission State
   const [submitting, setSubmitting] = useState(false);
   const [createdCaseNumber, setCreatedCaseNumber] = useState<string | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Load categories and service areas
     const loadMetadata = async () => {
       try {
         const [catRes, areaRes] = await Promise.all([
-          apiClient.get('/areas/categories/'),
-          apiClient.get('/areas/service-areas/'),
+          apiClient.get('/areas/categories/').catch(() => ({ data: { results: [] } })),
+          apiClient.get('/areas/service-areas/').catch(() => ({ data: { results: [] } })),
         ]);
-        setCategories(catRes.data.results || catRes.data);
-        const areas = areaRes.data.results || areaRes.data;
-        setServiceAreas(areas);
+        const cats = catRes.data.results || catRes.data || [];
+        const areas = areaRes.data.results || areaRes.data || [];
+        setCategories(cats);
+        if (cats.length > 0) setSelectedCategory(cats[0].id);
         if (areas.length > 0) setSelectedArea(areas[0].id);
       } catch (e) {
-        console.error('Failed to load form metadata', e);
+        console.error('Failed to load metadata', e);
       }
     };
     loadMetadata();
@@ -76,8 +79,7 @@ export const ReportIssuePage: React.FC = () => {
       (err) => {
         console.warn('Geolocation error:', err.message);
         setLocationDetecting(false);
-        // Fallback to landmark-based entry
-        setError('Could not detect GPS location. You can enter the street landmark manually below.');
+        setError('GPS coordinates could not be detected automatically. You can enter the street landmark manually below.');
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -90,19 +92,25 @@ export const ReportIssuePage: React.FC = () => {
       return;
     }
     if (step === 2 && (!description.trim() || !landmark.trim())) {
-      setError('Please provide a description and nearby landmark/address.');
+      setError('Please provide a specific street landmark and problem description.');
       return;
     }
     if (step === 3 && photos.length === 0) {
-      setError('At least one photograph is required as verified proof of the issue.');
+      setError('At least one clear photograph is required as verified proof of the blackspot.');
       return;
     }
     setStep(step + 1);
   };
 
-  const handleSubmit = async () => {
-    if (!privacyConsent) {
-      setError('Please confirm that this photo was taken safely and in a public area.');
+  const handlePrevStep = () => {
+    setError(null);
+    setStep(step - 1);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!declarationChecked) {
+      setError('Please confirm the verification declaration checkbox before submitting.');
       return;
     }
 
@@ -110,7 +118,7 @@ export const ReportIssuePage: React.FC = () => {
     setError(null);
 
     try {
-      // 1. Create Case
+      // 1. Create the case record
       const casePayload = {
         category: selectedCategory,
         service_area: selectedArea || null,
@@ -149,328 +157,380 @@ export const ReportIssuePage: React.FC = () => {
     }
   };
 
-  // SUCCESS SCREEN
+  const handleCopyCaseNumber = () => {
+    if (createdCaseNumber) {
+      navigator.clipboard.writeText(createdCaseNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // SUCCESS STATE
   if (createdCaseNumber && createdCaseId) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-12 text-center">
-        <div className="rounded-2xl bg-white p-8 shadow-xl border border-slate-100 space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-            <CheckCircle2 className="h-10 w-10" />
+      <div className="mx-auto max-w-xl px-4 py-16 text-center font-sans">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 sm:p-10 shadow-xs space-y-6">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="h-7 w-7" />
           </div>
 
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-              Officially Submitted
-            </span>
-            <h1 className="mt-3 text-2xl font-black text-slate-900">
-              {t('report.success', 'Issue Reported Successfully!')}
+          <div className="space-y-2">
+            <Badge variant="emerald" size="sm">
+              Stage 01 Geotagged Report Registered
+            </Badge>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+              Civic Report Successfully Submitted
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Your submission has been securely recorded and queued for review and forwarding to the local operating unit.
+            <p className="text-xs text-slate-600 max-w-sm mx-auto">
+              Your report has entered the partner SLA queue for Bengaluru Ward 82. You will be notified when photographic proof of cleanup is uploaded.
             </p>
           </div>
 
-          <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Case Tracking Number</span>
-            <div className="font-mono text-2xl font-black text-slate-900 tracking-wider mt-1">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-left">
+            <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
+              <span>OFFICIAL CASE REFERENCE</span>
+              <button
+                type="button"
+                onClick={handleCopyCaseNumber}
+                className="flex items-center gap-1 text-slate-700 hover:text-slate-950 cursor-pointer"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+            <div className="text-xl font-bold font-mono text-slate-950 tracking-wider">
               {createdCaseNumber}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Save this number or track updates in real-time from your dashboard.
-            </p>
+            <div className="pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Reward Credited: <strong className="text-emerald-700">+50 Pts</strong></span>
+              <span>Status: <strong className="text-slate-800">Submitted</strong></span>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="flex-1"
               onClick={() => navigate(`/cases/${createdCaseId}`)}
-              className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition-colors"
             >
-              Track Case Timeline
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              Track Realtime Case Status &rarr;
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                setCreatedCaseNumber(null);
+                setCreatedCaseId(null);
+                setStep(1);
+                setDescription('');
+                setLandmark('');
+                setPhotos([]);
+              }}
             >
-              Back to Dashboard
-            </button>
+              Report Another Issue
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
+  const selectedCategoryObj = categories.find((c) => c.id === selectedCategory);
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      {/* Step Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          <span>{t('report.title', 'Report a Garbage Issue')}</span>
-          <span>Step {step} of 4</span>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 font-sans">
+      {/* Header & Step Tracker */}
+      <div className="space-y-4 border-b border-slate-200 pb-5">
+        <div className="flex items-center justify-between">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Cancel and return</span>
+          </Link>
+          <span className="font-mono text-xs text-slate-500 font-semibold">
+            Step {step} of 4
+          </span>
         </div>
-        {/* Progress Bar */}
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-          <div
-            className="h-full bg-emerald-600 transition-all duration-300"
-            style={{ width: `${(step / 4) * 100}%` }}
-          />
+
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+            Report a Local Civic Issue
+          </h1>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Verified intake for Bengaluru Ward 82 (Indiranagar) municipal response network.
+          </p>
+        </div>
+
+        {/* Stepper Progress Bar */}
+        <div className="grid grid-cols-4 gap-2 pt-2">
+          <div className={`h-1.5 rounded-full transition-colors ${step >= 1 ? 'bg-slate-900' : 'bg-slate-200'}`} />
+          <div className={`h-1.5 rounded-full transition-colors ${step >= 2 ? 'bg-slate-900' : 'bg-slate-200'}`} />
+          <div className={`h-1.5 rounded-full transition-colors ${step >= 3 ? 'bg-slate-900' : 'bg-slate-200'}`} />
+          <div className={`h-1.5 rounded-full transition-colors ${step >= 4 ? 'bg-slate-900' : 'bg-slate-200'}`} />
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-lg border border-slate-100">
-        {error && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 border border-red-200">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <span>{error}</span>
+      {/* Error alert */}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-md bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200"
+        >
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      )}
+
+      {/* STEP 1: CATEGORY SELECTION */}
+      {step === 1 && (
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">1. Select Issue Category</h2>
+            <p className="text-xs text-slate-500">
+              Categorization determines municipal crew dispatch and contractual SLA turnaround.
+            </p>
           </div>
-        )}
 
-        {/* STEP 1: CATEGORY SELECTION */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">What type of problem are you seeing?</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Select the civic category that best describes the situation.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2.5">
-              {categories.map((cat) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
                 <div
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all ${
-                    selectedCategory === cat.id
-                      ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300 text-slate-900'
                   }`}
                 >
-                  <div
-                    className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border ${
-                      selectedCategory === cat.id
-                        ? 'border-emerald-600 bg-emerald-600 text-white'
-                        : 'border-slate-300'
-                    }`}
-                  >
-                    {selectedCategory === cat.id && <div className="h-2 w-2 rounded-full bg-white" />}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{cat.name_en}</span>
+                    <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-300' : 'text-slate-400'}`}>
+                      {cat.name_hi}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      {cat.name_en} <span className="text-slate-400 font-normal">({cat.name_hi})</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {cat.slug === 'garbage-accumulation' && 'Piles of uncollected waste or litter on road or footpath'}
-                      {cat.slug === 'missed-collection' && 'Door-to-door or lane collection truck missed scheduled route'}
-                      {cat.slug === 'recurring-hotspot' && 'Chronic vulnerable dumping spot that recurs repeatedly'}
-                      {cat.slug === 'overflowing-bin' && 'Public community bin full with trash spilling around'}
-                      {cat.slug === 'illegal-dumping' && 'Construction debris, debris, or night dumping by vehicles'}
-                    </p>
-                  </div>
+                  <p className={`mt-1.5 text-[11px] leading-relaxed ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {cat.slug === 'garbage' && 'Roadside waste dumps, mixed garbage piles, and organic refuse.'}
+                    {cat.slug === 'construction-debris' && 'Concrete rubble, sand bags, and building material obstruction.'}
+                    {cat.slug === 'overflowing-bins' && 'Public bins overflowing onto pavement or footpaths.'}
+                    {cat.slug === 'drainage' && 'Stormwater drains clogged with solid waste risking flooding.'}
+                    {!['garbage', 'construction-debris', 'overflowing-bins', 'drainage'].includes(cat.slug) &&
+                      'Unaddressed municipal blackspots requiring field intervention.'}
+                  </p>
                 </div>
-              ))}
-            </div>
-
-            {serviceAreas.length > 0 && (
-              <div className="pt-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                  Pilot Service Ward
-                </label>
-                <select
-                  value={selectedArea}
-                  onChange={(e) => setSelectedArea(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-sm text-slate-800 focus:border-emerald-500 focus:outline-hidden"
-                >
-                  {serviceAreas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.name_hi})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+              );
+            })}
           </div>
-        )}
 
-        {/* STEP 2: DETAILS & LOCATION */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Where is the issue located?</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Provide landmark details so field operators can identify the exact spot.
-              </p>
-            </div>
+          <div className="pt-4 flex justify-end">
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handleNextStep}
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+            >
+              Continue to Location
+            </Button>
+          </div>
+        </div>
+      )}
 
-            {/* Geolocation Button */}
-            <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-semibold text-slate-700">GPS Coordinates</span>
-                  <div className="font-mono text-xs text-slate-500 mt-0.5">
-                    {latitude.toFixed(5)}, {longitude.toFixed(5)}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDetectLocation}
-                  disabled={locationDetecting}
-                  className="flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-white px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-50 transition-colors cursor-pointer"
-                >
-                  <Navigation className={`h-3.5 w-3.5 ${locationDetecting ? 'animate-spin' : ''}`} />
-                  <span>{locationDetecting ? 'Detecting...' : locationDetected ? 'GPS Updated' : 'Use My GPS'}</span>
-                </button>
+      {/* STEP 2: LOCATION & INCIDENT DETAILS */}
+      {step === 2 && (
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">2. Location & Description</h2>
+            <p className="text-xs text-slate-500">
+              Provide exact landmarks so field teams can locate and clear the spot without delay.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-5 space-y-4 shadow-2xs">
+            {/* GPS Detection Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50 p-3.5 rounded-md border border-slate-200/80">
+              <div className="space-y-0.5">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-700" />
+                  <span>Geotag Coordinates</span>
+                </span>
+                <span className="text-[11px] font-mono text-slate-500">
+                  {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E (Ward 82 Grid)
+                </span>
               </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={locationDetecting}
+                onClick={handleDetectLocation}
+                icon={<Navigation className="h-3 w-3 text-emerald-700" />}
+              >
+                {locationDetected ? '✓ GPS Acquired' : 'Detect My GPS'}
+              </Button>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                Street Landmark / Address *
+            {/* Landmark / Street Input */}
+            <div className="space-y-1.5">
+              <label htmlFor="landmark-input" className="block text-xs font-semibold text-slate-800">
+                Street Landmark or Address <span className="text-rose-600">*</span>
               </label>
               <input
+                id="landmark-input"
                 type="text"
                 required
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
-                placeholder="e.g., Opposite Metro Pillar 45, CMH Road, near Coffee Day"
-                className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                placeholder="e.g. Opposite Metro Pillar 104, near 12th Main crossroad"
+                className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                Problem Description *
+            {/* Detailed Description */}
+            <div className="space-y-1.5">
+              <label htmlFor="description-input" className="block text-xs font-semibold text-slate-800">
+                Detailed Problem Description <span className="text-rose-600">*</span>
               </label>
               <textarea
+                id="description-input"
+                rows={3}
                 required
-                rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the type of waste, how long it has been accumulating, whether it blocks pedestrians or drains..."
-                className="w-full rounded-xl border border-slate-200 py-2.5 px-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                placeholder="Describe the nature of the waste accumulation, estimated volume, and any immediate hazard..."
+                className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
               />
             </div>
           </div>
-        )}
 
-        {/* STEP 3: PHOTO EVIDENCE */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Upload Photographic Evidence</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Photos provide the baseline for verified resolution. Please take a clear, well-lit photo showing the waste and surroundings.
-              </p>
+          <div className="pt-4 flex items-center justify-between">
+            <Button type="button" variant="subtle" size="md" onClick={handlePrevStep}>
+              &larr; Back
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handleNextStep}
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+            >
+              Continue to Photos
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3: EVIDENCE UPLOAD */}
+      {step === 3 && (
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">3. Photographic Evidence</h2>
+            <p className="text-xs text-slate-500">
+              Clear on-ground proof is mandatory to prevent spurious claims and allow verified before-and-after audit.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-5 space-y-4 shadow-2xs">
+            <ImageUpload
+              onFilesSelected={(f) => setPhotos(f)}
+              maxFiles={3}
+              maxSizeMB={10}
+              label="Capture or upload photo of the blackspot"
+              helperText="Take clear wide-angle photos showing the scale of waste accumulation and nearby landmarks."
+            />
+          </div>
+
+          <div className="pt-4 flex items-center justify-between">
+            <Button type="button" variant="subtle" size="md" onClick={handlePrevStep}>
+              &larr; Back
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handleNextStep}
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+            >
+              Review & Submit
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: REVIEW & DECLARATION */}
+      {step === 4 && (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">4. Final Verification & Submit</h2>
+            <p className="text-xs text-slate-500">
+              Review your report summary. Once submitted, a case number is generated and routed to the municipal concessionaire.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden text-xs">
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <span className="font-semibold text-slate-500">Category:</span>
+              <span className="col-span-2 font-bold text-slate-900">{selectedCategoryObj?.name_en || 'General Garbage'}</span>
             </div>
 
-            <ImageUpload onFilesSelected={setPhotos} maxFiles={3} maxSizeMB={10} />
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <span className="font-semibold text-slate-500">Landmark:</span>
+              <span className="col-span-2 font-medium text-slate-900">{landmark}</span>
+            </div>
 
-            <div className="rounded-xl bg-amber-50 p-3 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-              <span>
-                <strong>Safety First</strong>: Never stand in live traffic or enter hazardous spots to take photos. Capture safely from a public sidewalk.
-              </span>
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <span className="font-semibold text-slate-500">Coordinates:</span>
+              <span className="col-span-2 font-mono text-slate-700">{latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E</span>
+            </div>
+
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <span className="font-semibold text-slate-500">Description:</span>
+              <span className="col-span-2 text-slate-700">{description}</span>
+            </div>
+
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <span className="font-semibold text-slate-500">Evidence Attached:</span>
+              <span className="col-span-2 font-mono text-emerald-800 font-semibold">{photos.length} photograph(s) attached</span>
             </div>
           </div>
-        )}
 
-        {/* STEP 4: REVIEW & CONFIRM */}
-        {step === 4 && (
-          <div className="space-y-5">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Review & Confirm Submission</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Verify your report details before submitting to the operating team.
-              </p>
-            </div>
-
-            <div className="space-y-3 rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-700">
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="font-semibold text-slate-500">Category</span>
-                <span className="font-bold text-slate-900">
-                  {categories.find((c) => c.id === selectedCategory)?.name_en}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="font-semibold text-slate-500">Landmark</span>
-                <span className="font-medium text-slate-900 text-right max-w-xs">{landmark}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span className="font-semibold text-slate-500">Coordinates</span>
-                <span className="font-mono text-slate-700">
-                  {latitude.toFixed(4)}, {longitude.toFixed(4)}
-                </span>
-              </div>
-              <div className="border-b border-slate-200 pb-2">
-                <span className="font-semibold text-slate-500 block mb-1">Description</span>
-                <p className="text-slate-800">{description}</p>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-slate-500">Photos Attached</span>
-                <span className="font-bold text-emerald-700">{photos.length} photo(s)</span>
-              </div>
-            </div>
-
-            {/* Privacy & Safety Consent Checkbox */}
-            <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 p-3 bg-white cursor-pointer">
-              <input
-                type="checkbox"
-                checked={privacyConsent}
-                onChange={(e) => setPrivacyConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span className="text-xs text-slate-600">
-                I confirm that this report describes a genuine civic issue, that photos were captured safely from a public space, and that no private personal documents are shown.
-              </span>
+          {/* Citizen Anti-Fraud Declaration */}
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3.5 flex items-start gap-3">
+            <input
+              id="declaration-checkbox"
+              type="checkbox"
+              required
+              checked={declarationChecked}
+              onChange={(e) => setDeclarationChecked(e.target.checked)}
+              className="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+            />
+            <label htmlFor="declaration-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
+              I certify that this report reflects a genuine on-ground civic issue. I understand that submitting fake photos or commercial waste disposal complaints as public municipal tickets is subject to penalty under the Municipal Solid Waste By-laws.
             </label>
           </div>
-        )}
 
-        {/* Action Controls */}
-        <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-5">
-          {step > 1 ? (
-            <button
-              type="button"
-              onClick={() => setStep(step - 1)}
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+          <div className="pt-4 flex items-center justify-between">
+            <Button type="button" variant="subtle" size="md" onClick={handlePrevStep} disabled={submitting}>
+              &larr; Back
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={submitting}
+              icon={<ShieldCheck className="h-4 w-4 text-emerald-400" />}
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step < 4 ? (
-            <button
-              type="button"
-              onClick={handleNextStep}
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition-colors cursor-pointer"
-            >
-              <span>Next</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={submitting || !privacyConsent}
-              onClick={handleSubmit}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50 transition-all cursor-pointer"
-            >
-              {submitting ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Submit Verified Report</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </div>
+              Submit Geotagged Report &rarr;
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };

@@ -1,1 +1,92 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --civic-ink-950: #070B14;
+    --civic-ink-900: #0D1527;
+    --civic-ink-850: #121E36;
+    --civic-ink-800: #192A4A;
+    --civic-slate-700: #334155;
+    --civic-slate-600: #475569;
+    --civic-slate-500: #64748B;
+    --civic-slate-400: #94A3B8;
+    --civic-slate-300: #CBD5E1;
+    --civic-slate-200: #E2E8F0;
+    --civic-slate-100: #F1F5F9;
+    --civic-slate-50: #F8FAFC;
+    --civic-emerald-900: #064E3B;
+    --civic-emerald-700: #047857;
+    --civic-emerald-600: #059669;
+    --civic-emerald-500: #10B981;
+    --civic-emerald-100: #D1FAE5;
+    --civic-emerald-50: #ECFDF5;
+  }
+
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Tabular figures for operational metrics and case codes */
+.font-tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Hairline borders & refined elevation */
+.border-subtle {
+  border-color: rgba(226, 232, 240, 0.85);
+}
+
+.border-dark-subtle {
+  border-color: rgba(30, 41, 59, 0.7);
+}
+
+/* Accessible focus ring */
+*:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Subtle dot grid for editorial background texture */
+.bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+}
+
+.bg-grid-pattern-dark {
+  background-size: 28px 28px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+/* Custom discreet scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
