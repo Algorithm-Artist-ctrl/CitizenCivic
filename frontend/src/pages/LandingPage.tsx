@@ -17,6 +17,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import CivicSphere3D from '../components/CivicSphere3D';
+import { MotionContainer } from '../components/ui/MotionContainer';
 
 export const LandingPage: React.FC = () => {
   const { user } = useAuth();
@@ -115,7 +117,7 @@ export const LandingPage: React.FC = () => {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left Column: Mission, Value Proposition, Action */}
-            <div className="lg:col-span-7 space-y-6">
+            <MotionContainer delay={0.05} className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
                 <ShieldCheck className="h-4 w-4 text-emerald-700" />
                 <span>Verified Ground-Truth Civic Resolution</span>
@@ -172,10 +174,11 @@ export const LandingPage: React.FC = () => {
                   <div className="text-xs text-slate-500">Hotspot Prevention</div>
                 </div>
               </div>
-            </div>
+            </MotionContainer>
 
-            {/* Right Column: Ground-truth interactive verification artifact */}
-            <div className="lg:col-span-5">
+            {/* Right Column: Ground-truth interactive verification artifact & 3D Grid */}
+            <MotionContainer delay={0.15} className="lg:col-span-5 space-y-4">
+              <CivicSphere3D className="h-48 w-full" />
               <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg relative">
                 {/* Header of proof card */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -274,7 +277,7 @@ export const LandingPage: React.FC = () => {
                   <span className="font-mono text-emerald-700 font-medium">Verified by Citizen</span>
                 </div>
               </div>
-            </div>
+            </MotionContainer>
           </div>
         </div>
       </section>

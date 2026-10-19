@@ -1,0 +1,44 @@
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
+import { config } from '../config';
+
+const isNeon = config.databaseUrl.includes('neon.tech') || config.databaseUrl.includes('sslmode=require');
+
+export const pool = new Pool({
+  connectionString: config.databaseUrl,
+  ssl: isNeon ? { rejectUnauthorized: false } : undefined,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
+
+pool.on('error', (err) => {
+  console.error('[pg-pool] Unexpected error on idle client:', err.message);
+});
+
+export async function query<T extends QueryResultRow = any>(
+  text: string,
+  params?: any[]
+): Promise<QueryResult<T>> {
+  const start = Date.now();
+  const res = await pool.query<T>(text, params);
+  const duration = Date.now() - start;
+  if (process.env.DEBUG_SQL === 'true') {
+    console.log('[pg-query]', { text, duration: `${duration}ms`, rows: res.rowCount });
+  }
+  return res;
+}
+
+export async function getClient(): Promise<PoolClient> {
+  return await pool.connect();
+}
+
+export async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    const res = await query('SELECT NOW() AS current_time;');
+    console.log('[db] Connected to PostgreSQL at:', res.rows[0].current_time);
+    return true;
+  } catch (err: any) {
+    console.error('[db] Connection check failed:', err.message);
+    return false;
+  }
+}

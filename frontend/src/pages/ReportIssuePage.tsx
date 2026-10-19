@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Copy,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import apiClient from '../api/client';
 import ImageUpload from '../components/ImageUpload';
@@ -17,11 +18,21 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import type { Category } from '../types';
 
+interface AITriageData {
+  suggested_category: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  hazard_flags: string[];
+  action_summary: string;
+  duplicate_risk: string;
+}
+
 export const ReportIssuePage: React.FC = () => {
   const navigate = useNavigate();
 
   // Multi-step progress: 1: Category, 2: Location & Details, 3: Evidence, 4: Review
   const [step, setStep] = useState(1);
+  const [aiTriageLoading, setAiTriageLoading] = useState(false);
+  const [aiTriageResult, setAiTriageResult] = useState<AITriageData | null>(null);
 
   // Form State
   const [categories, setCategories] = useState<Category[]>([]);
@@ -83,6 +94,27 @@ export const ReportIssuePage: React.FC = () => {
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
+  };
+
+  const handleAITriage = async () => {
+    if (!description.trim()) {
+      setError('Please provide a description first to run AI triage.');
+      return;
+    }
+    setAiTriageLoading(true);
+    setError(null);
+    try {
+      const res = await apiClient.post<AITriageData>('/ai/triage', {
+        description,
+        landmark,
+      });
+      setAiTriageResult(res.data);
+    } catch (e: any) {
+      console.warn('AI Triage error:', e);
+      setError('AI triage temporarily unavailable. You can proceed manually.');
+    } finally {
+      setAiTriageLoading(false);
+    }
   };
 
   const handleNextStep = () => {
@@ -406,6 +438,52 @@ export const ReportIssuePage: React.FC = () => {
                 placeholder="Describe the nature of the waste accumulation, estimated volume, and any immediate hazard..."
                 className="w-full rounded-md border border-slate-300 py-2.5 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
               />
+
+              {/* AI Triage Trigger */}
+              <div className="pt-1.5 flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="subtle"
+                  size="sm"
+                  loading={aiTriageLoading}
+                  onClick={handleAITriage}
+                  icon={<Sparkles className="h-3.5 w-3.5 text-emerald-600" />}
+                >
+                  Run Civic AI Triage & Hazard Scan
+                </Button>
+                {aiTriageResult && (
+                  <span className="text-[11px] text-emerald-700 font-medium">
+                    ✓ AI analysis complete
+                  </span>
+                )}
+              </div>
+
+              {/* AI Triage Intelligence Card */}
+              {aiTriageResult && (
+                <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Civic AI Triage Report</span>
+                    </span>
+                    <Badge variant={aiTriageResult.priority === 'CRITICAL' ? 'red' : aiTriageResult.priority === 'HIGH' ? 'amber' : 'emerald'} size="xs">
+                      Priority: {aiTriageResult.priority}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-slate-700">
+                    <span className="font-semibold">Action Plan: </span>{aiTriageResult.action_summary}
+                  </p>
+                  {aiTriageResult.hazard_flags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {aiTriageResult.hazard_flags.map((h, i) => (
+                        <span key={i} className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800 border border-rose-200">
+                          ⚠ {h}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

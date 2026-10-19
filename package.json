@@ -2,12 +2,15 @@
   "name": "citizencivic-workspace",
   "version": "1.0.0",
   "private": true,
-  "description": "CitizenCivic — Real-World Civic Resolution Engine",
+  "description": "CitizenCivic — JavaScript/TypeScript-First Civic Resolution Engine",
   "scripts": {
-    "build": "npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist ./dist",
+    "build": "npm --prefix server install && npm --prefix server run build && npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist ./dist",
+    "build:server": "npm --prefix server install && npm --prefix server run build",
+    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "npm --prefix server start",
+    "server": "npm --prefix server run dev",
     "dev": "npm --prefix frontend run dev",
     "preview": "npm --prefix frontend run preview",
-    "backend": "cd backend && source venv/bin/activate && python manage.py runserver 127.0.0.1:8000",
-    "test": "cd backend && source venv/bin/activate && python manage.py test --keepdb"
+    "test": "npm --prefix server test"
   }
 }
