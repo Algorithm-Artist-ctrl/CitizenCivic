@@ -66,15 +66,25 @@ if (!fs.existsSync(config.uploadDir)) {
 }
 app.use('/media', express.static(config.uploadDir));
 
-// Root route (API info & health check)
-app.get('/', (_req: Request, res: Response) => {
-  res.json({
-    status: 'online',
-    app: 'CitizenCivic Node.js Express API',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-  });
-});
+// Locate frontend build directory if present
+const candidateDistDirs = [
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../frontend/dist'),
+];
+
+let frontendDistPath: string | null = null;
+for (const dir of candidateDistDirs) {
+  if (fs.existsSync(path.join(dir, 'index.html'))) {
+    frontendDistPath = dir;
+    break;
+  }
+}
+
+if (frontendDistPath) {
+  app.use(express.static(frontendDistPath, { index: false }));
+}
 
 // Health routes
 app.use('/health', healthRoutes);
@@ -86,6 +96,37 @@ app.use('/api/v1/areas', areasRoutes);
 app.use('/api/v1/cases', casesRoutes);
 app.use('/api/v1/rewards', rewardsRoutes);
 app.use('/api/v1/ai', aiRoutes);
+
+// Root route (API info & health check, or frontend index if browser request)
+app.get('/', (req: Request, res: Response) => {
+  const isHtmlNavigation = Boolean(
+    req.headers.accept && req.headers.accept.includes('text/html')
+  );
+  if (isHtmlNavigation && frontendDistPath) {
+    return res.sendFile(path.join(frontendDistPath, 'index.html'));
+  }
+  res.json({
+    status: 'online',
+    app: 'CitizenCivic Node.js Express API',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Client-side SPA routing fallback for non-API/non-media routes
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  if (
+    req.path.startsWith('/api') ||
+    req.path.startsWith('/media') ||
+    req.path.startsWith('/health')
+  ) {
+    return next();
+  }
+  if (frontendDistPath) {
+    return res.sendFile(path.join(frontendDistPath, 'index.html'));
+  }
+  next();
+});
 
 // 404 Handler
 app.use((req: Request, res: Response) => {

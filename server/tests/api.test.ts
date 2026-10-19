@@ -49,17 +49,39 @@ afterAll(async () => {
 });
 
 describe('1. Health & Root Endpoints', () => {
-  it('GET / should return online status', async () => {
+  it('GET / should return online status for API clients', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('online');
     expect(res.body.app).toContain('CitizenCivic');
   });
 
+  it('GET / with Accept: text/html should serve SPA index.html for browsers', async () => {
+    const res = await request(app)
+      .get('/')
+      .set('Accept', 'text/html,application/xhtml+xml');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<!doctype html>');
+  });
+
+  it('GET /login with Accept: text/html should fallback to SPA index.html', async () => {
+    const res = await request(app)
+      .get('/login')
+      .set('Accept', 'text/html,application/xhtml+xml');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<!doctype html>');
+  });
+
   it('GET /health should return connected database status', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body.database).toBe('connected');
+  });
+
+  it('GET /api/v1/nonexistent should return 404 JSON', async () => {
+    const res = await request(app).get('/api/v1/nonexistent');
+    expect(res.status).toBe(404);
+    expect(res.body.detail).toContain('Not Found');
   });
 });
 

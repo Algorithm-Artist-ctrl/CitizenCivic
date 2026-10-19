@@ -4,7 +4,7 @@
   "private": true,
   "description": "CitizenCivic — JavaScript/TypeScript-First Civic Resolution Engine",
   "scripts": {
-    "build": "npm --prefix server install && npm --prefix server run build && npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist ./dist",
+    "build": "npm --prefix server install && npm --prefix server run build && npm --prefix frontend install && npm --prefix frontend run build",
     "build:server": "npm --prefix server install && npm --prefix server run build",
     "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
     "start": "npm --prefix server start",

@@ -1,3 +1,12 @@
+# ==============================================================================
+# CitizenCivic — Render Deployment Blueprint
+#
+# Supports TWO deployment patterns:
+# 1. Dual-Service (Default below): Node.js Web Service + React Static Site
+# 2. Unified Single-Service: Set Root Directory to empty, Build Command to
+#    "npm run build", and Start Command to "npm start" (Express serves both)
+# ==============================================================================
+
 services:
   # Node.js + Express Backend Dynamic Web Service
   - type: web
