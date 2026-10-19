@@ -82,7 +82,7 @@ ROOT_URLCONF = 'citizencivic.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -200,12 +200,18 @@ FRONTEND_DIST_DIR = BASE_DIR.parent / 'frontend' / 'dist'
 if not FRONTEND_DIST_DIR.exists():
     FRONTEND_DIST_DIR = BASE_DIR.parent / 'dist'
 
-# WhiteNoise serves SPA assets (e.g. /assets/..., /favicon.svg) from the root URL
-WHITENOISE_ROOT = FRONTEND_DIST_DIR if FRONTEND_DIST_DIR.exists() else None
-
+STATIC_DIR = BASE_DIR / 'static'
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [FRONTEND_DIST_DIR] if FRONTEND_DIST_DIR.exists() else []
+
+STATICFILES_DIRS = []
+if STATIC_DIR.exists():
+    STATICFILES_DIRS.append(STATIC_DIR)
+if FRONTEND_DIST_DIR.exists() and FRONTEND_DIST_DIR != STATIC_DIR and FRONTEND_DIST_DIR not in STATICFILES_DIRS:
+    STATICFILES_DIRS.append(FRONTEND_DIST_DIR)
+
+# WhiteNoise serves SPA assets (e.g. /assets/..., /favicon.svg) from the root URL
+WHITENOISE_ROOT = STATIC_DIR if STATIC_DIR.exists() else (FRONTEND_DIST_DIR if FRONTEND_DIST_DIR.exists() else None)
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'

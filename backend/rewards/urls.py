@@ -2,6 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from .views import LeaderboardView, MyRewardsView, RewardConfigViewSet
 
+app_name = 'rewards'
+
 router = DefaultRouter()
 router.register(r'configs', RewardConfigViewSet, basename='reward-config')
 
