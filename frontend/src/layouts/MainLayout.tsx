@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   Award,
   Landmark,
+  Bell,
+  ChevronDown,
+  Compass,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -23,6 +26,7 @@ export const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -41,83 +45,96 @@ export const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased">
-      {/* Main Navigation Header: ~80px Tall Premium Civic Shell */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xs min-h-[76px] sm:min-h-[80px] flex items-center">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col bg-[#f8fafc] text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased">
+      {/* Main Navigation Header: Clean White with 1px border */}
+      <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-md min-h-[72px] sm:min-h-[76px] flex items-center shadow-xs">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           {/* Logo & Platform Name */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-950 text-white shadow-2xs group-hover:bg-slate-800 transition-colors">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-950 text-white shadow-xs group-hover:bg-slate-800 transition-colors">
               <ShieldAlert className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-slate-950">
                 Citizen<span className="text-emerald-700">Civic</span>
               </span>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-medium">
                 Civic Accountability Platform
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1.5 text-[15px] font-medium text-slate-700">
+          <nav className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-700">
             {user ? (
               <>
                 <Link
                   to="/dashboard"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
                     isActive('/dashboard') || isActive('/')
-                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
-                      : 'hover:bg-slate-100 text-slate-800'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <LayoutDashboard className="h-4 w-4" />
+                  <LayoutDashboard className="h-3.5 w-3.5" />
                   <span>{t('nav.dashboard', 'Dashboard')}</span>
                 </Link>
 
                 <Link
-                  to="/cases"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/cases')
-                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
-                      : 'hover:bg-slate-100 text-slate-800'
+                  to="/cases?scope=mine"
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/cases') && location.search.includes('scope=mine')
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <ClipboardList className="h-4 w-4" />
+                  <ClipboardList className="h-3.5 w-3.5" />
                   <span>{user.role === 'CITIZEN' ? t('nav.cases', 'My Reports') : t('cases.allCases', 'Cases Directory')}</span>
                 </Link>
 
                 <Link
-                  to="/rewards"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/rewards')
-                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
-                      : 'hover:bg-slate-100 text-slate-800'
+                  to="/cases"
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/cases') && !location.search.includes('scope=mine')
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <Award className="h-4 w-4" />
+                  <Compass className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>{t('nav.publicCases', 'Public Cases')}</span>
+                </Link>
+
+                <Link
+                  to="/rewards"
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/rewards')
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <Award className="h-3.5 w-3.5" />
                   <span>{t('nav.karma', 'Community Karma')}</span>
                 </Link>
 
                 <Link
                   to="/municipal"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
                     isActive('/municipal')
-                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
-                      : 'hover:bg-slate-100 text-slate-800'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <Landmark className="h-4 w-4" />
+                  <Landmark className="h-3.5 w-3.5" />
                   <span>{t('nav.municipal', 'Municipal Data')}</span>
+                  <span className="text-[9px] font-mono uppercase bg-rose-500 text-white px-1.5 py-0.2 rounded-full font-bold">New</span>
                 </Link>
 
                 {user.role === 'CITIZEN' && (
                   <Link
                     to="/report"
-                    className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-4 py-1.5 text-[15px] font-semibold text-white shadow-2xs hover:bg-emerald-800 transition-colors ml-2"
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-800 active:scale-95 transition-all ml-1.5"
                   >
-                    <PlusCircle className="h-4 w-4" />
+                    <PlusCircle className="h-3.5 w-3.5" />
                     <span>{t('nav.report', 'Report Issue')}</span>
                   </Link>
                 )}
@@ -126,8 +143,8 @@ export const MainLayout: React.FC = () => {
               <>
                 <Link
                   to="/"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/') ? 'bg-slate-900 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
                   <span>{t('nav.overview', 'Overview')}</span>
@@ -135,8 +152,8 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/cases"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/cases') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/cases') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs' : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
                   <span>{t('nav.publicCases', 'Public Cases')}</span>
@@ -144,8 +161,8 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/rewards"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/rewards') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/rewards') ? 'bg-slate-900 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
                   <span>{t('nav.karma', 'Community Karma')}</span>
@@ -153,51 +170,96 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/municipal"
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
-                    isActive('/municipal') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
+                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    isActive('/municipal') ? 'bg-slate-900 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'
                   }`}
                 >
-                  <Landmark className="h-4 w-4" />
+                  <Landmark className="h-3.5 w-3.5" />
                   <span>{t('nav.municipal', 'Municipal Data')}</span>
                 </Link>
               </>
             )}
           </nav>
 
-          {/* Right Header Controls: Language & Account */}
+          {/* Right Header Controls: Language, Notification Bell & Account */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
 
+            {/* Notification Bell */}
+            <div className="relative p-1.5 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer" title="Notifications">
+              <Bell className="h-4 w-4" />
+              <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                1
+              </span>
+            </div>
+
             {user ? (
-              <div className="hidden sm:flex items-center gap-3 border-l border-slate-200 pl-3">
-                <div className="flex flex-col text-right">
-                  <span className="text-xs font-semibold text-slate-900 leading-tight">
-                    {user.display_name}
-                  </span>
-                  <span className="text-[10px] font-mono font-medium text-emerald-800 uppercase tracking-wider">
-                    {user.role}
-                  </span>
-                </div>
+              <div className="relative">
                 <button
-                  onClick={handleLogout}
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
-                  title={t('nav.logout', 'Logout')}
-                  aria-label="Logout"
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer group focus:outline-hidden"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <div className="h-8 w-8 rounded-full overflow-hidden border border-emerald-400 bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-800">
+                    {user.display_name ? user.display_name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-slate-900 leading-tight">
+                      {user.display_name}
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-700 uppercase tracking-wider">
+                      {user.role}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 transition-colors" />
                 </button>
+
+                {/* Dropdown Menu */}
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white p-1.5 shadow-lg border border-slate-200 z-50 text-xs">
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <p className="font-bold text-slate-900 truncate">{user.display_name}</p>
+                      <p className="text-[10px] font-mono text-slate-400 truncate">{user.email}</p>
+                    </div>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/rewards"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Community Karma
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50 transition-colors text-left font-semibold"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      <span>{t('nav.logout', 'Logout')}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="rounded-md px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                 >
                   {t('nav.login', 'Sign In')}
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
+                  className="rounded-lg bg-slate-950 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition-colors"
                 >
                   {t('nav.register', 'Register')}
                 </Link>
