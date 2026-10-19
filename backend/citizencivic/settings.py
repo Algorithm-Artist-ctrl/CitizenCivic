@@ -19,9 +19,13 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com').split(',')
+    for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
     if h.strip()
 ]
+
+for default_host in ['localhost', '127.0.0.1', '.onrender.com', 'testserver']:
+    if default_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(default_host)
 
 # Support Render external hostname if provided
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -192,8 +196,16 @@ LANGUAGES = [
 
 # ---------- Static & Media ----------
 
+FRONTEND_DIST_DIR = BASE_DIR.parent / 'frontend' / 'dist'
+if not FRONTEND_DIST_DIR.exists():
+    FRONTEND_DIST_DIR = BASE_DIR.parent / 'dist'
+
+# WhiteNoise serves SPA assets (e.g. /assets/..., /favicon.svg) from the root URL
+WHITENOISE_ROOT = FRONTEND_DIST_DIR if FRONTEND_DIST_DIR.exists() else None
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [FRONTEND_DIST_DIR] if FRONTEND_DIST_DIR.exists() else []
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
