@@ -20,6 +20,7 @@ export interface Category {
   name_en: string;
   name_hi: string;
   slug: string;
+  description?: string;
 }
 
 export interface ServiceArea {

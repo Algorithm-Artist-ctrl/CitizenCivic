@@ -43,10 +43,17 @@ export const RewardsPage: React.FC = () => {
         user ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 0, recent_entries: [] } })) : Promise.resolve({ data: { total_points: 0, recent_entries: [] } }),
       ]);
 
-      setLeaderboard(leaderboardRes.data || []);
-      if (myPointsRes.data) {
-        setTotalPoints(myPointsRes.data.total_points || 0);
-        setRecentEntries(myPointsRes.data.recent_entries || []);
+      const lbData: any = leaderboardRes.data;
+      const lbList = Array.isArray(lbData) ? lbData : (Array.isArray(lbData?.leaderboard) ? lbData.leaderboard : []);
+      setLeaderboard(lbList);
+
+      const mpData: any = myPointsRes.data;
+      if (mpData) {
+        setTotalPoints(mpData.total_points || 0);
+        const entries = Array.isArray(mpData.recent_entries)
+          ? mpData.recent_entries
+          : (Array.isArray(mpData.history) ? mpData.history : []);
+        setRecentEntries(entries);
       }
     } catch (err) {
       console.error('Error fetching rewards data', err);

@@ -69,23 +69,9 @@ export const App: React.FC = () => {
                 }
               />
 
-              {/* Cases Directory & Auditing */}
-              <Route
-                path="/cases"
-                element={
-                  <ProtectedRoute>
-                    <CaseListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/cases/:id"
-                element={
-                  <ProtectedRoute>
-                    <CaseDetailPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Cases Directory & Auditing (Publicly Transparent) */}
+              <Route path="/cases" element={<CaseListPage />} />
+              <Route path="/cases/:id" element={<CaseDetailPage />} />
 
               {/* Community Karma & Leaderboard */}
               <Route path="/rewards" element={<RewardsPage />} />

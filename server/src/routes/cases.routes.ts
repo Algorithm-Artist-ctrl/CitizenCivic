@@ -127,8 +127,8 @@ router.get('/analytics', authenticateToken, async (_req: Request, res: Response)
 });
 
 // GET /api/v1/cases/
-router.get('/', authenticateToken, async (req: Request, res: Response) => {
-  const user = req.user!;
+router.get('/', optionalAuth, async (req: Request, res: Response) => {
+  const user = req.user;
   const page = parseInt(String(req.query.page || '1'), 10);
   const pageSize = parseInt(String(req.query.page_size || '20'), 10);
   const offset = (page - 1) * pageSize;
@@ -138,12 +138,15 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   let paramIdx = 1;
 
   // RBAC Filter
-  if (user.role === 'CITIZEN') {
+  if (user && user.role === 'CITIZEN' && req.query.scope === 'mine') {
     conditions.push(`c.primary_reporter_id = $${paramIdx++}`);
     params.push(user.id);
-  } else if (user.role === 'OPERATOR') {
+  } else if (user && user.role === 'OPERATOR' && req.query.scope === 'mine') {
     conditions.push(`(c.assigned_operator_id = $${paramIdx++} OR c.assigned_operator_id IS NULL)`);
     params.push(user.id);
+  } else if (!user || user.role === 'CITIZEN') {
+    // Public directory shows non-draft cases
+    conditions.push(`c.status != 'DRAFT'`);
   }
   // MODERATOR, SUPERVISOR, ADMIN see all
 
@@ -359,7 +362,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // GET /api/v1/cases/:id/ — Full detail with timeline, evidence, observations
-router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
   const caseId = req.params.id;
 
   try {
@@ -386,6 +389,12 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     }
 
     const c = caseRes.rows[0];
+
+    // Restrict unpublished draft access
+    if (c.status === 'DRAFT' && (!req.user || req.user.id !== c.primary_reporter_id)) {
+      res.status(404).json({ detail: 'Case not found.' });
+      return;
+    }
 
     // Fetch Transitions
     const transRes = await query(
