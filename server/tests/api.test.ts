@@ -444,3 +444,76 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
     }
   });
 });
+
+describe('7. Official Indian Municipal Data & Role Access', () => {
+  it('GET /api/v1/municipal/states should return official states list', async () => {
+    const res = await request(app).get('/api/v1/municipal/states');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.states)).toBe(true);
+    expect(res.body.states.length).toBeGreaterThanOrEqual(8);
+    const ka = res.body.states.find((s: any) => s.code === 'KA');
+    expect(ka).toBeDefined();
+    expect(ka.capital).toBe('Bengaluru');
+  });
+
+  it('GET /api/v1/municipal/ulbs should return ULBs with financial and sanitation metrics', async () => {
+    const res = await request(app).get('/api/v1/municipal/ulbs?state=KA');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.ulbs)).toBe(true);
+    const bbmp = res.body.ulbs.find((u: any) => u.code === 'ULB-KA-BBMP');
+    expect(bbmp).toBeDefined();
+    expect(bbmp.total_revenue_cr).toBeGreaterThan(0);
+    expect(bbmp.swachh_rank).toBeDefined();
+  });
+
+  it('GET /api/v1/municipal/ulbs/:id should return complete municipal dossier with provenance', async () => {
+    const res = await request(app).get('/api/v1/municipal/ulbs/ULB-MP-IMC');
+    expect(res.status).toBe(200);
+    expect(res.body.ulb).toBeDefined();
+    expect(res.body.ulb.name).toContain('Indore');
+    expect(Array.isArray(res.body.observations)).toBe(true);
+    expect(res.body.observations.length).toBeGreaterThan(0);
+
+    const firstObs = res.body.observations[0];
+    expect(firstObs.source_publisher).toBeDefined();
+    expect(firstObs.source_url).toBeDefined();
+    expect(firstObs.source_license).toBeDefined();
+  });
+
+  it('GET /api/v1/municipal/compare should benchmark multiple corporations', async () => {
+    const res = await request(app).get('/api/v1/municipal/compare?ids=ULB-KA-BBMP,ULB-MH-BMC,ULB-MP-IMC');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.comparison)).toBe(true);
+    expect(res.body.comparison.length).toBe(3);
+  });
+
+  it('GET /api/v1/municipal/sources should return data sources registry', async () => {
+    const res = await request(app).get('/api/v1/municipal/sources');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.sources)).toBe(true);
+    const cityFinance = res.body.sources.find((s: any) => s.id === 'CITYFINANCE_MOHUA');
+    expect(cityFinance).toBeDefined();
+  });
+
+  it('GET /api/v1/rewards/leaderboard should allow officers to view citizens leaderboard without exposing private data', async () => {
+    // Authenticate as officer or test user
+    const res = await request(app)
+      .get('/api/v1/rewards/leaderboard?type=citizen')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('citizen');
+    expect(Array.isArray(res.body.leaderboard)).toBe(true);
+    if (res.body.leaderboard.length > 0) {
+      const entry = res.body.leaderboard[0];
+      expect(entry.rank).toBeDefined();
+      expect(entry.display_name).toBeDefined();
+      expect(entry.total_points).toBeDefined();
+      // Ensure private credentials are never exposed
+      expect(entry.password).toBeUndefined();
+      expect(entry.email).toBeUndefined();
+      expect(entry.phone_hash).toBeUndefined();
+    }
+  });
+});
+

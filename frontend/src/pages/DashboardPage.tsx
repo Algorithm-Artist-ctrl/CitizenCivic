@@ -13,6 +13,7 @@ import {
   FileCheck,
   Wrench,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -37,6 +38,7 @@ export const DashboardPage: React.FC = () => {
   const [nearbyCases, setNearbyCases] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [points, setPoints] = useState<number>(0);
+  const [topCitizens, setTopCitizens] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,15 +67,20 @@ export const DashboardPage: React.FC = () => {
         }
       }
 
-      // 3. If supervisor/moderator/operator/admin, fetch real operational analytics
+      // 3. If supervisor/moderator/operator/admin, fetch real operational analytics + top citizens
       if (['SUPERVISOR', 'MODERATOR', 'ADMIN', 'OPERATOR'].includes(user?.role || '')) {
         try {
-          const analyticsRes = await apiClient.get<AnalyticsData>('/cases/analytics/').catch(() => ({ data: null }));
+          const [analyticsRes, topCitizensRes] = await Promise.all([
+            apiClient.get<AnalyticsData>('/cases/analytics/').catch(() => ({ data: null })),
+            apiClient.get('/rewards/leaderboard?type=citizen').catch(() => ({ data: { leaderboard: [] } })),
+          ]);
           if (analyticsRes.data) {
             setAnalytics(analyticsRes.data);
           }
+          const lb = topCitizensRes.data?.leaderboard || (Array.isArray(topCitizensRes.data) ? topCitizensRes.data : []);
+          setTopCitizens(lb.slice(0, 5));
         } catch (e) {
-          console.error('Failed to load analytics', e);
+          console.error('Failed to load analytics or top citizens', e);
         }
       }
     } catch (err) {
@@ -141,13 +148,29 @@ export const DashboardPage: React.FC = () => {
           )}
 
           {['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user?.role || '') && (
-            <Link
-              to="/cases"
-              className="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
-            >
-              <Layers className="h-4 w-4 text-emerald-400" />
-              <span>{t('dashboard.allCasesDirectory', 'All Cases Directory')}</span>
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/rewards?tab=citizen"
+                className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors"
+              >
+                <Users className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{t('nav.citizensLeaderboard', 'Citizen Leaderboard')}</span>
+              </Link>
+              <Link
+                to="/rewards?tab=officer"
+                className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors"
+              >
+                <Award className="h-3.5 w-3.5 text-blue-600" />
+                <span>{t('nav.officerLeaderboard', 'Officer Standings')}</span>
+              </Link>
+              <Link
+                to="/cases"
+                className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
+              >
+                <Layers className="h-3.5 w-3.5 text-emerald-400" />
+                <span>{t('dashboard.allCasesDirectory', 'Case Queue')}</span>
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -401,41 +424,117 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Column: Nearby Issues Feed / Community Karma (4 cols) */}
+        {/* Right Column: Nearby Issues Feed for Citizen / Top Sentinels for Officers (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Nearby Issues Radar */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="text-xs font-mono uppercase tracking-wider text-slate-600 font-bold flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-emerald-700" />
-                <span>{t('dashboard.nearbyRadar', 'Nearby Field Radar')}</span>
-              </h3>
-              <span className="text-[10px] font-mono text-slate-400">{t('dashboard.radius', 'Radius: 1000m')}</span>
-            </div>
+          {/* For Citizens: Nearby Issues Radar */}
+          {user?.role === 'CITIZEN' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-slate-600 font-bold flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-700" />
+                  <span>{t('dashboard.nearbyRadar', 'Nearby Field Radar')}</span>
+                </h3>
+                <span className="text-[10px] font-mono text-slate-400">{t('dashboard.radius', 'Radius: 1000m')}</span>
+              </div>
 
-            {nearbyCases.length === 0 ? (
-              <div className="rounded-lg border border-slate-200 bg-white p-4 text-center text-xs text-slate-500">
-                {t('dashboard.noNearby', 'No active neighbor reports detected in this grid radius.')}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden">
-                {nearbyCases.map((nb, i) => (
-                  <div key={nb.id || i} className="p-3 hover:bg-slate-50 transition-colors space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-bold text-slate-900">
-                        {nb.case_number}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        {nb.distance_meters ? t('dashboard.away', { meters: Math.round(nb.distance_meters) }) : t('dashboard.nearby', 'Nearby')}
-                      </span>
+              {nearbyCases.length === 0 ? (
+                <div className="rounded-lg border border-slate-200 bg-white p-4 text-center text-xs text-slate-500">
+                  {t('dashboard.noNearby', 'No active neighbor reports detected in this grid radius.')}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden">
+                  {nearbyCases.map((nb, i) => (
+                    <div key={nb.id || i} className="p-3 hover:bg-slate-50 transition-colors space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] font-bold text-slate-900">
+                          {nb.case_number}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {nb.distance_meters ? t('dashboard.away', { meters: Math.round(nb.distance_meters) }) : t('dashboard.nearby', 'Nearby')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 truncate">{nb.description}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{nb.landmark}</p>
                     </div>
-                    <p className="text-xs text-slate-700 truncate">{nb.description}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{nb.landmark}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* For Officers: Top Citizen Sentinels in Jurisdiction */}
+          {['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user?.role || '') && (
+            <>
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-emerald-700" />
+                    <h3 className="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">
+                      {t('dashboard.topCitizenSentinels') || 'Top Citizen Sentinels'}
+                    </h3>
                   </div>
-                ))}
+                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                    Verified
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {t('dashboard.topCitizensIntro') || 'Citizens actively monitoring on-ground conditions and auditing municipal cleanups.'}
+                </p>
+
+                {topCitizens.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No community citizen sentinels recorded yet.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {topCitizens.map((c, idx) => (
+                      <div key={c.user_id || idx} className="py-2.5 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="font-mono font-bold text-slate-400 text-[11px]">
+                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                          </span>
+                          <span className="font-medium text-slate-800 truncate">{c.display_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-mono text-xs shrink-0">
+                          <span className="text-slate-500 text-[11px]">{c.verified_reports} reports</span>
+                          <span className="font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">
+                            {c.total_points} pts
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-100">
+                  <Link
+                    to="/rewards?tab=citizen"
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center justify-between group"
+                  >
+                    <span>{t('dashboard.viewAllCitizenLeaderboard') || 'View Full Citizen Leaderboard'}</span>
+                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Officer Directives & Performance Standings Card */}
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                  <ShieldCheck className="h-4 w-4 text-blue-700" />
+                  <span>{t('dashboard.officerDirectivesTitle') || 'Operational Performance'}</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {t('dashboard.officerDirectivesDesc') || 'Review peer turnaround benchmarks, SLA acknowledgement rates, and verified closure metrics.'}
+                </p>
+                <Link
+                  to="/rewards?tab=officer"
+                  className="text-xs font-semibold text-blue-700 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <span>{t('dashboard.viewOfficerLeaderboard') || 'View Officer Standings'}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </>
+          )}
 
           {/* Quick Action Card for Citizen */}
           {user?.role === 'CITIZEN' && (

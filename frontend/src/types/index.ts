@@ -88,3 +88,85 @@ export interface AuthTokens {
   access: string;
   refresh: string;
 }
+
+export interface MunicipalState {
+  code: string;
+  name: string;
+  name_hi: string;
+  capital: string;
+  region: string;
+  ulb_count?: number;
+}
+
+export interface MunicipalULB {
+  id: string;
+  code: string;
+  name: string;
+  name_hi: string;
+  ulb_type: string;
+  state_code: string;
+  state_name?: string;
+  state_name_hi?: string;
+  headquarters: string;
+  population_census_2011: number;
+  population_reference_year: number;
+  area_sq_km: number;
+  latitude: number;
+  longitude: number;
+  official_website: string;
+  total_revenue_cr?: number;
+  total_expenditure_cr?: number;
+  own_source_revenue_cr?: number;
+  per_capita_expenditure?: number;
+  swachh_rank?: number;
+  swachh_score?: number;
+  gfc_stars?: string;
+  odf_status?: string;
+}
+
+export interface MunicipalObservation {
+  id: string;
+  metric_id: string;
+  metric_category: string;
+  metric_name: string;
+  metric_name_hi: string;
+  metric_definition: string;
+  metric_methodology: string;
+  higher_is_better: boolean | null;
+  value_numeric: number | null;
+  value_text: string | null;
+  unit: string;
+  reporting_period: string;
+  assessment_year: number;
+  data_quality_status: string;
+  source_id: string;
+  source_publisher: string;
+  source_dataset_title: string;
+  source_url: string;
+  source_license: string;
+  source_documentation: string;
+  recorded_at: string;
+}
+
+export interface MunicipalDataSource {
+  id: string;
+  publisher: string;
+  dataset_title: string;
+  source_url: string;
+  access_method: string;
+  license: string;
+  documentation: string;
+  retrieved_at: string;
+}
+
+export interface MunicipalMetric {
+  id: string;
+  category: string;
+  name: string;
+  name_hi: string;
+  unit: string;
+  definition: string;
+  methodology: string;
+  higher_is_better: boolean | null;
+}
+

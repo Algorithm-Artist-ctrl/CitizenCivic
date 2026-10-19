@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Award,
@@ -9,6 +9,7 @@ import {
   Users,
   MapPin,
   Filter,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -52,8 +53,30 @@ interface LedgerEntry {
 export const RewardsPage: React.FC = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [tab, setTab] = useState<'citizen' | 'officer'>('citizen');
+  const tabParam = searchParams.get('tab');
+  const [tab, setTab] = useState<'citizen' | 'officer'>(
+    tabParam === 'officer' ? 'officer' : 'citizen'
+  );
+
+  const isOfficer = !!(user && ['OPERATOR', 'MODERATOR', 'SUPERVISOR', 'ADMIN'].includes(user.role));
+
+  useEffect(() => {
+    if (tabParam === 'officer' || tabParam === 'citizen') {
+      setTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (newTab: 'citizen' | 'officer') => {
+    setTab(newTab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newTab);
+      return next;
+    });
+  };
+
   const [serviceAreas, setServiceAreas] = useState<ServiceAreaItem[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string>('');
   const [areaDisplayName, setAreaDisplayName] = useState<string>('All Service Areas');
@@ -165,43 +188,76 @@ export const RewardsPage: React.FC = () => {
           </p>
         </div>
 
-        <Link
-          to="/report"
-          className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
-        >
-          <PlusCircle className="h-4 w-4 text-emerald-400" />
-          <span>{t('rewards.reportIssue') || 'Report Issue (+10 Pts)'}</span>
-        </Link>
+        {isOfficer ? (
+          <Link
+            to="/cases"
+            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
+          >
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <span>{t('rewards.viewFieldDirectory') || 'View Field Directory'}</span>
+          </Link>
+        ) : (
+          <Link
+            to="/report"
+            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors"
+          >
+            <PlusCircle className="h-4 w-4 text-emerald-400" />
+            <span>{t('rewards.reportIssue') || 'Report Issue (+10 Pts)'}</span>
+          </Link>
+        )}
       </div>
 
       {/* User Standing & Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-xl border border-slate-900 bg-slate-950 text-white p-6 shadow-md flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-              {t('rewards.myScore') || 'Personal Balance'}
-            </span>
-            <div className="mt-2 text-4xl font-extrabold font-tabular text-white font-mono">
-              {totalPoints} <span className="text-sm font-normal text-slate-400 font-sans">pts</span>
+        {isOfficer && user ? (
+          <div className="rounded-xl border border-slate-900 bg-slate-950 text-white p-6 shadow-md flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
+                {t('rewards.officerStanding') || 'Municipal Field Standing'}
+              </span>
+              <div className="mt-2 text-3xl font-extrabold font-tabular text-white font-mono flex items-center gap-2">
+                {user.role} <span className="text-xs font-normal text-slate-400 font-sans">Active Staff</span>
+              </div>
+              <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-slate-300">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <span>{user.display_name} • Operational Roster</span>
+              </div>
             </div>
-            {!user ? (
-              <div className="mt-2 text-xs text-slate-400">
-                <Link to="/login" className="text-emerald-400 underline hover:text-emerald-300 font-medium">
-                  {t('nav.login') || 'Sign in'}
-                </Link>{' '}
-                to view and track your verified points
-              </div>
-            ) : (
-              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-300">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>{currentTier.title}</span>
-              </div>
-            )}
+            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Jurisdiction oversight active</span>
+              <Link to="/cases" className="text-emerald-400 hover:text-emerald-300 underline font-medium">
+                Open Case Queue &rarr;
+              </Link>
+            </div>
           </div>
-          <p className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400">
-            {user ? currentTier.next : 'Verified civic reporting ledger'}
-          </p>
-        </div>
+        ) : (
+          <div className="rounded-xl border border-slate-900 bg-slate-950 text-white p-6 shadow-md flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-emerald-400">
+                {t('rewards.myScore') || 'Personal Balance'}
+              </span>
+              <div className="mt-2 text-4xl font-extrabold font-tabular text-white font-mono">
+                {totalPoints} <span className="text-sm font-normal text-slate-400 font-sans">pts</span>
+              </div>
+              {!user ? (
+                <div className="mt-2 text-xs text-slate-400">
+                  <Link to="/login" className="text-emerald-400 underline hover:text-emerald-300 font-medium">
+                    {t('nav.login') || 'Sign in'}
+                  </Link>{' '}
+                  to view and track your verified points
+                </div>
+              ) : (
+                <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-300">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>{currentTier.title}</span>
+                </div>
+              )}
+            </div>
+            <p className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400">
+              {user ? currentTier.next : 'Verified civic reporting ledger'}
+            </p>
+          </div>
+        )}
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-3">
           <span className="text-xs font-mono uppercase tracking-wider text-slate-500">
@@ -234,55 +290,144 @@ export const RewardsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Left = Activity History, Right = Dual Leaderboard */}
+      {/* Main Grid: Left = Activity History / Directives, Right = Dual Leaderboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: User's Recent Ledger Entries */}
+        {/* Left Column: Directives for Officers OR Activity History for Citizens */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 font-heading">
-              <Clock className="h-4 w-4 text-emerald-700" />
-              <span>{t('rewards.historyTitle') || 'Your Verified Karma Activity'}</span>
-            </h2>
-            <span className="text-xs text-slate-500">Latest 20 records</span>
-          </div>
+          {isOfficer && user ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 font-heading">
+                  <ShieldCheck className="h-4 w-4 text-emerald-700" />
+                  <span>{t('rewards.officerGuidelinesTitle') || 'Oversight & Verification Directives'}</span>
+                </h2>
+                <span className="text-xs font-mono text-emerald-800 font-semibold">{user.role} Protocols</span>
+              </div>
 
-          {recentEntries.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center space-y-3">
-              <Award className="mx-auto h-8 w-8 text-slate-300" />
-              <h3 className="text-sm font-bold text-slate-800 font-heading">
-                {t('rewards.noTransactions') || 'No karma points recorded yet'}
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Submit your first verified civic report or audit an existing case to begin building your community standing.
-              </p>
-              <Link
-                to="/report"
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800"
-              >
-                {t('landing.reportIssue') || 'Report an Issue'}
-              </Link>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden">
-              {recentEntries.map((entry) => (
-                <div key={entry.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4 text-xs text-slate-700">
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                    1
+                  </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-slate-900">{entry.reason}</p>
-                    <p className="text-[11px] font-mono text-slate-400">
-                      {new Date(entry.created_at).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <h4 className="font-semibold text-slate-900 font-heading">
+                      {t('rewards.guideline1Title') || 'Photographic Ground Truth'}
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      {t('rewards.guideline1Desc') || 'Every resolution reported by an operator must include clear on-site photographs proving the hazard or waste has been cleared before case closure.'}
                     </p>
                   </div>
-                  <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
-                    +{entry.points} pts
-                  </span>
                 </div>
-              ))}
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                    2
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-slate-900 font-heading">
+                      {t('rewards.guideline2Title') || 'Turnaround SLA (< 4.0 Hours)'}
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      {t('rewards.guideline2Desc') || 'Forwarded tickets require prompt acknowledgement. Operators maintaining fast turnaround rates receive higher standing in the performance rankings.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center shrink-0 text-xs">
+                    3
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-slate-900 font-heading">
+                      {t('rewards.guideline3Title') || 'Dispute & Reopen Accountability'}
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      {t('rewards.guideline3Desc') || 'Citizens possess dispute rights. If a closed report is challenged with contrary ground evidence, supervisory review is immediately triggered.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500 font-mono">Civic Integrity Protocol v2.4</span>
+                  <Link to="/cases" className="text-xs font-semibold text-slate-900 hover:text-emerald-700 flex items-center gap-1">
+                    <span>Manage Assigned Queue</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+
+              {recentEntries.length > 0 && (
+                <div className="pt-2">
+                  <div className="text-xs font-bold text-slate-700 mb-2 font-mono uppercase tracking-wider">
+                    Your Personal Karma Ledger
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden">
+                    {recentEntries.map((entry) => (
+                      <div key={entry.id} className="p-3 flex items-center justify-between hover:bg-slate-50/50">
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-semibold text-slate-900">{entry.reason}</p>
+                          <p className="text-[10px] font-mono text-slate-400">
+                            {new Date(entry.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          +{entry.points} pts
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 font-heading">
+                  <Clock className="h-4 w-4 text-emerald-700" />
+                  <span>{t('rewards.historyTitle') || 'Your Verified Karma Activity'}</span>
+                </h2>
+                <span className="text-xs text-slate-500">Latest 20 records</span>
+              </div>
+
+              {recentEntries.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center space-y-3">
+                  <Award className="mx-auto h-8 w-8 text-slate-300" />
+                  <h3 className="text-sm font-bold text-slate-800 font-heading">
+                    {t('rewards.noTransactions') || 'No karma points recorded yet'}
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    Submit your first verified civic report or audit an existing case to begin building your community standing.
+                  </p>
+                  <Link
+                    to="/report"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800"
+                  >
+                    {t('landing.reportIssue') || 'Report an Issue'}
+                  </Link>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 shadow-2xs overflow-hidden">
+                  {recentEntries.map((entry) => (
+                    <div key={entry.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-900">{entry.reason}</p>
+                        <p className="text-[11px] font-mono text-slate-400">
+                          {new Date(entry.created_at).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
+                        +{entry.points} pts
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -295,7 +440,7 @@ export const RewardsPage: React.FC = () => {
             <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setTab('citizen')}
+                onClick={() => handleTabChange('citizen')}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   tab === 'citizen'
                     ? 'bg-white text-slate-950 shadow-2xs'
@@ -307,7 +452,7 @@ export const RewardsPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setTab('officer')}
+                onClick={() => handleTabChange('officer')}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   tab === 'officer'
                     ? 'bg-white text-slate-950 shadow-2xs'

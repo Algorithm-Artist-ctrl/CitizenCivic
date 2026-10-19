@@ -13,6 +13,7 @@ import ReportIssuePage from './pages/ReportIssuePage';
 import CaseListPage from './pages/CaseListPage';
 import CaseDetailPage from './pages/CaseDetailPage';
 import RewardsPage from './pages/RewardsPage';
+import MunicipalExplorerPage from './pages/MunicipalExplorerPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 import './i18n';
@@ -75,6 +76,10 @@ export const App: React.FC = () => {
 
               {/* Community Karma & Leaderboard */}
               <Route path="/rewards" element={<RewardsPage />} />
+
+              {/* Official Indian Municipal Data Explorer */}
+              <Route path="/municipal" element={<MunicipalExplorerPage />} />
+              <Route path="/municipal/:id" element={<MunicipalExplorerPage />} />
 
               {/* Public Authentication */}
               <Route path="/login" element={<LoginPage />} />

@@ -135,6 +135,7 @@ router.get('/leaderboard', optionalAuth, async (req: Request, res: Response) => 
        JOIN rewards_rewardledger l ON u.id = l.user_id
        LEFT JOIN cases_case c ON l.related_case_id = c.id
        WHERE u.is_active = true
+         AND u.role = 'CITIZEN'
          AND ($1::uuid IS NULL OR c.service_area_id = $1::uuid)
        GROUP BY u.id, u.display_name, u.preferred_language
        ORDER BY total_points DESC

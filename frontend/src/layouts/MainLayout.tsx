@@ -11,6 +11,7 @@ import {
   X,
   CheckCircle2,
   Award,
+  Landmark,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -99,6 +100,18 @@ export const MainLayout: React.FC = () => {
                   <span>{t('nav.karma', 'Community Karma')}</span>
                 </Link>
 
+                <Link
+                  to="/municipal"
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                    isActive('/municipal')
+                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                      : 'hover:bg-slate-100 text-slate-800'
+                  }`}
+                >
+                  <Landmark className="h-4 w-4" />
+                  <span>{t('nav.municipal', 'Municipal Data')}</span>
+                </Link>
+
                 {user.role === 'CITIZEN' && (
                   <Link
                     to="/report"
@@ -136,6 +149,16 @@ export const MainLayout: React.FC = () => {
                   }`}
                 >
                   <span>{t('nav.karma', 'Community Karma')}</span>
+                </Link>
+
+                <Link
+                  to="/municipal"
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors ${
+                    isActive('/municipal') ? 'text-slate-950 font-semibold bg-slate-100' : 'hover:bg-slate-100 text-slate-800'
+                  }`}
+                >
+                  <Landmark className="h-4 w-4" />
+                  <span>{t('nav.municipal', 'Municipal Data')}</span>
                 </Link>
               </>
             )}
@@ -231,7 +254,16 @@ export const MainLayout: React.FC = () => {
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
                   <Award className="h-4 w-4 text-slate-500" />
-                  <span>Community Karma</span>
+                  <span>{t('nav.karma', 'Community Karma')}</span>
+                </Link>
+
+                <Link
+                  to="/municipal"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <Landmark className="h-4 w-4 text-slate-500" />
+                  <span>{t('nav.municipal', 'Municipal Data')}</span>
                 </Link>
 
                 {user.role === 'CITIZEN' && (
@@ -278,6 +310,13 @@ export const MainLayout: React.FC = () => {
                   className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
                   {t('nav.karma', 'Community Karma')}
+                </Link>
+                <Link
+                  to="/municipal"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block rounded-md px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {t('nav.municipal', 'Municipal Data')}
                 </Link>
                 <div className="pt-2 border-t border-slate-100 flex gap-2">
                   <Link
@@ -334,6 +373,9 @@ export const MainLayout: React.FC = () => {
             </Link>
             <Link to="/rewards" className="hover:text-slate-900 transition-colors">
               {t('landing.footer.communityKarma', 'Community Karma')}
+            </Link>
+            <Link to="/municipal" className="hover:text-slate-900 transition-colors">
+              {t('nav.municipal', 'Municipal Data')}
             </Link>
             <Link to={user ? '/report' : '/login'} className="hover:text-emerald-800 transition-colors">
               {t('landing.footer.reportIssue', 'Report an Issue')}
