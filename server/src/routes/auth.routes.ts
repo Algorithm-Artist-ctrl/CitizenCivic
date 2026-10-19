@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { query } from '../db';
 import { hashPassword, verifyPassword } from '../auth/hash';
@@ -9,6 +10,16 @@ import { logAudit } from '../services/audit.service';
 import { DbUser } from '../types';
 
 const router = Router();
+
+// Abuse protection: limit authentication attempts to 30 requests per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { detail: 'Too many authentication attempts. Please try again later.' },
+  skip: () => process.env.NODE_ENV === 'test',
+});
 
 const RegisterSchema = z.object({
   email: z.string().email('Please enter a valid email address.').transform(s => s.trim().toLowerCase()),
@@ -28,7 +39,7 @@ const LoginSchema = z.object({
 });
 
 // POST /api/v1/auth/register/
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   const parseResult = RegisterSchema.safeParse(req.body);
   if (!parseResult.success) {
     const formatted = parseResult.error.format();
@@ -138,8 +149,8 @@ async function handleLogin(req: Request, res: Response) {
   }
 }
 
-router.post('/login', handleLogin);
-router.post('/token', handleLogin);
+router.post('/login', authLimiter, handleLogin);
+router.post('/token', authLimiter, handleLogin);
 
 // POST /api/v1/auth/token/refresh/
 router.post('/token/refresh', async (req: Request, res: Response) => {

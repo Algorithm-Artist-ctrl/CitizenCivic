@@ -233,6 +233,10 @@ describe('4. Cases & Civic Workflow', () => {
     expect(Array.isArray(res.body.transitions)).toBe(true);
     expect(res.body.transitions.length).toBeGreaterThanOrEqual(1);
     expect(res.body.transitions[0].to_status).toBe('SUBMITTED');
+    expect(res.body.primary_reporter?.email).toBeUndefined();
+    if (res.body.assigned_operator) {
+      expect(res.body.assigned_operator.email).toBeUndefined();
+    }
   });
 
   it('POST /api/v1/cases/:id/transition should reject invalid state transition', async () => {

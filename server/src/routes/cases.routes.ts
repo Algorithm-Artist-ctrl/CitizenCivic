@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { query, getClient } from '../db';
 import { authenticateToken, optionalAuth } from '../auth/middleware';
@@ -8,6 +9,26 @@ import { logAudit } from '../services/audit.service';
 import { CaseStatus, UserRole } from '../types';
 
 const router = Router();
+
+// Abuse protection: limit report creation to 20 reports per 15 minutes per IP
+const reportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { detail: 'Reporting rate limit reached. Please wait before filing more reports.' },
+  skip: () => process.env.NODE_ENV === 'test',
+});
+
+// Abuse protection: limit evidence file uploads to 30 files per 15 minutes per IP
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { detail: 'Upload rate limit reached. Please wait before uploading more files.' },
+  skip: () => process.env.NODE_ENV === 'test',
+});
 
 const VALID_TRANSITIONS: Record<string, Record<string, UserRole[]>> = {
   DRAFT: { SUBMITTED: ['CITIZEN'] },
@@ -246,7 +267,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
         cat.id AS cat_id, cat.name_en AS cat_name_en, cat.name_hi AS cat_name_hi, cat.slug AS cat_slug,
         sa.id AS sa_id, sa.name AS sa_name, sa.name_hi AS sa_name_hi,
         u.id AS rep_id, u.display_name AS rep_name,
-        op.id AS op_id, op.display_name AS op_name, op.email AS op_email,
+        op.id AS op_id, op.display_name AS op_name,
         (
           SELECT f.file FROM cases_caseevidence f 
           WHERE f.case_id = c.id 
@@ -299,7 +320,6 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
         assigned_operator: row.op_id ? {
           id: row.op_id,
           display_name: row.op_name,
-          email: row.op_email,
         } : null,
         thumbnail: evidenceUrl,
       };
@@ -328,7 +348,7 @@ const CreateCaseSchema = z.object({
   is_hotspot: z.boolean().optional().default(false),
 });
 
-router.post('/', authenticateToken, async (req: Request, res: Response) => {
+router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Response) => {
   const parseResult = CreateCaseSchema.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json(parseResult.error.format());
@@ -434,8 +454,8 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
         c.*,
         cat.id AS cat_id, cat.name_en AS cat_name_en, cat.name_hi AS cat_name_hi, cat.slug AS cat_slug,
         sa.id AS sa_id, sa.name AS sa_name, sa.name_hi AS sa_name_hi,
-        u.id AS rep_id, u.display_name AS rep_name, u.email AS rep_email,
-        op.id AS op_id, op.display_name AS op_name, op.email AS op_email
+        u.id AS rep_id, u.display_name AS rep_name,
+        op.id AS op_id, op.display_name AS op_name
       FROM cases_case c
       JOIN areas_category cat ON c.category_id = cat.id
       LEFT JOIN areas_servicearea sa ON c.service_area_id = sa.id
@@ -538,7 +558,6 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
       assigned_operator: c.op_id ? {
         id: c.op_id,
         display_name: c.op_name,
-        email: c.op_email,
       } : null,
       transitions: transRes.rows.map(t => ({
         id: t.id,
@@ -677,7 +696,7 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
 });
 
 // POST /api/v1/cases/:id/evidence/ — Upload evidence file
-router.post('/:id/evidence', authenticateToken, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/:id/evidence', authenticateToken, uploadLimiter, upload.single('file'), async (req: Request, res: Response) => {
   const caseId = req.params.id;
   const user = req.user!;
   const file = req.file;

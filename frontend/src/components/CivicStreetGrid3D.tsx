@@ -276,7 +276,7 @@ export const CivicStreetGrid3D: React.FC<CivicStreetGrid3DProps> = ({
       {/* Topology Badge */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-md border border-slate-200 bg-white/95 px-2 py-1 text-[11px] font-mono text-slate-700 shadow-2xs backdrop-blur-xs">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-        <span>Ward 82 Grid · {cases.length} Live Tickets</span>
+        <span>Illustrative Spatial Grid · {cases.length} Real Cases</span>
       </div>
 
       <Canvas
@@ -305,7 +305,7 @@ export const CivicStreetGrid3D: React.FC<CivicStreetGrid3DProps> = ({
 
       {/* Legend Footer */}
       <div className="absolute bottom-2 inset-x-3 z-10 flex items-center justify-between text-[11px] font-mono text-slate-600 bg-white/90 px-2.5 py-1 rounded border border-slate-200 backdrop-blur-xs">
-        <span className="truncate">Bengaluru Sector: Indiranagar Ward 82</span>
+        <span className="truncate">Illustrative Model · Relative Case Coordinates</span>
         <div className="flex items-center gap-3 shrink-0">
           <span className="flex items-center gap-1 text-emerald-800">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-700" /> Resolved

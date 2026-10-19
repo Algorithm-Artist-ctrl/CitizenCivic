@@ -40,10 +40,11 @@ export const ReportIssuePage: React.FC = () => {
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [description, setDescription] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [latitude, setLatitude] = useState<number>(12.9784); // Default to Indiranagar Ward 82
-  const [longitude, setLongitude] = useState<number>(77.6408);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [locationDetecting, setLocationDetecting] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
+  const [manualCoordsOpen, setManualCoordsOpen] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [declarationChecked, setDeclarationChecked] = useState(false);
 
@@ -82,15 +83,16 @@ export const ReportIssuePage: React.FC = () => {
     setError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLatitude(pos.coords.latitude);
-        setLongitude(pos.coords.longitude);
+        setLatitude(Number(pos.coords.latitude.toFixed(6)));
+        setLongitude(Number(pos.coords.longitude.toFixed(6)));
         setLocationDetecting(false);
         setLocationDetected(true);
       },
       (err) => {
-        console.warn('Geolocation error:', err.message);
+        console.warn('Geolocation notice:', err.message);
         setLocationDetecting(false);
-        setError('GPS coordinates could not be detected automatically. You can enter the street landmark manually below.');
+        setLocationDetected(false);
+        setError('Device GPS was unavailable or permission denied. You can specify coordinates manually or use the street landmark.');
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -150,14 +152,16 @@ export const ReportIssuePage: React.FC = () => {
     setError(null);
 
     try {
-      // 1. Create the case record
+      const finalLat = latitude ?? 12.9784;
+      const finalLng = longitude ?? 77.6408;
+
       const casePayload = {
         category: selectedCategory,
         service_area: selectedArea || null,
         description,
         landmark,
-        latitude,
-        longitude,
+        latitude: finalLat,
+        longitude: finalLng,
       };
 
       const caseRes = await apiClient.post('/cases/', casePayload);
@@ -208,19 +212,19 @@ export const ReportIssuePage: React.FC = () => {
 
           <div className="space-y-2">
             <Badge variant="emerald" size="sm">
-              Stage 01 Geotagged Report Registered
+              Verified Case Report Registered
             </Badge>
             <h1 className="text-2xl font-bold tracking-tight text-slate-950">
               Civic Report Successfully Submitted
             </h1>
             <p className="text-xs text-slate-600 max-w-sm mx-auto">
-              Your report has entered the partner SLA queue for Bengaluru Ward 82. You will be notified when photographic proof of cleanup is uploaded.
+              Your report has been logged with an immutable timestamp on the public ledger. You will be able to track status transitions and photographic evidence.
             </p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-left">
             <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
-              <span>OFFICIAL CASE REFERENCE</span>
+              <span>CASE REFERENCE NUMBER</span>
               <button
                 type="button"
                 onClick={handleCopyCaseNumber}
@@ -234,7 +238,7 @@ export const ReportIssuePage: React.FC = () => {
               {createdCaseNumber}
             </div>
             <div className="pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Reward Credited: <strong className="text-emerald-700">+50 Pts</strong></span>
+              <span>Reward Credited: <strong className="text-emerald-700">+10 Pts</strong></span>
               <span>Status: <strong className="text-slate-800">Submitted</strong></span>
             </div>
           </div>
@@ -247,7 +251,7 @@ export const ReportIssuePage: React.FC = () => {
               className="flex-1"
               onClick={() => navigate(`/cases/${createdCaseId}`)}
             >
-              Track Realtime Case Status &rarr;
+              Track Case Status & Evidence &rarr;
             </Button>
             <Button
               type="button"
@@ -294,7 +298,7 @@ export const ReportIssuePage: React.FC = () => {
             Report a Local Civic Issue
           </h1>
           <p className="text-xs text-slate-600 mt-0.5">
-            Verified intake for Bengaluru Ward 82 (Indiranagar) municipal response network.
+            Citizen issue reporting and transparent verification tracking.
           </p>
         </div>
 
@@ -324,7 +328,7 @@ export const ReportIssuePage: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-slate-900">1. Select Issue Category</h2>
             <p className="text-xs text-slate-500">
-              Categorization determines municipal crew dispatch and contractual SLA turnaround.
+              Categorization organizes reports and assigns them to the appropriate tracking workflow.
             </p>
           </div>
 
@@ -393,20 +397,72 @@ export const ReportIssuePage: React.FC = () => {
                   <span>Geotag Coordinates</span>
                 </span>
                 <span className="text-[11px] font-mono text-slate-500">
-                  {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E (Ward 82 Grid)
+                  {latitude !== null && longitude !== null
+                    ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E ${locationDetected ? '(Device GPS)' : '(Manual)'}`
+                    : 'Coordinates not yet set (optional or manual)'}
                 </span>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                loading={locationDetecting}
-                onClick={handleDetectLocation}
-                icon={<Navigation className="h-3 w-3 text-emerald-700" />}
-              >
-                {locationDetected ? '✓ GPS Acquired' : 'Detect My GPS'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={locationDetecting}
+                  onClick={handleDetectLocation}
+                  icon={<Navigation className="h-3 w-3 text-emerald-700" />}
+                >
+                  {locationDetected ? '✓ GPS Acquired' : 'Detect My GPS'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setManualCoordsOpen(!manualCoordsOpen)}
+                  className="text-[11px] font-medium text-slate-600 hover:text-slate-900 underline cursor-pointer"
+                >
+                  {manualCoordsOpen ? 'Hide Manual' : 'Manual Coordinates'}
+                </button>
+              </div>
             </div>
+
+            {/* Optional Manual Coordinate Inputs */}
+            {manualCoordsOpen && (
+              <div className="p-3 bg-slate-50 rounded-md border border-slate-200 grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label htmlFor="lat-input" className="block text-[11px] font-medium text-slate-600 mb-1">Latitude</label>
+                  <input
+                    id="lat-input"
+                    type="number"
+                    step="any"
+                    value={latitude ?? ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setLatitude(isNaN(val) ? null : val);
+                      setLocationDetected(false);
+                    }}
+                    placeholder="e.g. 12.9784"
+                    className="w-full rounded border border-slate-300 py-1.5 px-2 font-mono text-xs text-slate-900 bg-white"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lng-input" className="block text-[11px] font-medium text-slate-600 mb-1">Longitude</label>
+                  <input
+                    id="lng-input"
+                    type="number"
+                    step="any"
+                    value={longitude ?? ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setLongitude(isNaN(val) ? null : val);
+                      setLocationDetected(false);
+                    }}
+                    placeholder="e.g. 77.6408"
+                    className="w-full rounded border border-slate-300 py-1.5 px-2 font-mono text-xs text-slate-900 bg-white"
+                  />
+                </div>
+                <div className="col-span-2 text-[10px] text-slate-500">
+                  Browser GPS assists in geographic placement. You may adjust or input coordinates manually.
+                </div>
+              </div>
+            )}
 
             {/* Landmark / Street Input */}
             <div className="space-y-1.5">
@@ -547,7 +603,7 @@ export const ReportIssuePage: React.FC = () => {
           <div>
             <h2 className="text-base font-bold text-slate-900">4. Final Verification & Submit</h2>
             <p className="text-xs text-slate-500">
-              Review your report summary. Once submitted, a case number is generated and routed to the municipal concessionaire.
+              Review your report summary. Once submitted, an official case tracking number is generated and recorded on the public timeline.
             </p>
           </div>
 
@@ -564,7 +620,11 @@ export const ReportIssuePage: React.FC = () => {
 
             <div className="p-4 grid grid-cols-3 gap-2">
               <span className="font-semibold text-slate-500">Coordinates:</span>
-              <span className="col-span-2 font-mono text-slate-700">{latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E</span>
+              <span className="col-span-2 font-mono text-slate-700">
+                {latitude !== null && longitude !== null
+                  ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E ${locationDetected ? '(GPS)' : '(Manual)'}`
+                  : '12.9784° N, 77.6408° E (Ward Default)'}
+              </span>
             </div>
 
             <div className="p-4 grid grid-cols-3 gap-2">
@@ -578,7 +638,7 @@ export const ReportIssuePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Citizen Anti-Fraud Declaration */}
+          {/* Citizen Certification */}
           <div className="rounded-md border border-slate-200 bg-slate-50 p-3.5 flex items-start gap-3">
             <input
               id="declaration-checkbox"
@@ -589,7 +649,7 @@ export const ReportIssuePage: React.FC = () => {
               className="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
             />
             <label htmlFor="declaration-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
-              I certify that this report reflects a genuine on-ground civic issue. I understand that submitting fake photos or commercial waste disposal complaints as public municipal tickets is subject to penalty under the Municipal Solid Waste By-laws.
+              I certify that this report reflects a genuine civic issue observed in my locality, backed by photographic evidence I personally captured.
             </label>
           </div>
 
@@ -604,7 +664,7 @@ export const ReportIssuePage: React.FC = () => {
               loading={submitting}
               icon={<ShieldCheck className="h-4 w-4 text-emerald-400" />}
             >
-              Submit Geotagged Report &rarr;
+              Submit Case Report &rarr;
             </Button>
           </div>
         </form>

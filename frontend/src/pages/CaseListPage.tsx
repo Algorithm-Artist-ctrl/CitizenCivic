@@ -96,7 +96,7 @@ export const CaseListPage: React.FC = () => {
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-slate-500">
             <span className="font-bold text-slate-900">PUBLIC REGISTRY</span>
             <span>·</span>
-            <span>WARD 82 JURISDICTION</span>
+            <span>PUBLIC CIVIC DIRECTORY</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
             {user?.role === 'CITIZEN' ? 'My Reported Cases' : 'Municipal Cases Directory'}

@@ -116,7 +116,7 @@ export const LandingPage: React.FC = () => {
           {/* Eyebrow Label */}
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-emerald-600" />
-            <span className="tracking-wide">Bengaluru Municipal Sector Pilot</span>
+            <span className="tracking-wide">Independent Civic Accountability Initiative</span>
           </div>
 
           {/* Main Headline (44–54px scale) */}
@@ -208,7 +208,7 @@ export const LandingPage: React.FC = () => {
 
             <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5">
               <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
-              <span>Calculated directly from live municipal database records</span>
+              <span>Calculated directly from live platform database records</span>
             </p>
           </div>
         </div>
