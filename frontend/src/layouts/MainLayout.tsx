@@ -27,35 +27,46 @@ export const MainLayout: React.FC = () => {
   };
 
   const isActive = (path: string) => location.pathname === path;
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
+
+  if (isAuthRoute) {
+    return (
+      <div className="min-h-screen bg-white font-sans text-slate-900 antialiased selection:bg-slate-900 selection:text-white">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans">
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
       {/* Pilot environment indicator banner with Neon Realtime */}
-      <div className="bg-emerald-900 px-4 py-1.5 text-center text-xs font-medium text-emerald-100 flex flex-wrap items-center justify-center gap-2">
-        <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>
-          <strong>Pilot Live</strong>: Indiranagar Ward 82 & Koramangala 4th Block — Verified civic accountability workflow
-        </span>
-        <span className="hidden sm:inline text-emerald-400">•</span>
-        <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold bg-emerald-950/70 text-emerald-200 border border-emerald-700/50 px-2 py-0.5 rounded-full">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-          <span>Neon Realtime Sync</span>
-        </span>
+      <div className="bg-slate-950 border-b border-slate-800 px-4 py-1.5 text-xs text-slate-300">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span className="font-semibold text-slate-200">Active Locality:</span>
+            <span className="text-slate-400">Indiranagar Ward 82 & Koramangala 4th Block · Verified Civic Resolution</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-slate-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span>Neon Realtime Active</span>
+          </div>
+        </div>
       </div>
 
       {/* Main Navigation Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xs">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-xs">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
           {/* Logo & Platform Name */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
-              <ShieldAlert className="h-6 w-6" />
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-white shadow-2xs group-hover:bg-slate-800 transition-colors">
+              <ShieldAlert className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-slate-900">
-                Citizen<span className="text-emerald-600">Civic</span>
+              <span className="text-lg font-bold tracking-tight text-slate-900">
+                Citizen<span className="text-emerald-700">Civic</span>
               </span>
-              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
                 Accountable Civic Resolution
               </p>
             </div>
@@ -88,9 +99,9 @@ export const MainLayout: React.FC = () => {
                 {user.role === 'CITIZEN' && (
                   <Link
                     to="/report"
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                    className="flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-white shadow-2xs hover:bg-slate-800 transition-colors"
                   >
-                    <PlusCircle className="h-4 w-4" />
+                    <PlusCircle className="h-4 w-4 text-emerald-400" />
                     <span>{t('nav.report', 'Report Issue')}</span>
                   </Link>
                 )}
@@ -106,13 +117,13 @@ export const MainLayout: React.FC = () => {
               <div className="hidden sm:flex items-center gap-3 border-l border-slate-200 pl-3">
                 <div className="flex flex-col text-right">
                   <span className="text-sm font-semibold text-slate-800">{user.display_name}</span>
-                  <span className="text-[10px] font-bold tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm">
+                  <span className="text-[10px] font-mono font-medium tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-xs">
                     {user.role}
                   </span>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
                   title={t('nav.logout', 'Logout')}
                 >
                   <LogOut className="h-4 w-4" />
@@ -122,13 +133,13 @@ export const MainLayout: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                 >
-                  {t('nav.login', 'Login')}
+                  {t('nav.login', 'Sign In')}
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white shadow-xs hover:bg-emerald-700"
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-2xs hover:bg-slate-800 transition-colors"
                 >
                   {t('nav.register', 'Register')}
                 </Link>
@@ -241,19 +252,19 @@ export const MainLayout: React.FC = () => {
       )}
 
       {/* Standard Civic Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6">
+      <footer className="border-t border-slate-200/80 bg-white py-4">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
               <span>
-                <strong>CitizenCivic</strong> — Real-World Civic Resolution Engine &copy; 2026.
+                <strong>CitizenCivic</strong> — Real-World Civic Resolution Platform &copy; 2026.
               </span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-5 text-slate-400">
               <span>Verified Closure Protocol</span>
               <span>Recurring Hotspot Protection</span>
-              <span>Role-Based Privacy</span>
+              <span>Role-Based Audit Trail</span>
             </div>
           </div>
         </div>

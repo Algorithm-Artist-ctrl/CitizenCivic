@@ -128,7 +128,15 @@
     }
   },
   "auth": {
-    "login": "Login",
+    "login": "Sign In",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "welcomeBack": "Welcome back",
+    "loginSubtitle": "Sign in to access your civic reporting and resolution dashboard.",
+    "headline": "Civic issues deserve verified resolutions.",
+    "headlineDesc": "Citizens report local issues with verified ground evidence. Authorized operators take action. Resolving an issue requires photographic proof and independent verification before closure.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "register": "Create Account",
     "email": "Email Address",
     "emailPlaceholder": "you@example.com",
