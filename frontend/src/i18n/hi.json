@@ -363,7 +363,7 @@
     "hidePassword": "पासवर्ड छिपाएं",
     "register": "खाता बनाएं",
     "email": "ईमेल पता",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "अपना ईमेल पता दर्ज करें",
     "password": "पासवर्ड",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
     "confirmPassword": "पासवर्ड की पुष्टि करें",

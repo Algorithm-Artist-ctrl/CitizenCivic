@@ -363,7 +363,7 @@
     "hidePassword": "Hide password",
     "register": "Create Account",
     "email": "Email Address",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "Enter your email address",
     "password": "Password",
     "passwordPlaceholder": "Enter your password",
     "confirmPassword": "Confirm Password",
