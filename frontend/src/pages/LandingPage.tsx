@@ -120,72 +120,57 @@ export const LandingPage: React.FC = () => {
           <div className="pt-3 border-t border-slate-200/80">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5 max-w-xl">
               {/* Card 1: Total Reports */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-start min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-slate-950 leading-tight">
-                      {loadingAnalytics ? '...' : (totalReportsCount ?? 0)}
+                      {loadingAnalytics ? '…' : (totalReportsCount ?? '—')}
                     </div>
                     <div className="text-[11px] font-semibold text-slate-600 truncate">
                       {t('landing.metrics.totalReports') || 'Total Reports'}
                     </div>
                   </div>
                 </div>
-                {/* Green Upward Sparkline */}
-                <div className="w-10 sm:w-12 h-6 shrink-0 hidden xs:block">
-                  <svg className="w-full h-full" viewBox="0 0 50 20" fill="none">
-                    <path d="M2 16 L15 11 L25 14 L48 4" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+
               </div>
 
               {/* Card 2: In Progress */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-start min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-500 shrink-0">
                     <Clock className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-amber-800 leading-tight">
-                      {loadingAnalytics ? '...' : (inProgressCount ?? 0)}
+                      {loadingAnalytics ? '…' : (inProgressCount ?? '—')}
                     </div>
                     <div className="text-[11px] font-semibold text-slate-600 truncate">
                       {t('landing.metrics.inProgress') || 'In Progress'}
                     </div>
                   </div>
                 </div>
-                {/* Amber Upward Sparkline */}
-                <div className="w-10 sm:w-12 h-6 shrink-0 hidden xs:block">
-                  <svg className="w-full h-full" viewBox="0 0 50 20" fill="none">
-                    <path d="M2 16 L14 13 L26 15 L48 4" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+
               </div>
 
               {/* Card 3: Verified Resolved */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-start min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-emerald-800 leading-tight">
-                      {loadingAnalytics ? '...' : (verifiedResolvedCount ?? 0)}
+                      {loadingAnalytics ? '…' : (verifiedResolvedCount ?? '—')}
                     </div>
                     <div className="text-[11px] font-semibold text-slate-600 truncate">
                       {t('landing.metrics.verifiedResolved') || 'Verified Resolved'}
                     </div>
                   </div>
                 </div>
-                {/* Emerald Upward Sparkline */}
-                <div className="w-10 sm:w-12 h-6 shrink-0 hidden xs:block">
-                  <svg className="w-full h-full" viewBox="0 0 50 20" fill="none">
-                    <path d="M2 15 L16 12 L28 13 L48 3" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+
               </div>
             </div>
 

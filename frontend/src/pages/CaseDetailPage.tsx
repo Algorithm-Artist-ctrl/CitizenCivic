@@ -623,7 +623,7 @@ export const CaseDetailPage: React.FC = () => {
               required
               value={transitionReason}
               onChange={(e) => setTransitionReason(e.target.value)}
-              placeholder="e.g. Rapid response team dispatched with 2 tipper trucks. 350kg debris collected."
+              placeholder="Describe the work actually completed, quantities only if measured, and the evidence attached."
               className="w-full rounded-md border border-slate-300 py-2 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
             />
           </div>
@@ -765,8 +765,8 @@ export const CaseDetailPage: React.FC = () => {
               onChange={(e) => setFeedbackComment(e.target.value)}
               placeholder={
                 isDispute
-                  ? 'e.g. Only top garbage removed. Heavy debris still blocking pedestrian walkway.'
-                  : 'e.g. Cleaned thoroughly within 4 hours. Great response.'
+                  ? 'Describe why you dispute the closure and what you observed on site.'
+                  : 'Describe what you personally verified and any remaining issue.'
               }
               className="w-full rounded-md border border-slate-300 py-2 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
             />

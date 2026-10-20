@@ -434,7 +434,10 @@ export const DashboardPage: React.FC = () => {
                           </span>
                           <span>·</span>
                           <span className="font-mono text-slate-400">
-                            {c.latitude ? `${c.latitude.toFixed(4)}° N, ${c.longitude.toFixed(4)}° E` : '12.9716° N, 77.6412° E'}
+                            {typeof c.latitude === 'number' && Number.isFinite(c.latitude) &&
+                             typeof c.longitude === 'number' && Number.isFinite(c.longitude)
+                              ? `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`
+                              : t('dashboard.coordinatesNotProvided', 'Coordinates not provided')}
                           </span>
                         </div>
                       </div>
