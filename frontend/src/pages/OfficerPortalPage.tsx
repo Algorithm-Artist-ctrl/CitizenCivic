@@ -150,9 +150,6 @@ export const OfficerPortalPage: React.FC = () => {
               <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase text-white">
                 {user?.role || 'OFFICER'}
               </span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
-                Ward 82 (Indiranagar Pilot)
-              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
               Municipal Operations & Triage Workspace
@@ -425,7 +422,7 @@ export const OfficerPortalPage: React.FC = () => {
                             variant="primary"
                             size="sm"
                             loading={isItemBusy}
-                            onClick={() => handleTransition(item.id, 'FORWARDED', 'Forwarded to Indiranagar Ward 82 field engineering team.')}
+                            onClick={() => handleTransition(item.id, 'FORWARDED', 'Forwarded to the assigned field response team.')}
                           >
                             Forward to Field
                           </Button>
@@ -437,7 +434,7 @@ export const OfficerPortalPage: React.FC = () => {
                           variant="primary"
                           size="sm"
                           loading={isItemBusy}
-                          onClick={() => handleTransition(item.id, 'FORWARDED', 'Forwarded to Indiranagar Ward 82 field engineering team.')}
+                          onClick={() => handleTransition(item.id, 'FORWARDED', 'Forwarded to the assigned field response team.')}
                         >
                           Forward to Field
                         </Button>

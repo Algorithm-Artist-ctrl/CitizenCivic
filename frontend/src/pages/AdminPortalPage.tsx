@@ -120,7 +120,7 @@ export const AdminPortalPage: React.FC = () => {
               Platform Governance & User Roster
             </h1>
             <p className="text-xs text-slate-500">
-              Manage authoritative access control, verify official municipal personnel, and oversee system operations across Bengaluru Ward 82.
+              Manage access control, verify authorised municipal personnel, and oversee system operations across configured service areas.
             </p>
           </div>
 

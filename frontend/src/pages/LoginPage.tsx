@@ -12,7 +12,6 @@ import {
   Users,
   Shield,
   KeyRound,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -53,12 +52,6 @@ export const LoginPage: React.FC = () => {
       next.set('portal', portal);
       return next;
     });
-    setError(null);
-  };
-
-  const handleFillCredentials = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
     setError(null);
   };
 
@@ -245,13 +238,7 @@ export const LoginPage: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={
-                      activePortal === 'citizen'
-                        ? 'citizen@example.com'
-                        : activePortal === 'officer'
-                        ? 'operator@example.com'
-                        : 'admin@example.com'
-                    }
+                    placeholder="Enter your email address"
                     className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
                   />
                 </div>
@@ -311,60 +298,7 @@ export const LoginPage: React.FC = () => {
               </div>
             </form>
 
-            {/* Quick 1-Click Demo Evaluation Fillers */}
-            <div className="border-t border-slate-100 pt-4 space-y-2">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                <Sparkles className="h-3 w-3 text-amber-500" />
-                <span>Quick Demo Fill for Evaluation</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {activePortal === 'citizen' && (
-                  <button
-                    type="button"
-                    onClick={() => handleFillCredentials('citizen@example.com', 'Citizen123!')}
-                    className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100 transition-colors cursor-pointer"
-                  >
-                    👤 Citizen (citizen@example.com)
-                  </button>
-                )}
 
-                {activePortal === 'officer' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleFillCredentials('operator@example.com', 'Operator123!')}
-                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
-                    >
-                      🔧 Field Operator
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFillCredentials('moderator@example.com', 'Moderator123!')}
-                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
-                    >
-                      🔍 Review Moderator
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFillCredentials('supervisor@example.com', 'Supervisor123!')}
-                      className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
-                    >
-                      🛡️ Ward Supervisor
-                    </button>
-                  </>
-                )}
-
-                {activePortal === 'admin' && (
-                  <button
-                    type="button"
-                    onClick={() => handleFillCredentials('admin@example.com', 'Admin123!')}
-                    className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-900 hover:bg-purple-100 transition-colors cursor-pointer"
-                  >
-                    ⚡ System Admin (admin@example.com)
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Informational security footnote */}
@@ -380,7 +314,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/80 bg-white py-4 px-4 text-center text-xs text-slate-500">
-        CitizenCivic Accountability Engine &copy; 2026 · Bengaluru Ward 82 Pilot
+        CitizenCivic Accountability Platform &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );

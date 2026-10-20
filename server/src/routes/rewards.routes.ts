@@ -154,7 +154,7 @@ router.get('/leaderboard', optionalAuth, async (req: Request, res: Response) => 
 
     res.json({
       type: 'citizen',
-      ward: areaId ? areaName : 'Ward 82 — Indiranagar',
+      ward: areaName,
       area_id: areaId,
       area_name: areaName,
       last_updated: new Date().toISOString(),

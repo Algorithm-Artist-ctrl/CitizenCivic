@@ -233,7 +233,7 @@ export const CaseDetailPage: React.FC = () => {
           </Link>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono text-slate-500 uppercase">
-              Ward 82 Master Registry
+              {caseData.service_area?.name || t('caseDetail.serviceArea', 'Service Area')}
             </span>
           </div>
         </div>
@@ -438,7 +438,7 @@ export const CaseDetailPage: React.FC = () => {
               <div>
                 <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.serviceArea') || 'SERVICE AREA'}</span>
                 <span className="font-semibold text-slate-900 mt-0.5 block">
-                  {i18n.language === 'hi' ? (caseData.service_area?.name_hi || caseData.service_area?.name) : (caseData.service_area?.name || 'Bengaluru Ward 82')}
+                  {i18n.language === 'hi' ? (caseData.service_area?.name_hi || caseData.service_area?.name) : (caseData.service_area?.name || t('caseDetail.notSpecified', 'Not specified'))}
                 </span>
               </div>
               <div>

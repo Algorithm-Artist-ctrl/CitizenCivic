@@ -40,7 +40,8 @@ export const DashboardPage: React.FC = () => {
   const [recentCases, setRecentCases] = useState<Case[]>([]);
   const [nearbyCases, setNearbyCases] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [points, setPoints] = useState<number>(0);
+  const [points, setPoints] = useState<number | null>(null);
+  const [karmaTier, setKarmaTier] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,11 +60,12 @@ export const DashboardPage: React.FC = () => {
       // 2. Fetch personal karma points and nearby issues
       try {
         const [pointsRes, nearbyRes] = await Promise.all([
-          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 0 } })),
+          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: null, karma_tier: null } })),
           apiClient.get('/cases/nearby/').catch(() => ({ data: [] })),
         ]);
         if (pointsRes.data?.total_points !== undefined && pointsRes.data?.total_points !== null) {
-          setPoints(pointsRes.data.total_points >= 0 ? pointsRes.data.total_points : 0);
+          setPoints(pointsRes.data.total_points >= 0 ? pointsRes.data.total_points : null);
+          setKarmaTier(pointsRes.data.karma_tier || null);
         }
         if (Array.isArray(nearbyRes.data) && nearbyRes.data.length > 0) {
           setNearbyCases(nearbyRes.data.slice(0, 4));
@@ -117,7 +119,7 @@ export const DashboardPage: React.FC = () => {
           <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>PILOT WARD 82 (INDIRANAGAR)</span>
+              <span>{t('dashboard.workspaceLabel', 'Civic Response Workspace')}</span>
             </div>
 
             <div className="space-y-1.5">
@@ -235,7 +237,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* 4 KPI Stat Cards with SVG Sparklines matching mockups */}
+      {/* 4 KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Active Reports */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all hover:border-slate-300 flex flex-col justify-between">
@@ -264,11 +266,7 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="w-20 h-8">
-              <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <path d="M0 32 Q 25 15, 50 24 T 100 8" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-              </svg>
-            </div>
+            
           </div>
         </div>
 
@@ -299,11 +297,7 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="w-20 h-8">
-              <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <path d="M0 35 Q 20 28, 45 18 T 100 6" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-              </svg>
-            </div>
+            
           </div>
         </div>
 
@@ -324,21 +318,17 @@ export const DashboardPage: React.FC = () => {
           <div className="mt-3 flex items-baseline justify-between">
             <div>
               <div className="text-2xl font-black text-amber-700 font-mono tracking-tight">
-                {points} <span className="text-xs font-sans font-bold text-amber-600">pts</span>
+                {points ?? '—'} <span className="text-xs font-sans font-bold text-amber-600">pts</span>
               </div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 KARMA POINTS
               </div>
               <p className="mt-0.5 text-[11px] text-slate-400">
-                Tier: Neighborhood Sentinel
+                Tier: {karmaTier || '—'}
               </p>
             </div>
 
-            <div className="w-20 h-8">
-              <svg className="w-full h-full" viewBox="0 0 100 40" fill="none">
-                <path d="M0 30 Q 30 35, 60 14 T 100 4" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-              </svg>
-            </div>
+            
           </div>
         </div>
 
@@ -400,7 +390,7 @@ export const DashboardPage: React.FC = () => {
                 const thumbImage =
                   c.evidence && c.evidence.length > 0 && c.evidence[0].file
                     ? c.evidence[0].file
-                    : '/assets/cat-garbage.jpg';
+                    : '';
 
                 return (
                   <div
@@ -415,7 +405,7 @@ export const DashboardPage: React.FC = () => {
                           alt={categoryName}
                           mode={thumbImage.includes('/assets/cat-') ? 'contain' : 'cover'}
                           className={thumbImage.includes('/assets/cat-') ? 'p-1.5' : ''}
-                          fallbackSrc="/assets/cat-garbage.jpg"
+                          fallbackSrc=""
                         />
                       </div>
 
@@ -440,7 +430,7 @@ export const DashboardPage: React.FC = () => {
                         <div className="flex items-center gap-2 text-[11px] text-slate-500 flex-wrap">
                           <span className="flex items-center gap-1 font-medium">
                             <MapPin className="h-3 w-3 text-emerald-600" />
-                            <span>{c.landmark || 'Indiranagar, Ward 82'}</span>
+                            <span>{c.landmark || t('dashboard.locationNotProvided', 'Location not provided')}</span>
                           </span>
                           <span>·</span>
                           <span className="font-mono text-slate-400">
@@ -561,7 +551,7 @@ export const DashboardPage: React.FC = () => {
                       </span>
                     </div>
                     <span className="font-mono text-[11px] font-bold text-slate-500 shrink-0">
-                      {item.distance || '450m'}
+                      {item.distance ?? '—'}
                     </span>
                   </div>
                 ))}
@@ -572,7 +562,7 @@ export const DashboardPage: React.FC = () => {
               to="/cases"
               className="block w-full text-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 py-2.5 text-xs font-bold text-slate-800 transition-colors"
             >
-              Explore Full Ward Radar →
+              Explore Cases →
             </Link>
           </div>
         </div>
