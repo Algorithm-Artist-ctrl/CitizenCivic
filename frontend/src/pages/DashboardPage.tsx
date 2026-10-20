@@ -402,7 +402,7 @@ export const DashboardPage: React.FC = () => {
                       <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center">
                         <CivicImage
                           src={thumbImage}
-                          alt={categoryName}
+                          alt={thumbImage ? categoryName : t('dashboard.noEvidencePhoto', 'No photo attached')}
                           mode={thumbImage.includes('/assets/cat-') ? 'contain' : 'cover'}
                           className={thumbImage.includes('/assets/cat-') ? 'p-1.5' : ''}
                           fallbackSrc=""

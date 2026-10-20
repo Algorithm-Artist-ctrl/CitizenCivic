@@ -363,7 +363,7 @@ export const CaseListPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {cases.map((c) => {
-                  const thumb = c.evidence && c.evidence.length > 0 && c.evidence[0].file ? c.evidence[0].file : '/assets/cat-garbage.jpg';
+                  const thumb = c.evidence?.find((item) => item.file)?.file || '';
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="px-5 py-4 whitespace-nowrap">
@@ -371,10 +371,8 @@ export const CaseListPage: React.FC = () => {
                           <div className="h-10 w-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center">
                             <CivicImage
                               src={thumb}
-                              alt="Thumbnail"
-                              mode={thumb.includes('/assets/cat-') ? 'contain' : 'cover'}
-                              className={thumb.includes('/assets/cat-') ? 'p-1' : ''}
-                              fallbackSrc="/assets/cat-garbage.jpg"
+                              alt={`Evidence for ${c.case_number}`}
+                              mode="cover"
                             />
                           </div>
                           <div>

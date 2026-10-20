@@ -42,6 +42,7 @@ export const AdminPortalPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [systemHealth, setSystemHealth] = useState<'checking' | 'healthy' | 'degraded' | 'unavailable'>('checking');
 
   const fetchUsersRoster = async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -60,8 +61,26 @@ export const AdminPortalPage: React.FC = () => {
     }
   };
 
+  const fetchSystemHealth = async () => {
+    setSystemHealth('checking');
+    try {
+      const apiRoot = String(apiClient.defaults.baseURL || '').split('/api/v1')[0];
+      const response = await apiClient.get(`${apiRoot}/health`);
+      if (response.data?.status === 'online' && response.data?.database === 'connected') {
+        setSystemHealth('healthy');
+      } else if (response.data?.status === 'online') {
+        setSystemHealth('degraded');
+      } else {
+        setSystemHealth('unavailable');
+      }
+    } catch {
+      setSystemHealth('unavailable');
+    }
+  };
+
   useEffect(() => {
     fetchUsersRoster();
+    fetchSystemHealth();
   }, []);
 
   const roleCounts = userData?.role_counts || {};
@@ -112,8 +131,14 @@ export const AdminPortalPage: React.FC = () => {
               <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase text-white">
                 {user?.role || 'ADMIN'}
               </span>
-              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                System Healthy
+              <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                systemHealth === 'healthy'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : systemHealth === 'checking'
+                  ? 'bg-slate-50 border-slate-200 text-slate-600'
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                {systemHealth === 'healthy' ? 'System Healthy' : systemHealth === 'checking' ? 'Checking System' : systemHealth === 'degraded' ? 'Database Unavailable' : 'Health Check Unavailable'}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
@@ -153,27 +178,27 @@ export const AdminPortalPage: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-4 border-t border-slate-100">
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200/80">
             <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Accounts</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900">{userData?.total_users || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900">{userData ? userData.total_users : '—'}</div>
           </div>
           <div className="rounded-xl bg-emerald-50/70 p-3.5 border border-emerald-200/80">
             <div className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">Citizens</div>
-            <div className="mt-1 text-2xl font-bold text-emerald-950">{roleCounts['CITIZEN'] || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-950">{userData ? (roleCounts['CITIZEN'] ?? 0) : '—'}</div>
           </div>
           <div className="rounded-xl bg-blue-50/70 p-3.5 border border-blue-200/80">
             <div className="text-[10px] font-semibold text-blue-800 uppercase tracking-wider">Operators</div>
-            <div className="mt-1 text-2xl font-bold text-blue-950">{roleCounts['OPERATOR'] || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-blue-950">{userData ? (roleCounts['OPERATOR'] ?? 0) : '—'}</div>
           </div>
           <div className="rounded-xl bg-amber-50/70 p-3.5 border border-amber-200/80">
             <div className="text-[10px] font-semibold text-amber-800 uppercase tracking-wider">Moderators</div>
-            <div className="mt-1 text-2xl font-bold text-amber-950">{roleCounts['MODERATOR'] || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-amber-950">{userData ? (roleCounts['MODERATOR'] ?? 0) : '—'}</div>
           </div>
           <div className="rounded-xl bg-indigo-50/70 p-3.5 border border-indigo-200/80">
             <div className="text-[10px] font-semibold text-indigo-800 uppercase tracking-wider">Supervisors</div>
-            <div className="mt-1 text-2xl font-bold text-indigo-950">{roleCounts['SUPERVISOR'] || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-indigo-950">{userData ? (roleCounts['SUPERVISOR'] ?? 0) : '—'}</div>
           </div>
           <div className="rounded-xl bg-purple-50/70 p-3.5 border border-purple-200/80">
             <div className="text-[10px] font-semibold text-purple-800 uppercase tracking-wider">Admins</div>
-            <div className="mt-1 text-2xl font-bold text-purple-950">{roleCounts['ADMIN'] || 0}</div>
+            <div className="mt-1 text-2xl font-bold text-purple-950">{userData ? (roleCounts['ADMIN'] ?? 0) : '—'}</div>
           </div>
         </div>
       </div>

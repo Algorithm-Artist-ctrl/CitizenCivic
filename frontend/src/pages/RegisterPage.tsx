@@ -122,7 +122,7 @@ export const RegisterPage: React.FC = () => {
               Create Citizen Account
             </h1>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Join the verified resident network for reporting and tracking civic resolutions in Bengaluru Ward 82
+              Join the community to report local civic issues and track their resolution in your service area.
             </p>
           </div>
 
@@ -175,7 +175,7 @@ export const RegisterPage: React.FC = () => {
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="e.g. Ramesh K. or Indiranagar Resident"
+                    placeholder="Enter your name"
                     className="w-full rounded-md border border-slate-300 py-2.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"
                   />
                 </div>
@@ -294,7 +294,7 @@ export const RegisterPage: React.FC = () => {
       </main>
 
       <footer className="border-t border-slate-200/80 bg-white py-4 px-4 text-center text-xs text-slate-500">
-        CitizenCivic Accountability Engine &copy; 2026 · Bengaluru Ward 82 Pilot
+        CitizenCivic Accountability Platform &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );

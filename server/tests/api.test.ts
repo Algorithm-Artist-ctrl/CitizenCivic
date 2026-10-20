@@ -461,7 +461,7 @@ describe('7. Municipal Data & Role Access', () => {
     const res = await request(app).get('/api/v1/municipal/ulbs?state=KA');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.ulbs)).toBe(true);
-    expect(res.body.count).toBe(res.body.ulbs.length);
+    expect(res.body.total_count).toBe(res.body.ulbs.length);
     for (const ulb of res.body.ulbs) {
       expect(ulb.code).toBeTruthy();
       expect(ulb.name).toBeTruthy();
