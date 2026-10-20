@@ -455,11 +455,43 @@ export const CaseDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="text-slate-400 block font-mono text-[11px]">{t('caseDetail.description') || 'PROBLEM DESCRIPTION'}</span>
               <p className="text-xs text-slate-800 leading-relaxed bg-slate-50/70 p-3 rounded border border-slate-100">
                 {caseData.description}
               </p>
+
+              {/* Structured AI Triage & Impact Meta */}
+              {caseData.structured_data?.observed_impact && (
+                <div className="bg-emerald-50/60 p-2.5 rounded border border-emerald-200/80 text-[11px] text-slate-800">
+                  <strong className="text-emerald-950 font-bold">Observed Impact:</strong> {caseData.structured_data.observed_impact}
+                </div>
+              )}
+
+              {caseData.structured_data?.detected_hazards && caseData.structured_data.detected_hazards.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-mono text-slate-400">HAZARDS IDENTIFIED:</span>
+                  {caseData.structured_data.detected_hazards.map((hazard, idx) => (
+                    <span key={idx} className="rounded-md bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 text-[10px] font-bold">
+                      ⚠️ {hazard}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Original Raw Description Provenance */}
+              {caseData.original_description && caseData.original_description !== caseData.description && (
+                <div className="pt-1 text-[11px]">
+                  <details className="text-slate-600">
+                    <summary className="cursor-pointer font-semibold text-slate-500 hover:text-slate-800">
+                      Original Citizen Input (Voice / Raw Text)
+                    </summary>
+                    <div className="mt-1.5 p-2.5 bg-slate-100 rounded border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap">
+                      {caseData.original_description}
+                    </div>
+                  </details>
+                </div>
+              )}
             </div>
 
             {/* Real Geographic Map Location */}

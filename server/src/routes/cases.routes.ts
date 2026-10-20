@@ -9,6 +9,7 @@ import { logAudit } from '../services/audit.service';
 import { CaseStatus, UserRole } from '../types';
 import { config } from '../config';
 import { getConfiguredRewardPoints } from '../services/rewards.service';
+import { notifyCaseSubmitted, notifyCaseStatusChanged, notifyVerifiedResolved } from '../services/email.service';
 
 const router = Router();
 
@@ -569,6 +570,8 @@ const CreateCaseSchema = z.object({
   service_area: z.string().uuid().optional().nullable(),
   location_source: z.enum(['VERIFIED_ADDRESS', 'MANUAL_PIN', 'GPS_DETECTED']).optional().default('MANUAL_PIN'),
   is_hotspot: z.boolean().optional().default(false),
+  original_description: z.string().optional().nullable(),
+  structured_data: z.any().optional().nullable(),
 }).refine(data => Boolean(data.category_id || data.category), {
   message: 'Category is required.',
   path: ['category_id'],
@@ -702,8 +705,9 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
     const insertCaseQuery = `
       INSERT INTO cases_case 
         (id, case_number, status, description, landmark, latitude, longitude,
-         is_hotspot, primary_reporter_id, category_id, service_area_id, location_source, created_at, updated_at)
-      VALUES ($1, $2, 'SUBMITTED', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+         is_hotspot, primary_reporter_id, category_id, service_area_id, location_source,
+         original_description, structured_data, created_at, updated_at)
+      VALUES ($1, $2, 'SUBMITTED', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)
       RETURNING *;
     `;
     const caseResult = await client.query(insertCaseQuery, [
@@ -718,6 +722,8 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       categoryId,
       assignedServiceAreaId,
       data.location_source,
+      data.original_description || null,
+      data.structured_data ? JSON.stringify(data.structured_data) : null,
       now,
     ]);
 
@@ -741,6 +747,24 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
     }
 
     await client.query('COMMIT');
+
+    // Trigger asynchronous Resend email notification (non-blocking)
+    (async () => {
+      try {
+        const catRes = await query('SELECT name_en, name_hi FROM areas_category WHERE id = $1;', [categoryId]);
+        const catName = catRes.rows[0]?.name_en || 'Civic Issue';
+        await notifyCaseSubmitted(user.email, {
+          caseNumber,
+          categoryName: catName,
+          landmark: data.landmark,
+          description: data.description,
+          status: 'SUBMITTED',
+          language: (user as any).preferred_language === 'hi' ? 'hi' : 'en',
+        });
+      } catch (err: any) {
+        console.warn('[email/notifyCaseSubmitted] Background send notice:', err.message);
+      }
+    })();
 
     await logAudit({
       actor_id: user.id,
@@ -999,6 +1023,48 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
     }
 
     await client.query('COMMIT');
+
+    // Trigger asynchronous Resend email notification (non-blocking)
+    (async () => {
+      try {
+        const repRes = await query(
+          `SELECT u.email, u.preferred_language, cat.name_en AS category_name, c.landmark, c.description
+           FROM cases_case c
+           JOIN accounts_user u ON c.primary_reporter_id = u.id
+           JOIN areas_category cat ON c.category_id = cat.id
+           WHERE c.id = $1;`,
+          [caseId]
+        );
+        if (repRes.rows.length > 0) {
+          const reporter = repRes.rows[0];
+          const lang = reporter.preferred_language === 'hi' ? 'hi' : 'en';
+          if (new_status === 'VERIFIED_RESOLVED') {
+            await notifyVerifiedResolved(reporter.email, {
+              caseNumber: currentCase.case_number,
+              categoryName: reporter.category_name,
+              landmark: reporter.landmark,
+              description: reporter.description,
+              status: new_status,
+              karmaEarned: 25,
+              language: lang,
+            });
+          } else {
+            await notifyCaseStatusChanged(reporter.email, {
+              caseNumber: currentCase.case_number,
+              categoryName: reporter.category_name,
+              landmark: reporter.landmark,
+              description: reporter.description,
+              status: new_status,
+              previousStatus: currentStatus,
+              reason: reason || undefined,
+              language: lang,
+            });
+          }
+        }
+      } catch (err: any) {
+        console.warn('[email/transitionNotification] Background send notice:', err.message);
+      }
+    })();
 
     await logAudit({
       actor_id: user.id,

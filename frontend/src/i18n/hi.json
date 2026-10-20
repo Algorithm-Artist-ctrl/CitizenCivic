@@ -424,5 +424,24 @@
     "privacy": "गोपनीयता नीति",
     "terms": "सेवा की शर्तें",
     "copyright": "© {{year}} सिटीज़नसिविक। नागरिक जवाबदेही मंच।"
+  },
+  "ai": {
+    "guideTitle": "नागरिक एआई सहायक",
+    "assistantTitle": "CitizenCivic नागरिक सहायता मित्र",
+    "verifiedSupport": "सत्यापित नगर निगम सहायता",
+    "onlineStatus": "24x7 ऑनलाइन",
+    "speakMessage": "बोलकर संदेश दें",
+    "listen": "सुनें",
+    "structuringDraft": "एआई-सहायक रिपोर्ट प्रारूपण",
+    "useStructuredDraft": "एआई प्रारूप का उपयोग करें (अनुशंसित)",
+    "useRawDraft": "मूल विवरण का उपयोग करें",
+    "suggestedTitle": "सुझाया गया टिकट शीर्षक",
+    "confirmedSummary": "पुष्टि किया गया सारांश विवरण",
+    "observedImpact": "देखा गया प्रभाव",
+    "detectedHazards": "पहचाने गए खतरे",
+    "missingInfoTip": "नागरिक एआई से सुझाव",
+    "rawVoiceText": "मूल कच्चा विवरण",
+    "reviewTitle": "एआई प्रारूपण एवं पुष्टि",
+    "reviewSubtitle": "नगर निगम में अंतिम सबमिशन से पहले कृपया विवरण की पुष्टि करें। CitizenCivic आपकी स्वीकृति के बिना कभी सबमिट नहीं करता।"
   }
 }

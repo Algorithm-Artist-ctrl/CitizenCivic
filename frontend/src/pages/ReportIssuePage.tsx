@@ -30,6 +30,16 @@ interface AITriageData {
   duplicate_risk: string;
 }
 
+interface FormattedReportDraft {
+  suggested_title: string;
+  category_slug: string;
+  concise_summary: string;
+  observed_impact: string;
+  detected_hazards: string[];
+  missing_information: string[];
+  original_description: string;
+}
+
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
@@ -84,6 +94,14 @@ export const ReportIssuePage: React.FC = () => {
   const [manualCoordsOpen, setManualCoordsOpen] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [declarationChecked, setDeclarationChecked] = useState(false);
+
+  // AI Structured Draft State
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [structuredDraft, setStructuredDraft] = useState<FormattedReportDraft | null>(null);
+  const [useStructuredDraft, setUseStructuredDraft] = useState(true);
+  const [confirmedDescription, setConfirmedDescription] = useState('');
+  const [confirmedTitle, setConfirmedTitle] = useState('');
+  const [rawTextCollapsed, setRawTextCollapsed] = useState(true);
 
   // Autocomplete ref
   const landmarkInputRef = useRef<HTMLInputElement>(null);
@@ -207,6 +225,28 @@ export const ReportIssuePage: React.FC = () => {
     }
   };
 
+  const formatDraftWithAI = async (descToFormat: string, lmToFormat: string) => {
+    setAiDraftLoading(true);
+    try {
+      const chosenCat = categories.find((c) => c.id === selectedCategory);
+      const res = await apiClient.post<FormattedReportDraft>('/ai/format-report', {
+        raw_description: descToFormat,
+        landmark: lmToFormat,
+        category_slug: chosenCat?.slug,
+        language: i18n.language === 'hi' ? 'hi' : 'en',
+      });
+      setStructuredDraft(res.data);
+      setConfirmedTitle(res.data.suggested_title);
+      setConfirmedDescription(res.data.concise_summary);
+      setUseStructuredDraft(true);
+    } catch (e: any) {
+      console.warn('AI report formatting notice:', e);
+      setConfirmedDescription(descToFormat);
+    } finally {
+      setAiDraftLoading(false);
+    }
+  };
+
   const handleNextStep = () => {
     setError(null);
     if (step === 1 && !selectedCategory) {
@@ -227,6 +267,9 @@ export const ReportIssuePage: React.FC = () => {
       if (!description.trim()) {
         setError('Please enter a description of the civic problem.');
         return;
+      }
+      if (!structuredDraft) {
+        formatDraftWithAI(description.trim(), landmark.trim());
       }
     }
     setStep((prev) => Math.min(prev + 1, 4));
@@ -274,9 +317,22 @@ export const ReportIssuePage: React.FC = () => {
         return;
       }
 
+      const finalDescription = (useStructuredDraft && confirmedDescription.trim())
+        ? confirmedDescription.trim()
+        : description.trim();
+
       const payload = {
         category: selectedCategoryRecord.id,
-        description: description.trim(),
+        service_area: serviceAreas[0]?.id || null,
+        description: finalDescription,
+        original_description: description.trim(),
+        structured_data: (useStructuredDraft && structuredDraft) ? {
+          title: confirmedTitle || structuredDraft.suggested_title,
+          category_slug: structuredDraft.category_slug,
+          observed_impact: structuredDraft.observed_impact,
+          detected_hazards: structuredDraft.detected_hazards,
+          missing_information: structuredDraft.missing_information,
+        } : null,
         landmark: landmark.trim(),
         latitude,
         longitude,
@@ -978,7 +1034,7 @@ export const ReportIssuePage: React.FC = () => {
         </div>
       )}
 
-      {/* STEP 4: REVIEW & DECLARATION */}
+      {/* STEP 4: REVIEW, AI STRUCTURING & DECLARATION */}
       {step === 4 && (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
@@ -992,6 +1048,145 @@ export const ReportIssuePage: React.FC = () => {
               <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                 READY FOR DISPATCH
               </span>
+            </div>
+
+            {/* AI Structuring & Quality Review Block */}
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className="text-xs font-bold text-emerald-950">
+                    {t('ai.structuringDraft', 'AI-Assisted Report Structuring')}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white/90 p-1 rounded-lg border border-emerald-200/70 text-[11px] self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setUseStructuredDraft(true)}
+                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                      useStructuredDraft
+                        ? 'bg-emerald-700 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Structured Draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseStructuredDraft(false)}
+                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                      !useStructuredDraft
+                        ? 'bg-slate-900 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Raw Input
+                  </button>
+                </div>
+              </div>
+
+              {aiDraftLoading ? (
+                <div className="py-4 text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                    <Sparkles className="h-4 w-4 animate-spin text-emerald-600" />
+                    <span>Structuring and triaging draft with CitizenCivic AI...</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Extracting concise summary, physical hazards, and location clarity for field teams.
+                  </p>
+                </div>
+              ) : structuredDraft && useStructuredDraft ? (
+                <div className="space-y-3 text-xs">
+                  {/* Confirmed Title */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Suggested Ticket Title (Editable)
+                    </label>
+                    <input
+                      type="text"
+                      value={confirmedTitle}
+                      onChange={(e) => setConfirmedTitle(e.target.value)}
+                      className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-hidden focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {/* Confirmed Description */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Confirmed Summary Description (Editable by Citizen)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={confirmedDescription}
+                      onChange={(e) => setConfirmedDescription(e.target.value)}
+                      className="w-full rounded-lg border border-emerald-300 bg-white p-3 text-xs text-slate-900 focus:outline-hidden focus:border-emerald-600 leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Observed Impact */}
+                  {structuredDraft.observed_impact && (
+                    <div className="bg-white/90 p-2.5 rounded-lg border border-emerald-200/80 text-[11px] text-slate-700">
+                      <strong className="text-emerald-900 font-bold">Observed Impact:</strong>{' '}
+                      {structuredDraft.observed_impact}
+                    </div>
+                  )}
+
+                  {/* Detected Hazards */}
+                  {structuredDraft.detected_hazards && structuredDraft.detected_hazards.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[11px] font-semibold text-slate-600">Detected Hazards:</span>
+                      {structuredDraft.detected_hazards.map((h, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 text-[10px] font-bold"
+                        >
+                          ⚠️ {h}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Missing Information Advisory */}
+                  {structuredDraft.missing_information && structuredDraft.missing_information.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 p-2 rounded-lg text-[11px] text-amber-900">
+                      <strong>Optional Clarification:</strong> Field workers may ask for: {structuredDraft.missing_information.join(', ')}
+                    </div>
+                  )}
+
+                  {/* Collapsible Original Raw Description */}
+                  <div className="pt-2 border-t border-emerald-200/60">
+                    <button
+                      type="button"
+                      onClick={() => setRawTextCollapsed(!rawTextCollapsed)}
+                      className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline"
+                    >
+                      {rawTextCollapsed ? '▶ View Original Raw Voice/Text Description' : '▼ Hide Original Raw Input'}
+                    </button>
+                    {!rawTextCollapsed && (
+                      <div className="mt-2 p-2.5 rounded-lg bg-slate-100 border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap">
+                        {description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 text-xs">
+                  <p className="text-slate-700 leading-relaxed">
+                    <strong>Manual Description:</strong> {description}
+                  </p>
+                  {!structuredDraft && (
+                    <button
+                      type="button"
+                      onClick={() => formatDraftWithAI(description, landmark)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-900 underline"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Generate AI Structured Draft</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="divide-y divide-slate-100 text-xs">
@@ -1018,12 +1213,6 @@ export const ReportIssuePage: React.FC = () => {
                 <span className="font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
                   {latitude !== null && longitude !== null ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : t('report.coordinatesNotSet', 'Not set')}
                 </span>
-              </div>
-
-              {/* Description */}
-              <div className="py-3 flex items-start justify-between gap-4">
-                <span className="font-semibold text-slate-500 shrink-0">Description:</span>
-                <span className="text-slate-700 text-right max-w-md">{description || t('report.descriptionNotProvided', 'Not provided')}</span>
               </div>
 
               {/* Photos */}

@@ -424,5 +424,24 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "copyright": "© {{year}} CitizenCivic. Civic accountability platform."
+  },
+  "ai": {
+    "guideTitle": "Civic AI Guide",
+    "assistantTitle": "CitizenCivic AI Assistant",
+    "verifiedSupport": "Verified Municipal Support",
+    "onlineStatus": "24x7 Online",
+    "speakMessage": "Speak message",
+    "listen": "Listen",
+    "structuringDraft": "AI-Assisted Report Structuring",
+    "useStructuredDraft": "Use AI-Structured Draft (Recommended)",
+    "useRawDraft": "Use Original Raw Input",
+    "suggestedTitle": "Suggested Ticket Title",
+    "confirmedSummary": "Confirmed Summary Description",
+    "observedImpact": "Observed Impact",
+    "detectedHazards": "Detected Hazards",
+    "missingInfoTip": "Helpful Tip from Civic AI",
+    "rawVoiceText": "Original Raw Description",
+    "reviewTitle": "AI Structuring & Confirmation",
+    "reviewSubtitle": "Please review and confirm every detail before final municipal submission. CitizenCivic never submits without your approval."
   }
 }

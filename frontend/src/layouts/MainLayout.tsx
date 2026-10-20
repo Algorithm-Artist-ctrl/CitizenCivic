@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Badge from '../components/ui/Badge';
+import CivicAIAssistant from '../components/CivicAIAssistant';
 
 export const MainLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -584,6 +585,9 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* 24x7 Civic AI Assistant Widget */}
+      <CivicAIAssistant />
     </div>
   );
 };

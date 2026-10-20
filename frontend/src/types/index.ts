@@ -52,6 +52,14 @@ export interface Case {
   service_area: ServiceArea | null;
   status: CaseStatus;
   description: string;
+  original_description?: string | null;
+  structured_data?: {
+    title?: string;
+    category_slug?: string;
+    observed_impact?: string;
+    detected_hazards?: string[];
+    missing_information?: string[];
+  } | null;
   landmark: string;
   latitude: number;
   longitude: number;

@@ -5,7 +5,6 @@ import {
   Award,
   ShieldCheck,
   Clock,
-  Search,
   Filter,
   Leaf,
   Users,

@@ -13,7 +13,7 @@ let serviceAreaId: string;
 let createdCaseId: string;
 
 beforeAll(async () => {
-  // Ensure DB connection
+  // Ensure DB connection (allowing Neon serverless spin-up)
   const res = await query('SELECT 1;');
   expect(res.rows.length).toBe(1);
 
@@ -28,7 +28,7 @@ beforeAll(async () => {
   }
 
   testUserEmail = `vitest_${Date.now()}@example.com`;
-});
+}, 30000);
 
 afterAll(async () => {
   // Clean up created test case and user if created
@@ -210,6 +210,8 @@ describe('4. Cases & Civic Workflow', () => {
       .send({
         category_id: categoryId,
         description: 'Large waste accumulation near 12th Main Indiranagar park entrance',
+        original_description: 'voice recorded complaint about huge garbage dump near park',
+        structured_data: { hazard_flags: ['sanitation', 'pedestrian obstruction'] },
         landmark: 'Near 12th Main Park Entrance',
         latitude: 12.9784,
         longitude: 77.6408,
@@ -220,6 +222,7 @@ describe('4. Cases & Civic Workflow', () => {
     expect(res.body.case_number).toMatch(/^CC-\d{8}-\d{4}$/);
     expect(res.body.status).toBe('SUBMITTED');
     expect(res.body.location_source).toBe('MANUAL_PIN');
+    expect(res.body.original_description).toBe('voice recorded complaint about huge garbage dump near park');
     createdCaseId = res.body.id;
   });
 
@@ -311,7 +314,7 @@ describe('4. Cases & Civic Workflow', () => {
   });
 
   it('GET /api/v1/cases/nearby should return public nearby cases', async () => {
-    const res = await request(app).get('/api/v1/cases/nearby?lat=12.9784&lng=77.6408');
+    const res = await request(app).get('/api/v1/cases/nearby?lat=12.9784&lng=77.6408&radius_km=5');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
@@ -441,6 +444,60 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
     } else {
       expect(res.status).toBe(200);
       expect(res.body.requires_human_verification).toBe(true);
+    }
+  });
+
+  it('GET /api/v1/ai/email-status should report Resend configuration status without leaking keys', async () => {
+    const res = await request(app).get('/api/v1/ai/email-status');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toMatch(/configured|unconfigured/);
+    expect(res.body.from_email).toBeDefined();
+    expect(res.body.apiKey).toBeUndefined();
+    expect(res.body.secret).toBeUndefined();
+  });
+
+  it('POST /api/v1/ai/format-report should validate raw_description and handle AI response', async () => {
+    const resErr = await request(app)
+      .post('/api/v1/ai/format-report')
+      .send({});
+    expect(resErr.status).toBe(400);
+
+    const res = await request(app)
+      .post('/api/v1/ai/format-report')
+      .send({
+        raw_description: 'Deep pothole outside main gate creating heavy traffic jam',
+        landmark: 'Indiranagar 100ft road near Metro station',
+      });
+
+    if (res.status === 503) {
+      expect(res.body.detail).toContain('unavailable');
+    } else {
+      expect(res.status).toBe(200);
+      expect(res.body.suggested_title).toBeDefined();
+      expect(res.body.category_slug).toBeDefined();
+      expect(res.body.original_description).toBeDefined();
+    }
+  });
+
+  it('POST /api/v1/ai/assistant should validate messages and provide grounded guidance', async () => {
+    const resErr = await request(app)
+      .post('/api/v1/ai/assistant')
+      .send({});
+    expect(resErr.status).toBe(400);
+
+    const res = await request(app)
+      .post('/api/v1/ai/assistant')
+      .send({
+        messages: [{ role: 'user', content: 'How do I earn Karma points on CitizenCivic?' }],
+        language: 'en',
+      });
+
+    if (res.status === 503) {
+      expect(res.body.detail).toContain('unavailable');
+    } else {
+      expect(res.status).toBe(200);
+      expect(res.body.reply).toBeDefined();
+      expect(Array.isArray(res.body.suggested_prompts)).toBe(true);
     }
   });
 });

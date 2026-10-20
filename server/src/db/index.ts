@@ -8,7 +8,7 @@ export const pool = new Pool({
   ssl: isNeon ? { rejectUnauthorized: false } : undefined,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 15000,
 });
 
 pool.on('error', (err) => {
@@ -34,6 +34,10 @@ export async function getClient(): Promise<PoolClient> {
 
 export async function ensureBaseData(): Promise<void> {
   try {
+    await query(`
+      ALTER TABLE cases_case ADD COLUMN IF NOT EXISTS original_description TEXT;
+      ALTER TABLE cases_case ADD COLUMN IF NOT EXISTS structured_data JSONB;
+    `);
     await query(`
       INSERT INTO areas_category (id, name_en, name_hi, slug, description, is_active, sort_order, created_at)
       VALUES (

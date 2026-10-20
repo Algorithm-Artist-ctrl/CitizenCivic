@@ -1,14 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Languages, ChevronDown } from 'lucide-react';
+import apiClient from '../api/client';
 
 export const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
   const currentLang = i18n.language?.startsWith('hi') ? 'hi' : 'en';
 
+  useEffect(() => {
+    document.documentElement.lang = currentLang;
+  }, [currentLang]);
+
   const toggleLanguage = () => {
     const nextLang = currentLang === 'en' ? 'hi' : 'en';
     i18n.changeLanguage(nextLang);
+    document.documentElement.lang = nextLang;
+    localStorage.setItem('i18nextLng', nextLang);
+    // Sync preferred_language with user profile if authenticated
+    apiClient.patch('/auth/profile/', { preferred_language: nextLang }).catch(() => {});
   };
 
   return (

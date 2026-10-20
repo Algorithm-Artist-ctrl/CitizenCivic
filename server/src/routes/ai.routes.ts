@@ -9,7 +9,10 @@ import {
   detectDuplicateReport,
   summarizeCaseTimeline,
   reviewResolutionNotes,
+  formatCivicReportDraft,
+  chatWithCivicAssistant,
 } from '../services/openai.service';
+import { checkEmailHealth } from '../services/email.service';
 
 const router = Router();
 
@@ -44,6 +47,65 @@ router.get('/status', optionalAuth, async (_req: Request, res: Response) => {
 router.get('/health', optionalAuth, async (_req: Request, res: Response) => {
   const health = await checkAIHealth();
   res.json(health);
+});
+
+// GET /api/v1/ai/email-status — Diagnostic check for Resend notifications (never leaks key)
+router.get('/email-status', optionalAuth, async (_req: Request, res: Response) => {
+  const health = await checkEmailHealth();
+  res.json(health);
+});
+
+// POST /api/v1/ai/format-report — Structure citizen input into typed draft
+router.post('/format-report', optionalAuth, aiLimiter, async (req: Request, res: Response) => {
+  const { raw_description, landmark, category_slug, language } = req.body;
+
+  if (!raw_description || !String(raw_description).trim()) {
+    res.status(400).json({ detail: 'raw_description is required to format draft.' });
+    return;
+  }
+
+  try {
+    const catRes = await query('SELECT slug, name_en, name_hi FROM areas_category WHERE is_active = true ORDER BY sort_order ASC;');
+    const categories = catRes.rows.map(r => ({ slug: r.slug, name_en: r.name_en, name_hi: r.name_hi }));
+
+    const draft = await formatCivicReportDraft(
+      String(raw_description).trim(),
+      String(landmark || '').trim(),
+      categories,
+      category_slug ? String(category_slug) : undefined,
+      language === 'hi' ? 'hi' : 'en'
+    );
+
+    res.json(draft);
+  } catch (err: any) {
+    console.warn('[ai/format-report] Notice:', err.message);
+    res.status(503).json({
+      detail: err.message || 'AI report formatting service is temporarily unavailable.',
+    });
+  }
+});
+
+// POST /api/v1/ai/assistant — Grounded civic guidance assistant
+router.post('/assistant', optionalAuth, aiLimiter, async (req: Request, res: Response) => {
+  const { messages, language } = req.body;
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    res.status(400).json({ detail: 'messages array is required.' });
+    return;
+  }
+
+  try {
+    const response = await chatWithCivicAssistant(
+      messages,
+      language === 'hi' ? 'hi' : 'en'
+    );
+    res.json(response);
+  } catch (err: any) {
+    console.warn('[ai/assistant] Notice:', err.message);
+    res.status(503).json({
+      detail: err.message || 'Civic AI assistant is temporarily unavailable.',
+    });
+  }
 });
 
 // POST /api/v1/ai/triage — AI-assisted categorization using REAL DB categories

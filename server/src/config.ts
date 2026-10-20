@@ -52,4 +52,8 @@ export const config = {
 
   // Google Maps
   googleMapsApiKey: process.env.GOOGLE_MAPS_API || process.env.GOOGLE_MAPS_API_KEY || '',
+
+  // Resend Email Notifications
+  resendApiKey: process.env.RESEND_API_KEY || '',
+  resendFromEmail: process.env.RESEND_FROM_EMAIL || 'CitizenCivic Notifications <notifications@citizencivic.org>',
 };

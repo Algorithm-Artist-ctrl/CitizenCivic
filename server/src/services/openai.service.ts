@@ -62,6 +62,27 @@ export interface AIAdvisoryAuditResult {
   checklist_items_covered: string[];
 }
 
+export interface FormattedReportDraft {
+  suggested_title: string;
+  category_slug: string;
+  concise_summary: string;
+  observed_impact: string;
+  detected_hazards: string[];
+  missing_information: string[];
+  original_description: string;
+}
+
+export interface CivicChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface CivicAssistantResponse {
+  reply: string;
+  suggested_prompts: string[];
+  suggested_category?: string;
+}
+
 /**
  * Diagnostic health check verifying whether OPENAI_API_KEY is configured
  * and capable of successfully completing a minimal API request.
@@ -390,5 +411,129 @@ Return JSON with:
     operator_notes_clear: Boolean(parsed.operator_notes_clear),
     requires_human_verification: true,
     checklist_items_covered: Array.isArray(parsed.checklist_items_covered) ? parsed.checklist_items_covered : [],
+  };
+}
+
+/**
+ * 6. Format and Structure Citizen Report Draft
+ * Converts raw citizen input (text or transcribed voice) into a structured municipal complaint draft.
+ * Throws explicit error when AI is unconfigured or unavailable — NO FAKE FALLBACKS.
+ */
+export async function formatCivicReportDraft(
+  rawDescription: string,
+  landmark: string,
+  availableCategories: { slug: string; name_en: string; name_hi?: string }[],
+  currentSlug?: string,
+  preferredLanguage: 'en' | 'hi' = 'en'
+): Promise<FormattedReportDraft> {
+  const client = getOpenAIClient();
+  if (!client) {
+    throw new Error('AI report structuring is unavailable: OPENAI_API_KEY is not configured on the server.');
+  }
+
+  const isHi = preferredLanguage === 'hi';
+  const categoryListStr = availableCategories.map(c => `"${c.slug}" (${c.name_en})`).join(', ');
+
+  const systemPrompt = `You are an expert municipal solid waste and civic defect documentation specialist.
+Transform the citizen's complaint into a well-structured, objective, and actionable civic report draft.
+Available category slugs: [${categoryListStr}].
+
+Language instructions:
+${isHi ? 'Return output values primarily in clear, professional Hindi (Devanagari script).' : 'Return output values in clear, professional English.'}
+
+Return a valid JSON object matching this schema:
+{
+  "suggested_title": "Concise 5-8 word title specifying the issue and location",
+  "category_slug": "one of the exact category slugs from the available list",
+  "concise_summary": "2-3 sentences providing exact description of the physical defect, dimensions/severity, and landmark",
+  "observed_impact": "1-2 sentences on impact on pedestrians, traffic flow, hygiene, or safety",
+  "detected_hazards": ["array of specific immediate safety or health risks"],
+  "missing_information": ["array of critical missing details field teams will need, or empty if complete"]
+}`;
+
+  const userPrompt = `Citizen's Input: ${rawDescription}\nLandmark / Location: ${landmark || 'Not provided'}\nCategory Hint: ${currentSlug || 'none'}`;
+
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.2,
+    max_tokens: 500,
+  });
+
+  const parsed = JSON.parse(response.choices[0].message.content || '{}');
+  const validSlugs = availableCategories.map(c => c.slug);
+  const pickedCategory = validSlugs.includes(parsed.category_slug)
+    ? parsed.category_slug
+    : (currentSlug && validSlugs.includes(currentSlug) ? currentSlug : validSlugs[0] || 'other');
+
+  return {
+    suggested_title: String(parsed.suggested_title || (isHi ? 'नागरिक समस्या रिपोर्ट' : 'Civic Issue Report')),
+    category_slug: pickedCategory,
+    concise_summary: String(parsed.concise_summary || rawDescription),
+    observed_impact: String(parsed.observed_impact || (isHi ? 'सार्वजनिक असुविधा' : 'Public obstruction / inconvenience')),
+    detected_hazards: Array.isArray(parsed.detected_hazards) ? parsed.detected_hazards : [],
+    missing_information: Array.isArray(parsed.missing_information) ? parsed.missing_information : [],
+    original_description: rawDescription,
+  };
+}
+
+/**
+ * 7. Interactive Civic Assistant
+ * Grounded civic helper providing guidance on reporting, tracking, municipal procedures, and karma rewards in English & Hindi.
+ * Throws explicit error when AI is unconfigured or unavailable — NO FAKE FALLBACKS.
+ */
+export async function chatWithCivicAssistant(
+  messages: CivicChatMessage[],
+  preferredLanguage: 'en' | 'hi' = 'en'
+): Promise<CivicAssistantResponse> {
+  const client = getOpenAIClient();
+  if (!client) {
+    throw new Error('Civic AI Assistant is unavailable: OPENAI_API_KEY is not configured on the server.');
+  }
+
+  const isHi = preferredLanguage === 'hi';
+  const systemInstruction = `You are CitizenCivic AI, the official verified civic guide and municipal support assistant for CitizenCivic.
+CitizenCivic is an accountability platform connecting citizens directly with municipal corporation field operations.
+
+Core Principles:
+1. Grounded & Factual: Never invent fake case reference numbers (e.g., CC-XXXX), fake officers, or claim an issue is resolved without database evidence.
+2. Guidance: Explain how to file high-impact reports (clear before-photos, exact landmarks/cross-streets, selecting correct categories).
+3. Lifecycle Explanation: Explain status stages (SUBMITTED -> REVIEWED -> FORWARDED -> ACKNOWLEDGED -> IN_PROGRESS -> RESOLUTION_REPORTED -> VERIFICATION_PENDING -> VERIFIED_RESOLVED).
+4. Community Karma: Explain that citizens earn 10 Karma Points upon report submission and 25 Karma Points when the issue is verified resolved.
+5. Multilingual: If the user writes in Hindi or asks in Hindi, answer in Hindi. If in English, answer in English.
+6. Return format: Return a JSON object with:
+   - "reply": Markdown formatted string with your direct, helpful response.
+   - "suggested_prompts": array of 2-3 short follow-up questions the citizen might want to ask next.
+   - "suggested_category": optional category slug if the conversation is about a specific issue type.`;
+
+  const formattedMessages: any[] = [
+    { role: 'system', content: systemInstruction },
+    ...messages.slice(-6).map(m => ({
+      role: m.role === 'system' ? 'system' : m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    })),
+  ];
+
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: formattedMessages,
+    response_format: { type: 'json_object' },
+    temperature: 0.3,
+    max_tokens: 600,
+  });
+
+  const parsed = JSON.parse(response.choices[0].message.content || '{}');
+  return {
+    reply: String(parsed.reply || (isHi ? 'मैं आपकी नागरिक समस्याओं को दर्ज करने में सहायता कर सकता हूँ।' : 'I can assist you with reporting civic issues.')),
+    suggested_prompts: Array.isArray(parsed.suggested_prompts)
+      ? parsed.suggested_prompts
+      : (isHi
+          ? ['कचरा डंप की शिकायत कैसे दर्ज करें?', 'कर्म अंक कैसे मिलते हैं?', 'शिकायत की स्थिति कैसे ट्रैक करें?']
+          : ['How do I report a pothole?', 'How do I earn Karma points?', 'What is the case resolution process?']),
+    suggested_category: parsed.suggested_category,
   };
 }
