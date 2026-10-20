@@ -731,7 +731,7 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       timestamp: now.toISOString(),
     });
 
-    res.status(201).json(caseResult.rows[0]);
+    res.status(201).json({ ...caseResult.rows[0], reward_points_credited: submissionRewardPoints });
   } catch (err: any) {
     await client.query('ROLLBACK');
     console.error('[cases/create] Error:', err);

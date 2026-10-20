@@ -109,12 +109,30 @@ router.post('/check-duplicate', authenticateToken, aiLimiter, async (req: Reques
     return;
   }
 
-  try {
-    const lat = typeof latitude === 'number' ? latitude : 12.9784;
-    const lng = typeof longitude === 'number' ? longitude : 77.6408;
-    const radiusDeg = 1.0 / 111.0; // ~1km bounding box
+  const hasValidCoordinates =
+    typeof latitude === 'number' &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    typeof longitude === 'number' &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180;
 
-    // Query active non-closed cases from database
+  if (!hasValidCoordinates) {
+    res.status(400).json({
+      detail: 'Valid latitude and longitude are required for location-aware duplicate checking. Select the incident location first.',
+      field: 'coordinates',
+    });
+    return;
+  }
+
+  try {
+    const lat = latitude as number;
+    const lng = longitude as number;
+    const radiusDeg = 1.0 / 111.0; // Approximate 1 km latitude bounding box.
+
+    // Query active non-closed cases around the actual supplied incident coordinates.
     const casesRes = await query(
       `SELECT case_number, description, landmark, status 
        FROM cases_case 

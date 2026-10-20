@@ -92,6 +92,8 @@ export const ReportIssuePage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [createdCaseNumber, setCreatedCaseNumber] = useState<string | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
+  const [createdCaseStatus, setCreatedCaseStatus] = useState<string | null>(null);
+  const [createdRewardPoints, setCreatedRewardPoints] = useState<number | null>(null);
   const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -288,6 +290,14 @@ export const ReportIssuePage: React.FC = () => {
 
       setCreatedCaseNumber(caseNumber);
       setCreatedCaseId(caseId);
+      setCreatedCaseStatus(typeof newCase.status === 'string' ? newCase.status : null);
+      setCreatedRewardPoints(
+        typeof newCase.reward_points_credited === 'number' &&
+        Number.isFinite(newCase.reward_points_credited) &&
+        newCase.reward_points_credited > 0
+          ? newCase.reward_points_credited
+          : null
+      );
 
       // Upload photos if any
       if (photos.length > 0 && caseId) {
@@ -366,8 +376,18 @@ export const ReportIssuePage: React.FC = () => {
               {createdCaseNumber}
             </div>
             <div className="pt-3 border-t border-slate-200/80 text-xs text-slate-500 flex items-center justify-between">
-              <span>Reward Credited: <strong className="text-emerald-700 font-mono">+25 Pts</strong></span>
-              <span>Status: <strong className="text-slate-900 font-semibold">Submitted (Dispatch Pending)</strong></span>
+              <span>
+                {createdRewardPoints !== null
+                  ? <>Reward Credited: <strong className="text-emerald-700 font-mono">+{createdRewardPoints} Pts</strong></>
+                  : 'Reward points are recorded only when an active reward rule applies.'}
+              </span>
+              <span>
+                Status: <strong className="text-slate-900 font-semibold">
+                  {createdCaseStatus
+                    ? t(`case.status.${createdCaseStatus}`, createdCaseStatus.replace(/_/g, ' '))
+                    : 'Status unavailable'}
+                </strong>
+              </span>
             </div>
           </div>
 
@@ -384,6 +404,8 @@ export const ReportIssuePage: React.FC = () => {
               onClick={() => {
                 setCreatedCaseNumber(null);
                 setCreatedCaseId(null);
+                setCreatedCaseStatus(null);
+                setCreatedRewardPoints(null);
                 setStep(1);
                 setDescription('');
                 setLandmark('');
