@@ -5,12 +5,10 @@ import {
   Award,
   ShieldCheck,
   Clock,
-  Target,
   Search,
   Filter,
   Leaf,
   Users,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -21,7 +19,7 @@ interface LeaderboardCitizen {
   display_name: string;
   total_points: number;
   verified_reports: number;
-  karma_tier: string;
+  karma_tier: string | null;
 }
 
 interface LeaderboardOfficer {
@@ -82,7 +80,7 @@ export const RewardsPage: React.FC = () => {
 
   const [citizenList, setCitizenList] = useState<LeaderboardCitizen[]>([]);
   const [officerList, setOfficerList] = useState<LeaderboardOfficer[]>([]);
-  const [totalPoints, setTotalPoints] = useState<number>(0);
+  const [totalPoints, setTotalPoints] = useState<number | null>(null);
   const [recentEntries, setRecentEntries] = useState<LedgerEntry[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -96,8 +94,8 @@ export const RewardsPage: React.FC = () => {
         const [areasRes, myPointsRes] = await Promise.all([
           apiClient.get('/areas/service-areas/').catch(() => ({ data: { results: [] } })),
           user
-            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: 0, history: [] } }))
-            : Promise.resolve({ data: { total_points: 0, history: [] } }),
+            ? apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: null, history: [] } }))
+            : Promise.resolve({ data: { total_points: null, history: [] } }),
         ]);
 
         const areas = areasRes.data.results || areasRes.data || [];
@@ -153,13 +151,6 @@ export const RewardsPage: React.FC = () => {
 
     fetchLeaderboard();
   }, [tab, selectedAreaId]);
-
-  const verifiedCasesCount = recentEntries.filter(
-    (e) => (e.reason || '').toLowerCase().includes('verif') || e.points >= 100
-  ).length;
-  const auditsCompletedCount = recentEntries.filter(
-    (e) => (e.reason || '').toLowerCase().includes('audit')
-  ).length;
 
   if (loading) {
     return (
@@ -248,125 +239,26 @@ export const RewardsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Top 3 Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: MY KARMA SCORE (Dark Teal #073033) */}
-        <div className="relative overflow-hidden rounded-2xl bg-[#073033] text-white p-6 shadow-md flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">
-                MY KARMA SCORE
-              </span>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight flex items-baseline gap-2">
-                <span>{totalPoints}</span>
-                <span className="text-base font-sans font-bold text-emerald-400">pts</span>
-              </div>
+      {/* Ledger-backed karma total; no unconfigured tiers or reward promises. */}
+      <section className="max-w-2xl rounded-2xl border border-slate-200/90 bg-[#073033] p-6 text-white shadow-md">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <span className="block text-xs font-mono font-bold uppercase tracking-wider text-emerald-300">
+              {t('rewards.totalPointsTitle', 'Your Karma Points')}
+            </span>
+            <div className="flex items-baseline gap-2 text-3xl sm:text-4xl font-extrabold font-mono tracking-tight">
+              <span>{totalPoints ?? '—'}</span>
+              <span className="text-base font-sans font-bold text-emerald-300">pts</span>
             </div>
-
-            {/* 3D Gold Medal Image */}
-            <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden flex items-center justify-center">
-              <img
-                src="/assets/karma-medal.png"
-                alt="Karma Medal"
-                className="h-full w-full object-contain filter drop-shadow-md"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2 mt-4 pt-4 border-t border-emerald-900/60">
-            <div className="flex items-center justify-between text-xs">
-              <span className="inline-flex items-center gap-1.5 font-bold text-emerald-300">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Neighborhood Sentinel (Tier 1)</span>
-              </span>
-              <span className="font-mono text-[11px] text-emerald-200/80">
-                500 pts
-              </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="h-2 w-full rounded-full bg-emerald-950 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-1000"
-                style={{ width: `${Math.min(100, Math.max(5, (totalPoints / 500) * 100))}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-emerald-300/70 font-mono">
-              {Math.max(0, 500 - totalPoints)} pts to Community Warden (Tier 2)
+            <p className="max-w-xl text-xs leading-relaxed text-emerald-100/80">
+              {t('rewards.ledgerDescription', 'This total reflects points recorded in your reward ledger. Reward rules are shown only when configured by the platform.')}
             </p>
           </div>
-        </div>
-
-        {/* Card 2: VERIFIED RESOLUTION BONUS */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs flex flex-col justify-between hover:border-rose-200 transition-all">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
-                VERIFIED RESOLUTION BONUS
-              </span>
-              <div className="h-10 w-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-                <Target className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-2xl font-extrabold text-slate-950 font-heading">
-                +100 Pts / Case
-              </div>
-              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                When your reported issue is cleared and confirmed with on-ground photographic evidence.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 border border-emerald-200">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Strict anti-duplicate fraud filters applied</span>
-            </span>
-            {verifiedCasesCount > 0 && (
-              <span className="text-[11px] font-mono text-slate-500 font-semibold">
-                {verifiedCasesCount} verified
-              </span>
-            )}
+          <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden flex items-center justify-center">
+            <img src="/assets/karma-medal.png" alt="" aria-hidden="true" className="h-full w-full object-contain" />
           </div>
         </div>
-
-        {/* Card 3: HOTSPOT FOLLOW-UP AUDIT */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs flex flex-col justify-between hover:border-blue-200 transition-all">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
-                HOTSPOT FOLLOW-UP AUDIT
-              </span>
-              <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                <Search className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-2xl font-extrabold text-slate-950 font-heading">
-                +75 Pts / Audit
-              </div>
-              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                Verify that a previously resolved blackspot has remained clean during 7-day and 30-day checks.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 border border-emerald-200">
-              <Leaf className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Prevents recurring illegal waste accumulation</span>
-            </span>
-            {auditsCompletedCount > 0 && (
-              <span className="text-[11px] font-mono text-slate-500 font-semibold">
-                {auditsCompletedCount} audited
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -568,7 +460,7 @@ export const RewardsPage: React.FC = () => {
                               )}
                             </div>
                             <p className="text-[10px] text-slate-500 font-medium">
-                              {cit.karma_tier || 'Active Sentinel'} · {cit.verified_reports} verified
+                              {cit.karma_tier ? `${cit.karma_tier} · ` : ''}{cit.verified_reports} verified
                             </p>
                           </div>
                         </div>

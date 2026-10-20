@@ -8,6 +8,7 @@ import { upload, saveFile, getFileViewUrl } from '../services/storage.service';
 import { logAudit } from '../services/audit.service';
 import { CaseStatus, UserRole } from '../types';
 import { config } from '../config';
+import { getConfiguredRewardPoints } from '../services/rewards.service';
 
 const router = Router();
 
@@ -566,6 +567,7 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
     return;
   }
 
+  const submissionRewardPoints = await getConfiguredRewardPoints('case_submission');
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -697,15 +699,17 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       [transitionId, caseId, user.id, now]
     );
 
-    // Credit Karma Points (e.g. 10 points for submission)
-    const ledgerId = crypto.randomUUID();
-    const idempotencyKey = `report_${caseId}`;
-    await client.query(
-      `INSERT INTO rewards_rewardledger (id, user_id, points, reason, related_case_id, idempotency_key, created_at)
-       VALUES ($1, $2, 10, 'Issue reported', $3, $4, $5)
-       ON CONFLICT (idempotency_key) DO NOTHING;`,
-      [ledgerId, user.id, caseId, idempotencyKey, now]
-    );
+    // Award points only when an active submission reward is configured in the database.
+    if (submissionRewardPoints !== null && submissionRewardPoints > 0) {
+      const ledgerId = crypto.randomUUID();
+      const idempotencyKey = `report_${caseId}`;
+      await client.query(
+        `INSERT INTO rewards_rewardledger (id, user_id, points, reason, related_case_id, idempotency_key, created_at)
+         VALUES ($1, $2, $3, 'Issue reported', $4, $5, $6)
+         ON CONFLICT (idempotency_key) DO NOTHING;`,
+        [ledgerId, user.id, submissionRewardPoints, caseId, idempotencyKey, now]
+      );
+    }
 
     await client.query('COMMIT');
 
@@ -882,6 +886,9 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
     return;
   }
 
+  const verifiedResolutionPoints = new_status === 'VERIFIED_RESOLVED'
+    ? await getConfiguredRewardPoints('verified_resolution')
+    : null;
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -950,15 +957,15 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
       [transId, caseId, currentStatus, new_status, user.id, reason || '', evidence_refs ? JSON.stringify(evidence_refs) : null, now]
     );
 
-    // If Verified Resolved, reward reporter with 25 points
-    if (new_status === 'VERIFIED_RESOLVED') {
+    // Award resolution points only when an active verified-resolution reward is configured.
+    if (new_status === 'VERIFIED_RESOLVED' && verifiedResolutionPoints !== null && verifiedResolutionPoints > 0) {
       const ledgerId = crypto.randomUUID();
       const idempotencyKey = `verified_${caseId}`;
       await client.query(
         `INSERT INTO rewards_rewardledger (id, user_id, points, reason, related_case_id, idempotency_key, created_at)
-         VALUES ($1, $2, 25, 'Report verified resolved by municipal team', $3, $4, $5)
+         VALUES ($1, $2, $3, 'Report verified resolved by municipal team', $4, $5, $6)
          ON CONFLICT (idempotency_key) DO NOTHING;`,
-        [ledgerId, currentCase.primary_reporter_id, caseId, idempotencyKey, now]
+        [ledgerId, currentCase.primary_reporter_id, verifiedResolutionPoints, caseId, idempotencyKey, now]
       );
     }
 

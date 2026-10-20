@@ -60,7 +60,7 @@ npm install
 # Build TypeScript to dist
 npm run build
 
-# Run automated test suite (23 integration tests against Neon DB)
+# Run the automated API test suite against a dedicated test database
 npm test
 
 # Start development server (runs on http://localhost:8000)
@@ -90,21 +90,11 @@ npm test
 
 ---
 
-## 👥 Pre-seeded Pilot Accounts
+## Account Provisioning and Test Data
 
-All existing accounts in Neon PostgreSQL continue to work seamlessly with password verification:
+Do not rely on shared demo credentials in production. Create citizen accounts through the supported registration flow; privileged staff accounts must be provisioned through an authorised administrative process.
 
-| Role | Email | Password | Display Name |
-|---|---|---|---|
-| **Citizen** | `citizen@example.com` | `Citizen123!` | Rahul Sharma |
-| **Moderator / Verifier** | `moderator@example.com` | `Moderator123!` | Priya Nair |
-| **Operator** | `operator@example.com` | `Operator123!` | Suresh Kumar |
-| **Supervisor** | `supervisor@example.com` | `Supervisor123!` | Anita Desai |
-| **Admin** | `admin@example.com` | `Admin123!` | System Administrator |
-
-*(Note: The Login screen includes 1-click test role buttons to instantly authenticate into any role during development and review).*
-
----
+Automated tests should use a dedicated test database and disposable test users, with cleanup after each run. Test credentials belong only in local test configuration or CI secrets—not in source code, public documentation, or production defaults.
 
 ## ☁️ Render Production Deployment
 

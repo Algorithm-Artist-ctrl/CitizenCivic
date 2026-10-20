@@ -4,13 +4,6 @@ import { authenticateToken, optionalAuth } from '../auth/middleware';
 
 const router = Router();
 
-function getKarmaTier(points: number): string {
-  if (points >= 500) return 'PLATINUM';
-  if (points >= 200) return 'GOLD';
-  if (points >= 75) return 'SILVER';
-  return 'BRONZE';
-}
-
 // GET /api/v1/rewards/my-points/
 router.get('/my-points', authenticateToken, async (req: Request, res: Response) => {
   const user = req.user!;
@@ -33,7 +26,7 @@ router.get('/my-points', authenticateToken, async (req: Request, res: Response) 
 
     res.json({
       total_points: totalPoints,
-      karma_tier: getKarmaTier(totalPoints),
+      karma_tier: null,
       user_id: user.id,
       display_name: user.display_name,
       history: historyRes.rows,
@@ -149,7 +142,7 @@ router.get('/leaderboard', optionalAuth, async (req: Request, res: Response) => 
       display_name: row.display_name,
       total_points: row.total_points,
       verified_reports: row.verified_reports,
-      karma_tier: getKarmaTier(row.total_points),
+      karma_tier: null,
     }));
 
     res.json({
