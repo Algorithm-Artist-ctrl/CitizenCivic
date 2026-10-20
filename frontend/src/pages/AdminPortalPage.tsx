@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import apiClient from '../api/client';
+import apiClient, { BACKEND_ROOT_URL } from '../api/client';
 import type { UserRole } from '../types';
 
 interface AdminUserItem {
@@ -64,11 +64,14 @@ export const AdminPortalPage: React.FC = () => {
   const fetchSystemHealth = async () => {
     setSystemHealth('checking');
     try {
-      const apiRoot = String(apiClient.defaults.baseURL || '').split('/api/v1')[0];
-      const response = await apiClient.get(`${apiRoot}/health`);
-      if (response.data?.status === 'online' && response.data?.database === 'connected') {
+      // In local development, use the Vite /api proxy; in production, hit the configured backend origin.
+      const healthUrl = BACKEND_ROOT_URL ? `${BACKEND_ROOT_URL}/health` : '/api/health';
+      const response = await fetch(healthUrl, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('Health endpoint returned a non-success status');
+      const healthData = await response.json();
+      if (healthData?.status === 'online' && healthData?.database === 'connected') {
         setSystemHealth('healthy');
-      } else if (response.data?.status === 'online') {
+      } else if (healthData?.status === 'online') {
         setSystemHealth('degraded');
       } else {
         setSystemHealth('unavailable');
