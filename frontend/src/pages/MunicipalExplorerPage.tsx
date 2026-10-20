@@ -80,7 +80,11 @@ export const MunicipalExplorerPage: React.FC = () => {
         const params = new URLSearchParams();
         if (selectedState) params.append('state', selectedState);
         if (searchQuery) params.append('search', searchQuery);
-        if (sortBy) params.append('sort', sortBy);
+        const serverSort = sortBy === 'population' ? 'population_desc'
+          : sortBy === 'swachh' ? 'swachh_rank_asc'
+          : sortBy === 'per_capita' ? 'per_capita_desc'
+          : 'revenue_desc';
+        params.append('sort_by', serverSort);
 
         const res = await apiClient.get(`/municipal/ulbs?${params.toString()}`);
         setUlbs(res.data?.ulbs || []);
@@ -174,17 +178,19 @@ export const MunicipalExplorerPage: React.FC = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-700">
             <Landmark className="h-4 w-4" />
-            <span>{isHindi ? 'राष्ट्रीय शहरी प्रशासन अभिलेख' : 'Official Indian Municipal Data Explorer'}</span>
+            <span>{isHindi ? 'नगर निकाय डेटा निर्देशिका' : 'Municipal Data Directory'}</span>
             <span>·</span>
-            <span className="text-slate-500">{isHindi ? 'सत्यापित आधिकारिक स्रोत' : 'MoHUA & Census Ground Truth'}</span>
+            <span className="text-slate-500">
+              {isHindi ? 'उपलब्ध होने पर स्रोत विवरण दिखाया जाता है' : 'Source details shown where available'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950 mt-1 font-heading">
             {isHindi ? 'शहरी स्थानीय निकाय एवं नगर निगम प्रदर्शन' : 'Municipal Corporation Benchmark & Dossiers'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
             {isHindi
-              ? 'आधिकारिक सिटीफाइनेंस, स्वच्छ सर्वेक्षण 2023 एवं भारत की जनगणना से सत्यापित वित्तीय एवं स्वच्छता प्रदर्शन डेटा। पूर्ण पारदर्शिता एवं स्रोत प्रमाणन।'
-              : 'Grounded municipal revenue, per-capita civic spend, and Swachh Survekshan rankings aggregated from official MoHUA CityFinance statements, Census 2011, and SBM Urban.'}
+              ? 'वर्तमान डेटासेट में उपलब्ध नगर निकाय रिकॉर्ड देखें। प्रत्येक आंकड़े की रिपोर्टिंग अवधि, स्रोत और डेटा गुणवत्ता स्थिति जांचें; अनुपलब्ध जानकारी को अनुपलब्ध ही दिखाया जाता है।'
+              : 'Browse municipal records currently available in the dataset. Check each value’s reporting period, source, and data-quality status; missing values remain unavailable.'}
           </p>
         </div>
 
@@ -212,20 +218,24 @@ export const MunicipalExplorerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Official Data Provenance Notice */}
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-emerald-900 font-medium">
+      {/* Source status comes from the configured registry, not a fixed claim. */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-800 font-medium">
           <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0" />
           <span>
-            {isHindi
-              ? '100% आधिकारिक डेटा: CityFinance.in (ऑडिटेड वित्तीय विवरण), स्वच्छ सर्वेक्षण 2023 (राष्ट्रीय रैंकिंग) और आरजीआई जनगणना।'
-              : '100% Traceable Records: CityFinance.in (MoHUA audited financials), Swachh Survekshan 2023, and Census of India 2011.'}
+            {sources.length > 0
+              ? (isHindi
+                ? `${sources.length} डेटा स्रोत कॉन्फ़िगर हैं। उपयोग करने से पहले प्रत्येक रिकॉर्ड का स्रोत और गुणवत्ता स्थिति देखें।`
+                : `${sources.length} data source(s) are configured. Review each record’s provenance and quality status before relying on a metric.`)
+              : (isHindi
+                ? 'अभी कोई डेटा स्रोत कॉन्फ़िगर नहीं है। स्रोत सहित डेटा आयात होने तक नगर निकाय आंकड़े उपलब्ध नहीं होंगे।'
+                : 'No municipal data sources are configured yet. Municipal figures remain unavailable until sourced records are imported.')}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[11px] font-mono text-emerald-800 shrink-0">
-          <span>Zero Fabricated Metrics</span>
+        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-600 shrink-0">
+          <span>{isHindi ? `${ulbs.length} निकाय उपलब्ध` : `${ulbs.length} municipal bodies available`}</span>
           <span>•</span>
-          <span>CC-BY-4.0 & Open Data</span>
+          <span>{isHindi ? 'रिकॉर्ड-स्तरीय स्रोत जांचें' : 'Check per-record provenance'}</span>
         </div>
       </div>
 

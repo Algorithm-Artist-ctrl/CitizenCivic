@@ -551,7 +551,7 @@ export const MainLayout: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="text-emerald-700 text-sm">🍃</span>
             <span>
-              <strong className="text-slate-900 font-semibold">CitizenCivic</strong> — {t('landing.footer.platform', 'Civic Accountability Platform')} &copy; 2026.
+              <strong className="text-slate-900 font-semibold">CitizenCivic</strong> — {t('landing.footer.platform', 'Civic Accountability Platform')} &copy; {new Date().getFullYear()}.
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-5 sm:gap-6 text-slate-600">

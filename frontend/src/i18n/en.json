@@ -42,16 +42,16 @@
     "scene": {
       "illustrativeTitle": "Illustrative Isometric Ward Model",
       "locationPin": "Central Ward Node",
-      "exampleIssue": "Example issue",
+      "exampleIssue": "Illustrative civic issue",
       "orbitHint": "Drag to orbit precinct · Scroll to zoom",
       "garbage": "Garbage Accumulation",
-      "garbageStatus": "Reported · Under Review",
+      "garbageStatus": "Illustrative status · Under Review",
       "garbageLoc": "Commercial Corridor",
       "water": "Water Logging",
-      "waterStatus": "Dispatched · In Progress",
+      "waterStatus": "Illustrative status · In Progress",
       "waterLoc": "Storm Drain Network",
       "light": "Street Light Fixed",
-      "lightStatus": "Verified Resolved",
+      "lightStatus": "Illustrative status · Resolved",
       "lightLoc": "Public Park Road"
     },
     "features": {
@@ -82,7 +82,7 @@
     }
   },
   "dashboard": {
-    "wardBadge": "PILOT WARD 82 (INDIRANAGAR)",
+    "wardBadge": "CIVIC RESPONSE WORKSPACE",
     "portal": "{{role}} PORTAL",
     "welcome": "Welcome back, {{name}}",
     "officer": "Officer",
@@ -124,7 +124,7 @@
       "verifiedResolved": "Verified Resolved",
       "verifiedResolvedDesc": "Confirmed clean on ground",
       "karmaPoints": "Karma Points",
-      "karmaTier": "Tier: Neighborhood Sentinel"
+      "karmaTier": "Karma tier follows configured reward rules"
     },
     "myActiveReports": "My Active Civic Reports",
     "assignedQueue": "Assigned Action Queue",
@@ -136,7 +136,7 @@
     "hotspot": "Hotspot",
     "reviewDetails": "Review Details",
     "nearbyRadar": "Nearby Field Radar",
-    "radius": "Radius: 1000m",
+    "radius": "Nearby search radius is based on configured location rules",
     "noNearby": "No active neighbor reports detected in this grid radius.",
     "away": "{{meters}}m away",
     "verificationGuidelines": "Verification Guidelines",
@@ -263,8 +263,8 @@
     "manualCoords": "Manual Coordinates",
     "latitude": "Latitude",
     "longitude": "Longitude",
-    "manualHelp": "If browser GPS is unavailable on your device, click on the map, enter coordinates manually, or choose ward center.",
-    "useWardRef": "Use Ward 82 Reference (12.9784, 77.6408)",
+    "manualHelp": "If browser GPS is unavailable, choose a location on the map or enter coordinates manually.",
+    "useWardRef": "Choose a location using GPS, the map, or manual coordinates.",
     "mapPinpoint": "Interactive Map Pinpoint",
     "mapPinpointHelp": "(Click or drag pin to position)",
     "landmark": "Street Landmark or Address",
@@ -333,11 +333,11 @@
     "reportIssue": "Report an Issue",
     "myScore": "My Karma Score",
     "points": "{{points}} pts",
-    "currentRank": "Current Rank: Sentinel Tier",
+    "currentRank": "Rank reflects recorded contributions and configured reward rules.",
     "activityCount": "{{count}} Verified Contributions",
     "auditBadge": "Audit-Compliant Ledger",
     "antiSpam": "Karma cannot be purchased or fabricated. Points are cryptographically credited only upon ground verification of reports.",
-    "leaderboard": "Ward 82 Civic Leaderboard",
+    "leaderboard": "Civic Contributor Leaderboard",
     "leaderboardSub": "Top contributing sentinels this cycle",
     "rank": "Rank",
     "citizenName": "Citizen Sentinel",
@@ -405,7 +405,7 @@
   "municipal": {
     "title": "Municipal Corporation Benchmark & Dossiers",
     "subtitle": "Official Indian Municipal Data Explorer",
-    "provenanceNotice": "100% Traceable Records: CityFinance.in (MoHUA audited financials), Swachh Survekshan 2023, and Census of India 2011.",
+    "provenanceNotice": "Source details are shown where available. Missing or unverified records must not be treated as official.",
     "sourcesAndProvenance": "Official Sources & Provenance",
     "compare": "Compare Selected",
     "searchPlaceholder": "Search by corporation name, code or headquarters...",
@@ -423,6 +423,6 @@
   "footer": {
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "copyright": "© 2026 CitizenCivic. Civic Accountability Platform."
+    "copyright": "© {{year}} CitizenCivic. Civic accountability platform."
   }
 }
