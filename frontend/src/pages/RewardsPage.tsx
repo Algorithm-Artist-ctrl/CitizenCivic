@@ -8,6 +8,9 @@ import {
   Target,
   Search,
   Filter,
+  Leaf,
+  Users,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -170,6 +173,17 @@ export const RewardsPage: React.FC = () => {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
       {/* 3D Celebration Hero Banner */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+        {/* Floating Small Actions Big Impact Badge */}
+        <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-2 rounded-xl border border-emerald-100 bg-white/95 px-3 py-1.5 shadow-xs backdrop-blur-xs">
+          <div className="h-6 w-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+            <Leaf className="h-3.5 w-3.5" />
+          </div>
+          <div className="text-[10px] leading-tight">
+            <div className="font-bold text-slate-900">Small Actions</div>
+            <div className="text-emerald-700 font-semibold">Big Impact!</div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
           {/* Banner Left Content */}
           <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
@@ -182,31 +196,40 @@ export const RewardsPage: React.FC = () => {
                 Community Karma &amp; Recognition
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                Earn verified civic reputation points for reporting genuine neighborhood issues, auditing resolutions, and keeping cities clean.
+                Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.
               </p>
             </div>
 
-            {/* 3 Highlight Pills */}
+            {/* 3 Reference Feature Highlight Pills */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-xs font-extrabold text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded">
-                  +25 Pts
-                </span>
-                <span className="text-[11px] font-bold text-slate-700">Authentic Geo-Report</span>
+              <div className="flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3.5 py-2 shadow-2xs">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <Leaf className="h-4 w-4" />
+                </div>
+                <div className="text-[11px] leading-tight">
+                  <span className="font-bold text-slate-900 block">Cleaner Neighbourhoods</span>
+                  <span className="text-slate-500 text-[10px]">Real Civic Impact</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-xs font-extrabold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded">
-                  +100 Pts
-                </span>
-                <span className="text-[11px] font-bold text-slate-700">Verified Resolution</span>
+              <div className="flex items-center gap-2.5 rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-2 shadow-2xs">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div className="text-[11px] leading-tight">
+                  <span className="font-bold text-slate-900 block">Verified Actions</span>
+                  <span className="text-slate-500 text-[10px]">Trusted by Community</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-xs font-extrabold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded">
-                  Level 3
-                </span>
-                <span className="text-[11px] font-bold text-slate-700">Active Ward Sentinel</span>
+              <div className="flex items-center gap-2.5 rounded-xl border border-orange-100 bg-orange-50/60 px-3.5 py-2 shadow-2xs">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 text-orange-800">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div className="text-[11px] leading-tight">
+                  <span className="font-bold text-slate-900 block">Recognized Contributors</span>
+                  <span className="text-slate-500 text-[10px]">Build a Better City</span>
+                </div>
               </div>
             </div>
           </div>
@@ -234,7 +257,7 @@ export const RewardsPage: React.FC = () => {
               </span>
               <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight flex items-baseline gap-2">
                 <span>{totalPoints}</span>
-                <span className="text-base font-sans font-bold text-emerald-400">Pts</span>
+                <span className="text-base font-sans font-bold text-emerald-400">pts</span>
               </div>
             </div>
 
@@ -252,10 +275,10 @@ export const RewardsPage: React.FC = () => {
             <div className="flex items-center justify-between text-xs">
               <span className="inline-flex items-center gap-1.5 font-bold text-emerald-300">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                <span>NEIGHBORHOOD SENTINEL (TIER 1)</span>
+                <span>Neighborhood Sentinel (Tier 1)</span>
               </span>
               <span className="font-mono text-[11px] text-emerald-200/80">
-                {totalPoints} / 500 Pts
+                500 pts
               </span>
             </div>
 
@@ -279,7 +302,7 @@ export const RewardsPage: React.FC = () => {
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
                 VERIFIED RESOLUTION BONUS
               </span>
-              <div className="h-9 w-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
                 <Target className="h-5 w-5" />
               </div>
             </div>
@@ -289,16 +312,21 @@ export const RewardsPage: React.FC = () => {
                 +100 Pts / Case
               </div>
               <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                Earned when field officers resolve an issue you reported and civic inspection confirms completion.
+                When your reported issue is cleared and confirmed with on-ground photographic evidence.
               </p>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-mono font-bold text-rose-700 border border-rose-100">
-              {verifiedCasesCount} {verifiedCasesCount === 1 ? 'Case Verified' : 'Cases Verified'}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 border border-emerald-200">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Strict anti-duplicate fraud filters applied</span>
             </span>
-            <span className="text-[11px] font-mono text-slate-400">Anti-fraud verified</span>
+            {verifiedCasesCount > 0 && (
+              <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                {verifiedCasesCount} verified
+              </span>
+            )}
           </div>
         </div>
 
@@ -309,7 +337,7 @@ export const RewardsPage: React.FC = () => {
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
                 HOTSPOT FOLLOW-UP AUDIT
               </span>
-              <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
                 <Search className="h-5 w-5" />
               </div>
             </div>
@@ -319,16 +347,21 @@ export const RewardsPage: React.FC = () => {
                 +75 Pts / Audit
               </div>
               <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                Conduct 7-day and 30-day post-resolution audits to ensure chronic waste dumping does not recur.
+                Verify that a previously resolved blackspot has remained clean during 7-day and 30-day checks.
               </p>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-mono font-bold text-blue-700 border border-blue-100">
-              {auditsCompletedCount} {auditsCompletedCount === 1 ? 'Audit Completed' : 'Audits Completed'}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 border border-emerald-200">
+              <Leaf className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Prevents recurring illegal waste accumulation</span>
             </span>
-            <span className="text-[11px] font-mono text-slate-400">Prevents recurrence</span>
+            {auditsCompletedCount > 0 && (
+              <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                {auditsCompletedCount} audited
+              </span>
+            )}
           </div>
         </div>
       </div>

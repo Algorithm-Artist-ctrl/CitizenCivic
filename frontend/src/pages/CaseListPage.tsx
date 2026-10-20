@@ -126,7 +126,7 @@ export const CaseListPage: React.FC = () => {
           <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>PUBLIC RESOLUTION DIRECTORY</span>
+              <span>{activeScope === 'mine' ? 'MY REPORTED INCIDENTS' : 'PUBLIC RESOLUTION DIRECTORY'}</span>
             </div>
 
             <div className="space-y-1.5">
@@ -134,31 +134,39 @@ export const CaseListPage: React.FC = () => {
                 {activeScope === 'mine' ? 'My Reported Cases' : 'Civic Resolution Directory'}
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.
+                {activeScope === 'mine'
+                  ? 'Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.'
+                  : 'Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.'}
               </p>
             </div>
 
-            {/* 3 Metric Pills (100% Real Database Analytics) */}
+            {/* 3 Metric Pills (Scoped to Active Scope) */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 shadow-2xs">
                 <span className="font-mono text-sm font-extrabold text-slate-950">
-                  {analytics?.total_cases ?? totalCount}
+                  {activeScope === 'mine' ? totalCount : (analytics?.total_cases ?? totalCount)}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-600">Total Public Cases</span>
+                <span className="text-[11px] font-semibold text-slate-600">
+                  {activeScope === 'mine' ? 'My Total Reports' : 'Total Public Cases'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2 shadow-2xs">
                 <span className="font-mono text-sm font-extrabold text-emerald-800">
-                  {analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter(c => c.status === 'VERIFIED_RESOLVED').length}
+                  {activeScope === 'mine'
+                    ? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length
+                    : (analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length)}
                 </span>
                 <span className="text-[11px] font-semibold text-emerald-700">Resolved Cases</span>
               </div>
 
               <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 shadow-2xs">
                 <span className="font-mono text-sm font-extrabold text-amber-800">
-                  {analytics?.by_status
-                    ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
-                    : cases.filter(c => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length}
+                  {activeScope === 'mine'
+                    ? cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length
+                    : (analytics?.by_status
+                        ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
+                        : cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length)}
                 </span>
                 <span className="text-[11px] font-semibold text-amber-700">In Progress</span>
               </div>

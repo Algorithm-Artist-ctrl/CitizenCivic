@@ -19,6 +19,7 @@ import {
 import apiClient from '../api/client';
 import ImageUpload from '../components/ImageUpload';
 import GoogleMapView, { loadGoogleMaps } from '../components/GoogleMapView';
+import VoiceInputButton from '../components/VoiceInputButton';
 import type { Category } from '../types';
 
 interface AITriageData {
@@ -873,18 +874,37 @@ export const ReportIssuePage: React.FC = () => {
       {step === 3 && (
         <div className="space-y-5">
           <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs space-y-5">
-            {/* Description Textarea */}
-            <div className="space-y-1.5">
-              <label htmlFor="description-input" className="block text-xs font-bold text-slate-800">
-                Detailed Problem Description <span className="text-rose-600">*</span>
-              </label>
+            {/* Description Textarea with Puter.js AI Voice Input */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="description-input" className="block text-xs font-bold text-slate-800">
+                  Detailed Problem Description <span className="text-rose-600">*</span>
+                </label>
+                <span className="text-[11px] text-slate-500 font-normal hidden sm:inline">
+                  Type below or speak in Hindi / English
+                </span>
+              </div>
+
+              {/* Voice-to-Text Input via Puter.js */}
+              <VoiceInputButton
+                onTranscript={(transcript) => {
+                  setDescription((prev) => {
+                    const cleanPrev = prev.trim();
+                    const cleanTranscript = transcript.trim();
+                    if (!cleanPrev) return cleanTranscript;
+                    return `${cleanPrev}\n\n${cleanTranscript}`;
+                  });
+                }}
+                preferredLanguage={i18n.language === 'hi' ? 'hi' : 'auto'}
+              />
+
               <textarea
                 id="description-input"
                 rows={4}
                 required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the nature of the waste accumulation, estimated volume, and any immediate hazard..."
+                placeholder="Describe the nature of the waste accumulation, estimated volume, and any immediate hazard... (or use voice input above)"
                 className="w-full rounded-xl border border-slate-300 py-3 px-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden"
               />
             </div>
