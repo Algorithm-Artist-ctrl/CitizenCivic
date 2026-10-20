@@ -235,13 +235,15 @@ export const RewardsPage: React.FC = () => {
           </div>
 
           {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative h-56 sm:h-64 lg:h-full min-h-[220px] overflow-hidden bg-gradient-to-r from-white via-transparent to-transparent">
-            <img
-              src="/assets/karma-hero.png"
-              alt="Community Karma Celebration"
-              className="absolute inset-0 h-full w-full object-cover object-right lg:object-center transform hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent lg:hidden" />
+          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0">
+            <div className="relative w-full max-w-[520px] overflow-hidden rounded-xl flex items-center justify-center lg:justify-end">
+              <img
+                src="/assets/karma-hero.png"
+                alt="Community Karma Celebration"
+                className="w-full h-auto max-h-[210px] object-contain drop-shadow-sm pointer-events-none transition-transform duration-700 hover:scale-[1.01]"
+                loading="eager"
+              />
+            </div>
           </div>
         </div>
       </div>

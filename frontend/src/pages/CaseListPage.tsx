@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 import CaseStatusBadge from '../components/CaseStatusBadge';
+import CivicImage from '../components/ui/CivicImage';
 import type { Case, Category, PaginatedResponse } from '../types';
 
 export const CaseListPage: React.FC = () => {
@@ -174,13 +175,15 @@ export const CaseListPage: React.FC = () => {
           </div>
 
           {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative h-56 sm:h-64 lg:h-full min-h-[220px] overflow-hidden bg-gradient-to-r from-white via-transparent to-transparent">
-            <img
-              src="/assets/cases-hero.jpg"
-              alt="Civic Resolution Directory"
-              className="absolute inset-0 h-full w-full object-cover object-right lg:object-center transform hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent lg:hidden" />
+          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0">
+            <div className="relative w-full max-w-[520px] overflow-hidden rounded-xl flex items-center justify-center lg:justify-end">
+              <img
+                src="/assets/cases-hero.jpg"
+                alt="Civic Resolution Directory"
+                className="w-full h-auto max-h-[210px] object-contain drop-shadow-sm pointer-events-none transition-transform duration-700 hover:scale-[1.01]"
+                loading="eager"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -365,14 +368,13 @@ export const CaseListPage: React.FC = () => {
                     <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
-                            <img
+                          <div className="h-10 w-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center">
+                            <CivicImage
                               src={thumb}
                               alt="Thumbnail"
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/assets/cat-garbage.jpg';
-                              }}
+                              mode={thumb.includes('/assets/cat-') ? 'contain' : 'cover'}
+                              className={thumb.includes('/assets/cat-') ? 'p-1' : ''}
+                              fallbackSrc="/assets/cat-garbage.jpg"
                             />
                           </div>
                           <div>

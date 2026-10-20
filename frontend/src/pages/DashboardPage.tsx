@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
 import CaseStatusBadge from '../components/CaseStatusBadge';
+import CivicImage from '../components/ui/CivicImage';
 import type { Case, PaginatedResponse } from '../types';
 
 interface AnalyticsData {
@@ -156,13 +157,15 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative h-56 sm:h-64 lg:h-full min-h-[220px] overflow-hidden bg-gradient-to-r from-white via-transparent to-transparent">
-            <img
-              src="/assets/dashboard-hero.jpg"
-              alt="CitizenCivic Smart City"
-              className="absolute inset-0 h-full w-full object-cover object-right lg:object-center transform hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent lg:hidden" />
+          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0">
+            <div className="relative w-full max-w-[520px] overflow-hidden rounded-xl flex items-center justify-center lg:justify-end">
+              <img
+                src="/assets/dashboard-hero.jpg"
+                alt="CitizenCivic Smart City"
+                className="w-full h-auto max-h-[210px] object-contain drop-shadow-sm pointer-events-none transition-transform duration-700 hover:scale-[1.01]"
+                loading="eager"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -406,14 +409,13 @@ export const DashboardPage: React.FC = () => {
                   >
                     <div className="flex items-start sm:items-center gap-3.5">
                       {/* Thumbnail */}
-                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
-                        <img
+                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center">
+                        <CivicImage
                           src={thumbImage}
                           alt={categoryName}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/assets/cat-garbage.jpg';
-                          }}
+                          mode={thumbImage.includes('/assets/cat-') ? 'contain' : 'cover'}
+                          className={thumbImage.includes('/assets/cat-') ? 'p-1.5' : ''}
+                          fallbackSrc="/assets/cat-garbage.jpg"
                         />
                       </div>
 

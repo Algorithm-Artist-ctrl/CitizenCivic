@@ -570,11 +570,11 @@ export const ReportIssuePage: React.FC = () => {
                   >
                     <div className="flex items-start gap-3.5">
                       {/* 3D Illustration Thumbnail */}
-                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center p-1.5">
                         <img
                           src={cat.image}
                           alt={cat.title}
-                          className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                          className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
 
@@ -619,11 +619,12 @@ export const ReportIssuePage: React.FC = () => {
               </div>
 
               {/* 3D Mascot Image */}
-              <div className="relative h-56 w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+              <div className="relative w-full max-h-56 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center p-2">
                 <img
                   src="/assets/report-mascot.jpg"
                   alt="Clean Cities Brighter India"
-                  className="h-full w-full object-cover"
+                  className="h-auto max-h-52 w-auto max-w-full object-contain rounded-lg drop-shadow-sm"
+                  loading="eager"
                 />
               </div>
 

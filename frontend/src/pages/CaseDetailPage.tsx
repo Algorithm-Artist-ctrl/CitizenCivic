@@ -56,6 +56,9 @@ export const CaseDetailPage: React.FC = () => {
   const [isDispute, setIsDispute] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Evidence Lightbox Preview Modal
+  const [previewPhoto, setPreviewPhoto] = useState<{ url: string; label: string; date: string } | null>(null);
+
   // AI Verification
   const [aiVerifying, setAiVerifying] = useState(false);
   const [aiVerifyResult, setAiVerifyResult] = useState<AIVerifyResult | null>(null);
@@ -512,16 +515,26 @@ export const CaseDetailPage: React.FC = () => {
                   {beforeEvidence.map((ev) => (
                     <div
                       key={ev.id}
-                      className="group relative aspect-4/3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs"
+                      onClick={() =>
+                        setPreviewPhoto({
+                          url: getMediaUrl(ev.file),
+                          label: 'Initial Citizen Report Evidence',
+                          date: new Date(ev.created_at).toLocaleString(),
+                        })
+                      }
+                      className="group relative aspect-4/3 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs cursor-pointer hover:border-slate-400 transition-all"
                     >
                       <img
                         src={getMediaUrl(ev.file)}
                         alt="Initial evidence"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent p-2 flex items-end">
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent p-2 flex items-end justify-between">
                         <span className="text-[10px] font-mono text-white truncate">
                           {new Date(ev.created_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-[10px] text-slate-300 bg-slate-900/60 px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to View
                         </span>
                       </div>
                     </div>
@@ -545,16 +558,26 @@ export const CaseDetailPage: React.FC = () => {
                   {afterEvidence.map((ev) => (
                     <div
                       key={ev.id}
-                      className="group relative aspect-4/3 rounded-lg overflow-hidden border border-emerald-300 bg-slate-100 shadow-2xs ring-1 ring-emerald-200"
+                      onClick={() =>
+                        setPreviewPhoto({
+                          url: getMediaUrl(ev.file),
+                          label: 'On-Ground Verified Resolution Proof',
+                          date: new Date(ev.created_at).toLocaleString(),
+                        })
+                      }
+                      className="group relative aspect-4/3 rounded-lg overflow-hidden border border-emerald-300 bg-slate-100 shadow-2xs ring-1 ring-emerald-200 cursor-pointer hover:border-emerald-500 transition-all"
                     >
                       <img
                         src={getMediaUrl(ev.file)}
                         alt="Resolution proof"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-transparent p-2 flex items-end justify-between">
                         <span className="text-[10px] font-mono text-emerald-300">
                           CLEARED PROOF
+                        </span>
+                        <span className="text-[10px] text-emerald-200 bg-emerald-950/70 px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to View
                         </span>
                       </div>
                     </div>
@@ -769,6 +792,37 @@ export const CaseDetailPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Full HD Evidence Photo Lightbox Modal */}
+      <Modal
+        isOpen={Boolean(previewPhoto)}
+        onClose={() => setPreviewPhoto(null)}
+        title={previewPhoto?.label || 'Evidence Photograph'}
+        maxWidth="xl"
+      >
+        <div className="space-y-3">
+          <div className="max-h-[70vh] overflow-hidden rounded-xl bg-slate-950 flex items-center justify-center p-1">
+            <img
+              src={previewPhoto?.url}
+              alt={previewPhoto?.label || 'Evidence Full View'}
+              className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg"
+            />
+          </div>
+          {previewPhoto?.date && (
+            <div className="flex items-center justify-between text-xs text-slate-500 font-mono pt-1">
+              <span>Timestamp: {previewPhoto.date}</span>
+              <a
+                href={previewPhoto.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald-700 hover:underline font-semibold"
+              >
+                Open Full Original File ↗
+              </a>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
