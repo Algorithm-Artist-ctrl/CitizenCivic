@@ -81,7 +81,7 @@ export async function loadGoogleMaps(): Promise<boolean> {
 }
 
 export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
-  center = { lat: 12.9784, lng: 77.6408 }, // Ward 82 / Bangalore civic reference
+  center,
   zoom = 14,
   markers = [],
   selectedLocation,
@@ -98,12 +98,27 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const firstValidMarker = markers.find(
+    (item) =>
+      Number.isFinite(Number(item.latitude)) &&
+      Number.isFinite(Number(item.longitude))
+  );
+  const initialCenter = center || (firstValidMarker
+    ? { lat: Number(firstValidMarker.latitude), lng: Number(firstValidMarker.longitude) }
+    : null);
+
   useEffect(() => {
     let isMounted = true;
 
     async function initMap() {
       setLoading(true);
       setError(null);
+
+      if (!initialCenter) {
+        setError('No configured service-area location is available yet. Select a configured area or use GPS/manual coordinates.');
+        setLoading(false);
+        return;
+      }
 
       try {
         const loaded = await loadGoogleMaps();
@@ -114,11 +129,9 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
         }
         if (!isMounted || !mapContainerRef.current) return;
 
-        const initialCenter = selectedLocation || center;
-
-        const map = new google.maps.Map(mapContainerRef.current, {
+        const mapInstance = new google.maps.Map(mapContainerRef.current, {
           center: initialCenter,
-          zoom: selectedLocation ? 16 : zoom,
+          zoom,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
           mapTypeControl: true,
           streetViewControl: false,
@@ -137,15 +150,12 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
           ],
         });
 
-        mapInstanceRef.current = map;
+        mapInstanceRef.current = mapInstance;
 
-        // If interactive, allow clicking on map to choose coordinates
         if (interactive && onLocationSelect) {
-          map.addListener('click', (e: google.maps.MapMouseEvent) => {
+          mapInstance.addListener('click', (e: google.maps.MapMouseEvent) => {
             if (e.latLng) {
-              const lat = e.latLng.lat();
-              const lng = e.latLng.lng();
-              onLocationSelect({ lat, lng });
+              onLocationSelect({ lat: e.latLng.lat(), lng: e.latLng.lng() });
             }
           });
         }
@@ -164,8 +174,13 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
 
     return () => {
       isMounted = false;
+      markersRef.current.forEach((marker) => marker.setMap(null));
+      markersRef.current = [];
+      selectedMarkerRef.current?.setMap(null);
+      selectedMarkerRef.current = null;
+      mapInstanceRef.current = null;
     };
-  }, []);
+  }, [initialCenter?.lat, initialCenter?.lng, zoom]);
 
   // Update selected location marker when selectedLocation changes
   useEffect(() => {

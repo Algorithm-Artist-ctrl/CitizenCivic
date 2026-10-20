@@ -405,6 +405,17 @@ export const ReportIssuePage: React.FC = () => {
   const selectedCategoryName = selectedCategoryData
     ? (i18n.language === 'hi' ? selectedCategoryData.name_hi : selectedCategoryData.name_en)
     : t('report.categoryNotSelected', 'Not selected');
+  const mapCenterArea = serviceAreas.find((area: any) =>
+    area.latitude !== null &&
+    area.latitude !== undefined &&
+    area.longitude !== null &&
+    area.longitude !== undefined &&
+    Number.isFinite(Number(area.latitude)) &&
+    Number.isFinite(Number(area.longitude))
+  );
+  const mapCenter = mapCenterArea
+    ? { lat: Number(mapCenterArea.latitude), lng: Number(mapCenterArea.longitude) }
+    : undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
@@ -733,6 +744,7 @@ export const ReportIssuePage: React.FC = () => {
               </div>
               <div className="rounded-xl overflow-hidden border border-slate-200">
                 <GoogleMapView
+                  center={mapCenter}
                   selectedLocation={latitude !== null && longitude !== null ? { lat: latitude, lng: longitude } : null}
                   onLocationSelect={(loc) => {
                     setLatitude(loc.lat);
