@@ -40,59 +40,26 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// 5 Primary 3D Categories matching the mockup
-const MOCKUP_CATEGORIES = [
-  {
-    id: 'cat-garbage',
-    slug: 'garbage',
-    title: 'Garbage Accumulation',
-    title_hi: 'कचरा संचय',
-    subtitle_hi: 'कचरा संचय',
-    color_hi: 'text-amber-700 bg-amber-50 border-amber-200',
-    desc: 'Unaddressed municipal blackspots requiring field intervention.',
-    image: '/assets/cat-garbage.jpg',
-  },
-  {
-    id: 'cat-truck',
-    slug: 'missed-collection',
-    title: 'Missed Waste Collection',
-    title_hi: 'कचरा उठान छूटा',
-    subtitle_hi: 'कचरा उठान छूटा',
-    color_hi: 'text-blue-700 bg-blue-50 border-blue-200',
-    desc: 'Scheduled door-to-door solid waste pickup missed on daily route.',
-    image: '/assets/cat-truck.jpg',
-  },
-  {
-    id: 'cat-hotspot',
-    slug: 'chronic-hotspot',
-    title: 'Recurring Garbage Hotspot',
-    title_hi: 'आवर्ती कचरा स्थल',
-    subtitle_hi: 'आवर्ती कचरा स्थल',
-    color_hi: 'text-rose-700 bg-rose-50 border-rose-200',
-    desc: 'Persistent recurring blackspot requiring dedicated clearance and barricading.',
-    image: '/assets/cat-hotspot.jpg',
-  },
-  {
-    id: 'cat-bin',
-    slug: 'damaged-bin',
-    title: 'Overflowing Public Bin',
-    title_hi: 'भरा हुआ सार्वजनिक डस्टबिन',
-    subtitle_hi: 'भरा डस्टबिन',
-    color_hi: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    desc: 'Public municipal green/blue segregated bins overflowing or damaged.',
-    image: '/assets/cat-bin.jpg',
-  },
-  {
-    id: 'cat-dumping',
-    slug: 'construction-debris',
-    title: 'Illegal Dumping',
-    title_hi: 'अवैध कचरा फेंकना',
-    subtitle_hi: 'अवैध डंपिंग',
-    color_hi: 'text-purple-700 bg-purple-50 border-purple-200',
-    desc: 'Unauthorized dumping of debris, industrial or commercial waste.',
-    image: '/assets/cat-dumping.jpg',
-  },
-];
+// Map known category slugs to bundled illustrative assets. Actual category records come from the API.
+const getCategoryImage = (slug: string): string | null => {
+  const value = slug.toLowerCase();
+  if (/(missed|collection|truck|pickup)/.test(value)) return '/assets/cat-truck.jpg';
+  if (/(hotspot|recurring|chronic)/.test(value)) return '/assets/cat-hotspot.jpg';
+  if (/(bin|overflow)/.test(value)) return '/assets/cat-bin.jpg';
+  if (/(dump|debris|illegal)/.test(value)) return '/assets/cat-dumping.jpg';
+  if (/(garbage|waste|rubbish)/.test(value)) return '/assets/cat-garbage.jpg';
+  return null;
+};
+
+const getCategoryTone = (slug: string): string => {
+  const value = slug.toLowerCase();
+  if (/(missed|collection|truck|pickup)/.test(value)) return 'text-blue-700 bg-blue-50 border-blue-200';
+  if (/(hotspot|recurring|chronic)/.test(value)) return 'text-rose-700 bg-rose-50 border-rose-200';
+  if (/(bin|overflow)/.test(value)) return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+  if (/(dump|debris|illegal)/.test(value)) return 'text-purple-700 bg-purple-50 border-purple-200';
+  if (/(garbage|waste|rubbish)/.test(value)) return 'text-amber-700 bg-amber-50 border-amber-200';
+  return 'text-slate-700 bg-slate-50 border-slate-200';
+};
 
 export const ReportIssuePage: React.FC = () => {
   const navigate = useNavigate();
@@ -106,12 +73,11 @@ export const ReportIssuePage: React.FC = () => {
   // Form State
   const [categories, setCategories] = useState<Category[]>([]);
   const [serviceAreas, setServiceAreas] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('cat-garbage');
-  const [selectedArea, setSelectedArea] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [description, setDescription] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [latitude, setLatitude] = useState<number | null>(12.9716);
-  const [longitude, setLongitude] = useState<number | null>(77.6412);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [locationSource, setLocationSource] = useState<'VERIFIED_ADDRESS' | 'MANUAL_PIN' | 'GPS_DETECTED'>('MANUAL_PIN');
   const [locationDetecting, setLocationDetecting] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
@@ -141,7 +107,6 @@ export const ReportIssuePage: React.FC = () => {
         const areas = areaRes.data.results || areaRes.data || [];
         setCategories(cats);
         setServiceAreas(areas);
-        if (areas.length > 0) setSelectedArea(areas[0].id);
 
         // Preload Google Maps libraries in background
         loadGoogleMaps().catch(() => {});
@@ -290,23 +255,27 @@ export const ReportIssuePage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // Find matching backend category ID
-      let matchedCategoryId = '';
-      const chosenMockupCat = MOCKUP_CATEGORIES.find((c) => c.id === selectedCategory);
-      if (chosenMockupCat) {
-        const found = categories.find(
-          (c) => c.slug === chosenMockupCat.slug || c.name_en.toLowerCase().includes(chosenMockupCat.slug)
-        );
-        matchedCategoryId = found ? found.id : (categories[0]?.id || selectedCategory);
-      } else {
-        matchedCategoryId = categories[0]?.id || selectedCategory;
+      const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory);
+      if (!selectedCategoryRecord) {
+        setError(t('report.categoryRequired', 'Please select an available issue category.'));
+        setStep(1);
+        return;
+      }
+      if (description.trim().length < 10) {
+        setError(t('report.descriptionRequired', 'Please provide at least 10 characters describing the issue.'));
+        setStep(3);
+        return;
+      }
+      if (landmark.trim().length < 4) {
+        setError(t('report.landmarkRequired', 'Please provide a specific street landmark or address.'));
+        setStep(2);
+        return;
       }
 
       const payload = {
-        category: matchedCategoryId,
-        service_area: selectedArea || (serviceAreas[0]?.id || null),
-        description: description.trim() || chosenMockupCat?.title || 'Civic issue report',
-        landmark: landmark.trim() || 'Indiranagar, Ward 82',
+        category: selectedCategoryRecord.id,
+        description: description.trim(),
+        landmark: landmark.trim(),
         latitude,
         longitude,
         location_source: locationSource,
@@ -432,7 +401,10 @@ export const ReportIssuePage: React.FC = () => {
     );
   }
 
-  const selectedMockupCat = MOCKUP_CATEGORIES.find((c) => c.id === selectedCategory) || MOCKUP_CATEGORIES[0];
+  const selectedCategoryData = categories.find((category) => category.id === selectedCategory);
+  const selectedCategoryName = selectedCategoryData
+    ? (i18n.language === 'hi' ? selectedCategoryData.name_hi : selectedCategoryData.name_en)
+    : t('report.categoryNotSelected', 'Not selected');
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
@@ -550,8 +522,11 @@ export const ReportIssuePage: React.FC = () => {
           {/* Left: 5 Category Cards in 2-column grid */}
           <div className="lg:col-span-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {MOCKUP_CATEGORIES.map((cat, idx) => {
+              {categories.map((cat, idx) => {
                 const isSelected = selectedCategory === cat.id;
+                const categoryName = i18n.language === 'hi' ? cat.name_hi : cat.name_en;
+                const categoryImage = getCategoryImage(cat.slug);
+                const categoryTone = getCategoryTone(cat.slug);
 
                 return (
                   <div
@@ -561,7 +536,7 @@ export const ReportIssuePage: React.FC = () => {
                       setError(null);
                     }}
                     className={`group relative flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all ${
-                      idx === 4 ? 'md:col-span-2' : ''
+                      categories.length % 2 === 1 && idx === categories.length - 1 ? 'md:col-span-2' : ''
                     } ${
                       isSelected
                         ? 'border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/30 shadow-xs'
@@ -571,21 +546,25 @@ export const ReportIssuePage: React.FC = () => {
                     <div className="flex items-start gap-3.5">
                       {/* 3D Illustration Thumbnail */}
                       <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center p-1.5">
-                        <img
-                          src={cat.image}
-                          alt={cat.title}
-                          className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300"
-                        />
+                        {categoryImage ? (
+                          <img
+                            src={categoryImage}
+                            alt={categoryName}
+                            className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <FileText className="h-6 w-6 text-slate-400" aria-hidden="true" />
+                        )}
                       </div>
 
                       <div className="space-y-1 flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-1.5">
                           <div>
                             <h3 className="text-xs sm:text-sm font-extrabold text-slate-950 font-heading leading-snug">
-                              {i18n.language === 'hi' ? cat.title_hi : cat.title}
+                              {categoryName}
                             </h3>
-                            <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded border ${cat.color_hi}`}>
-                              {cat.subtitle_hi}
+                            <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded border ${categoryTone}`}>
+                              {cat.slug.replace(/[-_]/g, ' ')}
                             </span>
                           </div>
                           <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
@@ -597,7 +576,7 @@ export const ReportIssuePage: React.FC = () => {
                           </div>
                         </div>
                         <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed pt-1">
-                          {cat.desc}
+                          {cat.description || t('report.categoryDescriptionUnavailable', 'No description provided.')}
                         </p>
                       </div>
                     </div>
@@ -713,7 +692,7 @@ export const ReportIssuePage: React.FC = () => {
                       setLatitude(isNaN(val) ? null : val);
                       setLocationDetected(false);
                     }}
-                    placeholder="e.g. 12.9716"
+                    placeholder="Enter latitude"
                     className="w-full rounded-lg border border-slate-300 py-2 px-3 font-mono text-xs text-slate-900 bg-white focus:outline-hidden focus:border-slate-900"
                   />
                 </div>
@@ -731,25 +710,12 @@ export const ReportIssuePage: React.FC = () => {
                       setLongitude(isNaN(val) ? null : val);
                       setLocationDetected(false);
                     }}
-                    placeholder="e.g. 77.6412"
+                    placeholder="Enter longitude"
                     className="w-full rounded-lg border border-slate-300 py-2 px-3 font-mono text-xs text-slate-900 bg-white focus:outline-hidden focus:border-slate-900"
                   />
                 </div>
-                <div className="col-span-2 pt-2 border-t border-slate-200 text-[11px] flex items-center justify-between">
-                  <span className="text-slate-500">Need a reference point?</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLatitude(12.9716);
-                      setLongitude(77.6412);
-                      setLocationDetected(false);
-                      setLandmark('12th Main Road, HAL 2nd Stage, Indiranagar, Ward 82');
-                      setError(null);
-                    }}
-                    className="font-bold text-emerald-800 hover:underline"
-                  >
-                    Use Ward 82 Reference (12.9716, 77.6412)
-                  </button>
+                <div className="col-span-2 pt-2 border-t border-slate-200 text-[11px] text-slate-500">
+                  Drag the pin on the map above or enter the coordinates for the actual incident location.
                 </div>
               </div>
             )}
@@ -825,10 +791,20 @@ export const ReportIssuePage: React.FC = () => {
 
             {/* Zone Boundary Verification */}
             {(() => {
-              const activeZone = serviceAreas.find((a: any) => a.id === selectedArea) || serviceAreas[0];
-              if (latitude !== null && longitude !== null && activeZone && typeof activeZone.latitude === 'number') {
-                const dist = calculateDistanceMeters(latitude, longitude, activeZone.latitude, activeZone.longitude);
-                const isInside = dist <= (activeZone.radius_meters || 2500) * 1.5;
+              const nearestZone = latitude !== null && longitude !== null
+                ? serviceAreas.reduce((nearest: { area: any; distance: number } | null, area: any) => {
+                    const areaLat = Number(area.latitude);
+                    const areaLng = Number(area.longitude);
+                    if (!Number.isFinite(areaLat) || !Number.isFinite(areaLng)) return nearest;
+                    const distance = calculateDistanceMeters(latitude, longitude, areaLat, areaLng);
+                    return !nearest || distance < nearest.distance ? { area, distance } : nearest;
+                  }, null)
+                : null;
+              if (nearestZone) {
+                const activeZone = nearestZone.area;
+                const dist = nearestZone.distance;
+                const radius = Number(activeZone.radius_meters);
+                const isInside = Number.isFinite(radius) && radius > 0 && dist <= radius * 1.25;
                 const zoneName = i18n.language === 'hi' ? (activeZone.name_hi || activeZone.name) : activeZone.name;
                 return (
                   <div className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-xs ${
@@ -989,9 +965,9 @@ export const ReportIssuePage: React.FC = () => {
               <div className="py-3 flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Category:</span>
                 <div className="flex items-center gap-2 text-right">
-                  <span className="font-bold text-slate-900">{selectedMockupCat.title}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${selectedMockupCat.color_hi}`}>
-                    {selectedMockupCat.subtitle_hi}
+                  <span className="font-bold text-slate-900">{selectedCategoryName}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${selectedCategoryData ? getCategoryTone(selectedCategoryData.slug) : 'text-slate-700 bg-slate-50'}`}>
+                    {selectedCategoryData?.slug.replace(/[-_]/g, ' ') || ''}
                   </span>
                 </div>
               </div>
@@ -999,28 +975,28 @@ export const ReportIssuePage: React.FC = () => {
               {/* Landmark */}
               <div className="py-3 flex items-start justify-between gap-4">
                 <span className="font-semibold text-slate-500 shrink-0">Landmark / Address:</span>
-                <span className="font-bold text-slate-900 text-right">{landmark || 'Indiranagar, Ward 82'}</span>
+                <span className="font-bold text-slate-900 text-right">{landmark || t('report.locationNotProvided', 'Not provided')}</span>
               </div>
 
               {/* Coordinates */}
               <div className="py-3 flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Coordinates:</span>
                 <span className="font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  {latitude ? `${latitude.toFixed(6)}° N, ${longitude?.toFixed(6)}° E` : '12.9716° N, 77.6412° E'}
+                  {latitude !== null && longitude !== null ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : t('report.coordinatesNotSet', 'Not set')}
                 </span>
               </div>
 
               {/* Description */}
               <div className="py-3 flex items-start justify-between gap-4">
                 <span className="font-semibold text-slate-500 shrink-0">Description:</span>
-                <span className="text-slate-700 text-right max-w-md">{description || selectedMockupCat.desc}</span>
+                <span className="text-slate-700 text-right max-w-md">{description || t('report.descriptionNotProvided', 'Not provided')}</span>
               </div>
 
               {/* Photos */}
               <div className="py-3 flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Evidence Attached:</span>
                 <span className="font-mono font-bold text-slate-900">
-                  {photos.length > 0 ? `${photos.length} photo(s) selected` : '1 standard photo'}
+                  {photos.length > 0 ? `${photos.length} photo(s) selected` : t('report.noPhotosAttached', 'None')}
                 </span>
               </div>
             </div>
