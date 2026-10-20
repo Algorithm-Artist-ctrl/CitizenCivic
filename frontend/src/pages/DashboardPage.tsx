@@ -39,6 +39,8 @@ export const DashboardPage: React.FC = () => {
 
   const [recentCases, setRecentCases] = useState<Case[]>([]);
   const [nearbyCases, setNearbyCases] = useState<any[]>([]);
+  const [nearbyStatus, setNearbyStatus] = useState<'idle' | 'loading' | 'ready' | 'permission-denied' | 'unavailable' | 'unconfigured'>('idle');
+  const [nearbyRadiusMeters, setNearbyRadiusMeters] = useState<number | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [points, setPoints] = useState<number | null>(null);
   const [karmaTier, setKarmaTier] = useState<string | null>(null);
@@ -57,21 +59,18 @@ export const DashboardPage: React.FC = () => {
       const fetchedCases = casesRes.data?.results || [];
       setRecentCases(fetchedCases);
 
-      // 2. Fetch personal karma points and nearby issues
+      // 2. Fetch the authenticated user's reward ledger. Nearby searches run
+      // only after the user explicitly requests a location-based lookup.
       try {
-        const [pointsRes, nearbyRes] = await Promise.all([
-          apiClient.get('/rewards/my-points/').catch(() => ({ data: { total_points: null, karma_tier: null } })),
-          apiClient.get('/cases/nearby/').catch(() => ({ data: [] })),
-        ]);
+        const pointsRes = await apiClient.get('/rewards/my-points/').catch(() => ({
+          data: { total_points: null, karma_tier: null },
+        }));
         if (pointsRes.data?.total_points !== undefined && pointsRes.data?.total_points !== null) {
           setPoints(pointsRes.data.total_points >= 0 ? pointsRes.data.total_points : null);
           setKarmaTier(pointsRes.data.karma_tier || null);
         }
-        if (Array.isArray(nearbyRes.data) && nearbyRes.data.length > 0) {
-          setNearbyCases(nearbyRes.data.slice(0, 4));
-        }
       } catch (e) {
-        console.error('Failed to load points/nearby', e);
+        console.error('Failed to load reward ledger', e);
       }
 
       // 3. If supervisor/moderator/operator/admin, fetch real operational analytics
@@ -90,6 +89,85 @@ export const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadNearby = () => {
+    if (!navigator.geolocation) {
+      setNearbyStatus('unavailable');
+      return;
+    }
+
+    setNearbyStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        try {
+          const areasResponse = await apiClient.get('/areas/service-areas/');
+          const areas = Array.isArray(areasResponse.data)
+            ? areasResponse.data
+            : areasResponse.data?.results || [];
+          const validAreas = areas.filter((area: any) =>
+            area.latitude !== null &&
+            area.latitude !== undefined &&
+            area.longitude !== null &&
+            area.longitude !== undefined &&
+            Number.isFinite(Number(area.latitude)) &&
+            Number.isFinite(Number(area.longitude)) &&
+            Number.isFinite(Number(area.radius_meters)) &&
+            Number(area.radius_meters) > 0
+          );
+
+          const toRadians = (value: number) => (value * Math.PI) / 180;
+          const distanceMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+            const dLat = toRadians(lat2 - lat1);
+            const dLng = toRadians(lng2 - lng1);
+            const a =
+              Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+            return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          };
+
+          const nearestArea = validAreas.reduce((nearest: any, area: any) => {
+            const distance = distanceMeters(
+              latitude,
+              longitude,
+              Number(area.latitude),
+              Number(area.longitude)
+            );
+            return !nearest || distance < nearest.distance ? { area, distance } : nearest;
+          }, null as { area: any; distance: number } | null);
+
+          if (!nearestArea) {
+            setNearbyCases([]);
+            setNearbyRadiusMeters(null);
+            setNearbyStatus('unconfigured');
+            return;
+          }
+
+          const radiusMeters = Number(nearestArea.area.radius_meters);
+          setNearbyRadiusMeters(radiusMeters);
+          const nearbyResponse = await apiClient.get('/cases/nearby/', {
+            params: { lat: latitude, lng: longitude, radius_km: radiusMeters / 1000 },
+          });
+          const nearbyData = Array.isArray(nearbyResponse.data)
+            ? nearbyResponse.data
+            : nearbyResponse.data?.results || [];
+          setNearbyCases(nearbyData.slice(0, 4));
+          setNearbyStatus('ready');
+        } catch (error) {
+          console.error('Failed to load nearby reports for the shared location', error);
+          setNearbyCases([]);
+          setNearbyStatus('unavailable');
+        }
+      },
+      (error) => {
+        setNearbyCases([]);
+        setNearbyStatus(error.code === 1 ? 'permission-denied' : 'unavailable');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   // Metrics calculation
@@ -519,17 +597,13 @@ export const DashboardPage: React.FC = () => {
                 </h3>
               </div>
               <span className="text-[10px] font-mono font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                Radius: 1000m
+                {nearbyRadiusMeters !== null ? `Radius: ${nearbyRadiusMeters}m` : 'Radius not configured'}
               </span>
             </div>
 
             {/* Radar Graphic Map */}
             <div className="relative h-44 w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
-              <img
-                src="/assets/radar-map.jpg"
-                alt="Field Radar Map"
-                className="h-full w-full object-cover opacity-80"
-              />
+              <div className="absolute inset-0 bg-slate-900" aria-hidden="true" />
               <div className="absolute inset-0 bg-radial from-transparent to-slate-950/60 pointer-events-none" />
 
               {/* Pulsing Concentric Radar Rings */}
@@ -539,22 +613,44 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Radar Active Markers List */}
-            {displayNearby.length === 0 ? (
-              <div className="py-4 text-center text-xs text-slate-400">
-                No active incidents reported within radar range.
+            {nearbyStatus !== 'ready' ? (
+              <div className="space-y-3 py-4 text-center">
+                <p className="text-xs text-slate-500">
+                  {nearbyStatus === 'idle' && 'Share your location to find active reports near you.'}
+                  {nearbyStatus === 'loading' && 'Checking your location and finding nearby cases…'}
+                  {nearbyStatus === 'permission-denied' && 'Location permission was denied. Allow location access to search nearby reports.'}
+                  {nearbyStatus === 'unavailable' && 'Nearby reports could not be loaded. Check location permission and try again.'}
+                  {nearbyStatus === 'unconfigured' && 'No active service area with a configured search radius is available.'}
+                </p>
+                {(nearbyStatus === 'idle' || nearbyStatus === 'permission-denied' || nearbyStatus === 'unavailable') && (
+                  <button
+                    type="button"
+                    onClick={handleLoadNearby}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    {nearbyStatus === 'idle' ? 'Use my location' : 'Try again'}
+                  </button>
+                )}
+              </div>
+            ) : displayNearby.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-500">
+                No active cases were found within the configured radius of your shared location.
               </div>
             ) : (
               <div className="space-y-2.5 divide-y divide-slate-100 text-xs">
                 {displayNearby.map((item: any, idx: number) => (
                   <div key={item.id || idx} className="pt-2 first:pt-0 flex items-center justify-between">
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${item.color || 'bg-emerald-500'}`} />
-                      <span className="font-semibold text-slate-800 truncate">
-                        {item.title || item.landmark || `Case #${item.case_number || idx + 1}`}
-                      </span>
+                    <div className="min-w-0 truncate pr-2">
+                      <div className="font-semibold text-slate-800 truncate">
+                        {item.category_name || item.landmark || item.case_number || item.id}
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">
+                        {item.landmark || item.case_number} · {String(item.status || '').replace(/_/g, ' ')}
+                      </div>
                     </div>
                     <span className="font-mono text-[11px] font-bold text-slate-500 shrink-0">
-                      {item.distance ?? '—'}
+                      {item.distance_meters !== undefined ? `${Math.round(Number(item.distance_meters))}m` : 'Near'}
                     </span>
                   </div>
                 ))}

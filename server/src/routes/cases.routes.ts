@@ -206,22 +206,51 @@ export async function verifyWithGoogleMaps(
 // GET /api/v1/cases/nearby
 router.get('/nearby', optionalAuth, async (req: Request, res: Response) => {
   try {
-    const lat = parseFloat(String(req.query.lat || '12.9784'));
-    const lng = parseFloat(String(req.query.lng || '77.6408'));
-    const radiusKm = parseFloat(String(req.query.radius_km || '5.0'));
-    const radiusDeg = radiusKm / 111.0;
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const radiusKm = Number(req.query.radius_km);
+    if (
+      req.query.lat === undefined || req.query.lng === undefined || req.query.radius_km === undefined ||
+      !Number.isFinite(lat) || lat < -90 || lat > 90 ||
+      !Number.isFinite(lng) || lng < -180 || lng > 180 ||
+      !Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 50
+    ) {
+      res.status(400).json({ detail: 'Valid latitude, longitude, and configured search radius are required.', field: 'coordinates' });
+      return;
+    }
+    const latitudeRadiusDeg = radiusKm / 110.574;
+    const longitudeRadiusDeg = radiusKm / (111.32 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
 
     const result = await query(
-      `SELECT c.id, c.case_number, c.status, c.landmark, c.latitude, c.longitude, 
-              c.is_hotspot, c.created_at, cat.name_en AS category_name
-       FROM cases_case c
-       JOIN areas_category cat ON c.category_id = cat.id
-       WHERE c.status != 'DRAFT'
-         AND c.latitude BETWEEN $1 AND $2
-         AND c.longitude BETWEEN $3 AND $4
-       ORDER BY c.created_at DESC
+      `WITH candidates AS (
+         SELECT c.id, c.case_number, c.status, c.landmark, c.latitude, c.longitude,
+                c.is_hotspot, c.created_at, cat.name_en AS category_name,
+                (
+                  6371000 * ACOS(LEAST(1.0, GREATEST(-1.0,
+                    COS(RADIANS($1)) * COS(RADIANS(c.latitude::double precision)) *
+                    COS(RADIANS(c.longitude::double precision) - RADIANS($2)) +
+                    SIN(RADIANS($1)) * SIN(RADIANS(c.latitude::double precision))
+                  )))
+                )::integer AS distance_meters
+         FROM cases_case c
+         JOIN areas_category cat ON c.category_id = cat.id
+         WHERE c.status NOT IN ('VERIFIED_RESOLVED', 'REJECTED', 'DRAFT')
+           AND c.latitude BETWEEN $3 AND $4
+           AND c.longitude BETWEEN $5 AND $6
+       )
+       SELECT * FROM candidates
+       WHERE distance_meters <= $7
+       ORDER BY distance_meters ASC, created_at DESC
        LIMIT 50;`,
-      [lat - radiusDeg, lat + radiusDeg, lng - radiusDeg, lng + radiusDeg]
+      [
+        lat,
+        lng,
+        lat - latitudeRadiusDeg,
+        lat + latitudeRadiusDeg,
+        lng - longitudeRadiusDeg,
+        lng + longitudeRadiusDeg,
+        radiusKm * 1000,
+      ]
     );
 
     res.json(result.rows);
@@ -646,7 +675,7 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
       }
 
       if (geoCheck.status === 'OK' && typeof geoCheck.disparityMeters === 'number') {
-        // If disparity between Google's geocoded location and user's pinned coordinates is > 5 km (e.g. Aligarh address placed into Bangalore Ward 82)
+        // Reject large differences between the supplied address and the citizen-selected map coordinates.
         if (geoCheck.disparityMeters > 5000) {
           await client.query('ROLLBACK');
           res.status(400).json({

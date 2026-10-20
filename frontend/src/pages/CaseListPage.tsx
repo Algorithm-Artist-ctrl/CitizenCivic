@@ -406,7 +406,7 @@ export const CaseListPage: React.FC = () => {
                           <span className="truncate">{c.landmark}</span>
                         </div>
                         <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                          {c.latitude ? `${c.latitude.toFixed(4)}° N, ${c.longitude?.toFixed(4)}° E` : '27.8961° N, 78.0137° E'}
+                          {typeof c.latitude === 'number' && Number.isFinite(c.latitude) && typeof c.longitude === 'number' && Number.isFinite(c.longitude) ? `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}` : 'Coordinates not provided'}
                         </div>
                       </td>
 
@@ -417,7 +417,7 @@ export const CaseListPage: React.FC = () => {
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
                           <Camera className="h-3 w-3 text-slate-400" />
-                          <span>{c.evidence?.length || 1} photo(s)</span>
+                          <span>{c.evidence?.length ?? 0} photo(s)</span>
                         </div>
                       </td>
 
