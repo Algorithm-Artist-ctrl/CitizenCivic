@@ -328,7 +328,7 @@ export const MainLayout: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="hidden sm:flex items-center gap-2.5">
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors"

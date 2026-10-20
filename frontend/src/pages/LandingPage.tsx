@@ -60,10 +60,10 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col justify-between px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto w-full font-sans">
-      {/* 1. HERO SECTION: Two-Column Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+      {/* 1. HERO SECTION: Two-Column Responsive Layout (54% text / 46% illustration on desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[54%_46%] gap-8 lg:gap-10 xl:gap-12 items-center">
         {/* LEFT COLUMN: Value Proposition, CTAs, Real Grounded Metrics */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="min-w-0 space-y-5 sm:space-y-6">
           {/* Small rounded white badge with a green dot */}
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-white px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -71,7 +71,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Main Heading: Large Bold Typography (Navy line 1, Emerald Green line 2) */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-extrabold tracking-tight text-slate-950 leading-[1.08] font-heading">
+          <h1 className="heading-hero text-slate-950 font-extrabold tracking-tight">
             {isHindi ? (
               <>
                 नागरिक समस्याएं दर्ज करें।<br />
@@ -86,7 +86,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           {/* Short bold supporting line */}
-          <p className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+          <p className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-snug">
             {t('landing.heroSupporting') || 'Cleaner neighbourhoods. Safer streets. Better cities.'}
           </p>
 
@@ -96,7 +96,7 @@ export const LandingPage: React.FC = () => {
           </p>
 
           {/* Two Prominent Action Buttons matching Reference Image */}
-          <div className="flex flex-wrap items-center gap-3.5 pt-1">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-1">
             <Link
               to={user ? '/report' : '/login'}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900 active:scale-98 transition-all cursor-pointer"
@@ -118,14 +118,14 @@ export const LandingPage: React.FC = () => {
 
           {/* Three Compact Real-Data Statistic Cards matching Reference Image */}
           <div className="pt-3 border-t border-slate-200/80">
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5 max-w-xl">
               {/* Card 1: Total Reports */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                     <FileText className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-slate-950 leading-tight">
                       {loadingAnalytics ? '...' : (totalReportsCount ?? 0)}
                     </div>
@@ -143,12 +143,12 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Card 2: In Progress */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-500 shrink-0">
                     <Clock className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-amber-800 leading-tight">
                       {loadingAnalytics ? '...' : (inProgressCount ?? 0)}
                     </div>
@@ -166,12 +166,12 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Card 3: Verified Resolved */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xl sm:text-2xl font-black font-tabular font-mono text-emerald-800 leading-tight">
                       {loadingAnalytics ? '...' : (verifiedResolvedCount ?? 0)}
                     </div>
@@ -197,13 +197,13 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Premium 3D Miniature Smart City Diorama matching Reference Image 2 */}
-        <div className="lg:col-span-6 relative flex items-center justify-center select-none">
-          <div className="relative w-full overflow-hidden rounded-2xl">
+        {/* RIGHT COLUMN: Premium 3D Miniature Smart City Diorama matching Reference Image */}
+        <div className="min-w-0 relative flex items-center justify-center lg:justify-end select-none w-full">
+          <div className="relative w-full max-w-[560px] overflow-hidden rounded-2xl flex items-center justify-center">
             <img
               src="/assets/landing-hero-city-2x.jpg"
               alt="CitizenCivic Floating 3D Smart City"
-              className="w-full h-auto max-h-[480px] object-contain drop-shadow-xl pointer-events-none transform hover:scale-[1.01] transition-transform duration-700"
+              className="w-full h-auto max-h-[460px] object-contain drop-shadow-xl pointer-events-none transition-transform duration-700"
               loading="eager"
             />
           </div>
