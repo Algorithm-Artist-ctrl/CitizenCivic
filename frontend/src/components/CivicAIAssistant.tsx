@@ -34,9 +34,11 @@ export const CivicAIAssistant: React.FC = () => {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
-  const [aiStatus, setAiStatus] = useState<{ operational: boolean; configured: boolean; checking: boolean }>({
+  const [aiStatus, setAiStatus] = useState<{ operational: boolean; configured: boolean; status?: string; message?: string; checking: boolean }>({
     operational: false,
     configured: false,
+    status: 'checking',
+    message: '',
     checking: true,
   });
 
@@ -48,17 +50,19 @@ export const CivicAIAssistant: React.FC = () => {
     let mounted = true;
     const checkStatus = async () => {
       try {
-        const res = await apiClient.get<{ operational: boolean; configured: boolean }>('/ai/status');
+        const res = await apiClient.get<{ operational: boolean; configured: boolean; status?: string; message?: string }>('/ai/status');
         if (mounted) {
           setAiStatus({
             operational: Boolean(res.data?.operational),
             configured: Boolean(res.data?.configured),
+            status: res.data?.status || (res.data?.operational ? 'operational' : 'offline'),
+            message: res.data?.message || '',
             checking: false,
           });
         }
       } catch {
         if (mounted) {
-          setAiStatus({ operational: false, configured: false, checking: false });
+          setAiStatus({ operational: false, configured: false, status: 'offline', message: '', checking: false });
         }
       }
     };
@@ -286,6 +290,8 @@ export const CivicAIAssistant: React.FC = () => {
                   <p className="text-[10px] text-slate-300 font-mono">
                     {aiStatus.operational
                       ? (isHi ? 'सत्यापित नगर निगम सहायता (ऑनलाइन)' : 'Verified Municipal Support (Online)')
+                      : aiStatus.status === 'quota_exceeded'
+                      ? (isHi ? 'सहायक ऑफलाइन (ओपनएआई कोटा समाप्त)' : 'Assistant Offline (Quota Limit - Direct Filing Ready)')
                       : (isHi ? 'सहायक ऑफलाइन (मैन्युअल रिपोर्टिंग उपलब्ध)' : 'Assistant Offline (Direct reporting active)')}
                   </p>
                 </div>
@@ -335,8 +341,12 @@ export const CivicAIAssistant: React.FC = () => {
                 <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
                 <span className="truncate">
                   {isHi
-                    ? 'एआई सेवा ऑफलाइन मोड में है। सीधे शिकायत दर्ज करें:'
-                    : 'AI service in offline mode. Direct filing is ready:'}
+                    ? (aiStatus.status === 'quota_exceeded'
+                        ? 'एआई सेवा कोटा समाप्त है। सीधे शिकायत दर्ज करें:'
+                        : 'एआई सेवा ऑफलाइन मोड में है। सीधे शिकायत दर्ज करें:')
+                    : (aiStatus.status === 'quota_exceeded'
+                        ? 'OpenAI credit quota is exhausted. Direct report filing is ready:'
+                        : 'AI service in offline mode. Direct filing is ready:')}
                 </span>
               </div>
               <a

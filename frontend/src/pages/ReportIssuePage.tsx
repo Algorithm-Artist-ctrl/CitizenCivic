@@ -51,14 +51,14 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
 }
 
 // Map known category slugs to bundled illustrative assets. Actual category records come from the API.
-const getCategoryImage = (slug: string): string | null => {
+const getCategoryImage = (slug: string): string => {
   const value = slug.toLowerCase();
   if (/(missed|collection|truck|pickup)/.test(value)) return '/assets/cat-truck.jpg';
   if (/(hotspot|recurring|chronic)/.test(value)) return '/assets/cat-hotspot.jpg';
   if (/(bin|overflow)/.test(value)) return '/assets/cat-bin.jpg';
   if (/(dump|debris|illegal)/.test(value)) return '/assets/cat-dumping.jpg';
-  if (/(garbage|waste|rubbish)/.test(value)) return '/assets/cat-garbage.jpg';
-  return null;
+  if (/(garbage|waste|rubbish|accumulation)/.test(value)) return '/assets/cat-garbage.jpg';
+  return '/assets/cat-truck.jpg';
 };
 
 const getCategoryTone = (slug: string): string => {
@@ -505,7 +505,7 @@ export const ReportIssuePage: React.FC = () => {
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Cancel and return</span>
+            <span>{t('report.cancelAndReturn', 'Cancel and return')}</span>
           </Link>
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-mono text-[11px] text-slate-700 font-bold uppercase">
             {t('report.stepCount', { current: step, total: 4 })}
@@ -514,13 +514,13 @@ export const ReportIssuePage: React.FC = () => {
 
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950 font-heading">
-            Report a Civic Issue
+            {t('report.title', 'Report a Civic Issue')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600">
-            {step === 1 && 'Select the primary issue category below to dispatch to the correct municipal department.'}
-            {step === 2 && 'Pin the exact on-ground location and street address so response teams can locate the spot.'}
-            {step === 3 && 'Provide problem details and attach clear photographic evidence for verification.'}
-            {step === 4 && 'Review your report details and verify authenticity before official dispatch.'}
+            {step === 1 && t('report.step1Subtitle', 'Select the primary issue category below to dispatch to the correct municipal department.')}
+            {step === 2 && t('report.step2Subtitle', 'Pin the exact on-ground location and street address so response teams can locate the spot.')}
+            {step === 3 && t('report.step3Subtitle', 'Provide problem details and attach clear photographic evidence for verification.')}
+            {step === 4 && t('report.step4Subtitle', 'Review your report details and verify authenticity before official dispatch.')}
           </p>
         </div>
 
@@ -605,15 +605,14 @@ export const ReportIssuePage: React.FC = () => {
         </div>
       )}
 
-      {/* STEP 1: CATEGORY SELECTION (PIXEL-PERFECT MOCKUP 3) */}
+      {/* STEP 1: CATEGORY SELECTION (MATCHING SCREENSHOT 3) */}
       {step === 1 && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: 5 Category Cards in 2-column grid */}
-          <div className="lg:col-span-8">
+          {/* Left: 5 Category Cards in 2-column grid + Continue Button below */}
+          <div className="lg:col-span-8 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {categories.map((cat, idx) => {
                 const isSelected = selectedCategory === cat.id;
-                const categoryName = i18n.language === 'hi' ? cat.name_hi : cat.name_en;
                 const categoryImage = getCategoryImage(cat.slug);
                 const categoryTone = getCategoryTone(cat.slug);
 
@@ -628,33 +627,29 @@ export const ReportIssuePage: React.FC = () => {
                       categories.length % 2 === 1 && idx === categories.length - 1 ? 'md:col-span-2' : ''
                     } ${
                       isSelected
-                        ? 'border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/30 shadow-xs'
+                        ? 'border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/25 shadow-xs'
                         : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
                     }`}
                   >
                     <div className="flex items-start gap-3.5">
                       {/* 3D Illustration Thumbnail */}
-                      <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center p-1.5">
-                        {categoryImage ? (
-                          <img
-                            src={categoryImage}
-                            alt={categoryName}
-                            className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <FileText className="h-6 w-6 text-slate-400" aria-hidden="true" />
-                        )}
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center p-1.5">
+                        <img
+                          src={categoryImage}
+                          alt={cat.name_en}
+                          className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300"
+                        />
                       </div>
 
-                      <div className="space-y-1 flex-1 min-w-0">
+                      <div className="space-y-0.5 flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-1.5">
                           <div>
                             <h3 className="text-xs sm:text-sm font-extrabold text-slate-950 font-heading leading-snug">
-                              {categoryName}
+                              {cat.name_en}
                             </h3>
-                            <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded border ${categoryTone}`}>
-                              {cat.slug.replace(/[-_]/g, ' ')}
-                            </span>
+                            <div className="text-[11px] font-semibold text-slate-500 leading-tight">
+                              {cat.name_hi}
+                            </div>
                           </div>
                           <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
@@ -664,6 +659,9 @@ export const ReportIssuePage: React.FC = () => {
                             {isSelected ? <Check className="h-3 w-3" /> : null}
                           </div>
                         </div>
+                        <span className={`inline-block text-[9.5px] font-bold px-1.5 py-0.2 rounded border mt-1 ${categoryTone}`}>
+                          {cat.slug.replace(/[-_]/g, ' ')}
+                        </span>
                         <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed pt-1">
                           {cat.description || t('report.categoryDescriptionUnavailable', 'No description provided.')}
                         </p>
@@ -673,55 +671,36 @@ export const ReportIssuePage: React.FC = () => {
                 );
               })}
             </div>
-          </div>
 
-          {/* Right: 3D Mascot Billboard Banner */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
-              {/* Speech Bubble */}
-              <div className="relative rounded-xl bg-emerald-50 border border-emerald-200/80 p-3 text-center shadow-2xs">
-                <p className="text-xs font-bold text-emerald-950 leading-snug">
-                  "Cleaner Neighbourhoods, Happier Communities"
-                </p>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-emerald-200/80" />
-              </div>
-
-              {/* 3D Mascot Image */}
-              <div className="relative w-full max-h-56 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center p-2">
-                <img
-                  src="/assets/report-mascot.jpg"
-                  alt="Clean Cities Brighter India"
-                  className="h-auto max-h-52 w-auto max-w-full object-contain rounded-lg drop-shadow-sm"
-                  loading="eager"
-                />
-              </div>
-
-              <div className="space-y-1.5 text-center">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-extrabold block">
-                  CLEAN CITIES · BRIGHTER INDIA
-                </span>
-                <h4 className="text-sm font-extrabold text-slate-950 font-heading">
-                  Verified Geotagged Civic Dispatch
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Your report alerts the nearest municipal supervisor with GPS verification and photographic evidence.
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 space-y-2 text-[11px] text-slate-500">
-                <div className="flex items-center justify-center gap-1.5 text-emerald-800 font-semibold">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>+25 Karma points upon verified submission</span>
-                </div>
-              </div>
-
+            {/* Prominent Continue Button Below Categories */}
+            <div className="pt-2 flex items-center justify-start">
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-7 py-3.5 text-xs font-bold text-white shadow-md hover:bg-slate-900 active:scale-95 transition-all cursor-pointer"
               >
-                <span>Continue to Location →</span>
+                <span>{t('report.continueToLocation', 'Continue to Location →')}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Right: Unclipped 3D Mascot Billboard Banner */}
+          <div className="lg:col-span-4 space-y-3">
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs overflow-hidden flex flex-col items-center justify-center">
+              <img
+                src="/assets/report-mascot.jpg"
+                alt="Clean Cities Brighter India"
+                className="w-full h-auto max-h-[520px] object-contain rounded-xl"
+                loading="eager"
+              />
+            </div>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-center space-y-1">
+              <span className="text-[10.5px] font-mono uppercase tracking-wider text-emerald-800 font-extrabold block">
+                {t('report.mascotBadge', 'Clean Cities · Brighter India')}
+              </span>
+              <p className="text-[11px] text-slate-600 leading-snug">
+                {t('report.mascotTip', 'Your report alerts the nearest municipal response team with GPS coordinates and photographic evidence.')}
+              </p>
             </div>
           </div>
         </div>
@@ -922,16 +901,16 @@ export const ReportIssuePage: React.FC = () => {
             <button
               type="button"
               onClick={handlePrevStep}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
-              ← Back to Categories
+              {t('report.backToCategories', '← Back to Categories')}
             </button>
             <button
               type="button"
               onClick={handleNextStep}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              <span>Continue to Details &amp; Photo →</span>
+              <span>{t('report.continueToDetails', 'Continue to Details & Photo →')}</span>
             </button>
           </div>
         </div>
@@ -1019,16 +998,16 @@ export const ReportIssuePage: React.FC = () => {
             <button
               type="button"
               onClick={handlePrevStep}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
-              ← Back to Location
+              {t('report.backToLocation', '← Back to Location')}
             </button>
             <button
               type="button"
               onClick={handleNextStep}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              <span>Review Report →</span>
+              <span>{t('report.continueToSubmit', 'Review Report →')}</span>
             </button>
           </div>
         </div>
@@ -1237,7 +1216,7 @@ export const ReportIssuePage: React.FC = () => {
                 className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
               />
               <label htmlFor="declaration-checkbox" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
-                I certify that this report reflects a genuine civic issue observed on the ground with authentic location data.
+                {t('report.declaration', 'I certify that this report reflects a genuine civic issue observed in my locality, backed by photographic evidence I personally captured.')}
               </label>
             </div>
           </div>
@@ -1247,17 +1226,17 @@ export const ReportIssuePage: React.FC = () => {
               type="button"
               onClick={handlePrevStep}
               disabled={submitting}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
-              ← Back to Details
+              {t('report.backToLocation', '← Back to Details')}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-7 py-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-95 transition-all disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-7 py-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
             >
               <Send className="h-4 w-4" />
-              <span>{submitting ? 'Submitting Geotagged Report...' : 'Submit Geotagged Report'}</span>
+              <span>{submitting ? t('report.submittingGeotagged', 'Submitting Geotagged Report...') : t('report.submitGeotagged', 'Submit Geotagged Report')}</span>
             </button>
           </div>
         </form>

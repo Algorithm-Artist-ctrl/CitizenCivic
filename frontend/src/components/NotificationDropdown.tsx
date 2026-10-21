@@ -155,7 +155,7 @@ export const NotificationDropdown: React.FC = () => {
         }}
         aria-label={t('nav.notifications', 'Notifications')}
         aria-expanded={isOpen}
-        className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
+        className="relative h-9 w-9 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (

@@ -179,12 +179,12 @@ export const CaseListPage: React.FC = () => {
           </div>
 
           {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0">
-            <div className="relative w-full max-w-[520px] overflow-hidden rounded-xl flex items-center justify-center lg:justify-end">
+          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0 pr-0">
+            <div className="relative w-full overflow-hidden flex items-center justify-center lg:justify-end">
               <img
                 src="/assets/cases-hero.jpg"
                 alt="Civic Resolution Directory"
-                className="w-full h-auto max-h-[210px] object-contain drop-shadow-sm pointer-events-none transition-transform duration-700 hover:scale-[1.01]"
+                className="w-full h-auto max-h-[260px] object-contain object-right drop-shadow-sm pointer-events-none"
                 loading="eager"
               />
             </div>

@@ -38,7 +38,7 @@ export const config = {
     .filter(Boolean),
 
   // OpenAI
-  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiApiKey: process.env.OPENAI_API_KEY || (process.env.GEMINI_API_KEY?.startsWith('sk-') ? process.env.GEMINI_API_KEY : ''),
   
   // Storage (S3-compatible with local fallback)
   mediaStorageBackend: process.env.MEDIA_STORAGE_BACKEND || 'local',

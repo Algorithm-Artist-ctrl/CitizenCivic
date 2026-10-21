@@ -423,10 +423,10 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
         landmark: 'Near 100ft road junction',
       });
 
-    // If OPENAI_API_KEY is not configured in test environment, it must return 503 (NEVER fake 200)
-    // If configured, it must return 200 with suggested category
+    // If OPENAI_API_KEY is not configured or quota is exhausted, it must return 503 (NEVER fake 200)
+    // If configured and operational, it must return 200 with suggested category
     if (res.status === 503) {
-      expect(res.body.detail).toContain('unavailable');
+      expect(res.body.detail).toMatch(/unavailable|credits|quota|rate limit/i);
     } else {
       expect(res.status).toBe(200);
       expect(res.body.suggested_category).toBeDefined();
@@ -444,7 +444,7 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
       });
 
     if (res.status === 503) {
-      expect(res.body.detail).toContain('unavailable');
+      expect(res.body.detail).toMatch(/unavailable|credits|quota|rate limit/i);
     } else {
       expect(res.status).toBe(200);
       expect(res.body.requires_human_verification).toBe(true);
@@ -474,7 +474,7 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
       });
 
     if (res.status === 503) {
-      expect(res.body.detail).toContain('unavailable');
+      expect(res.body.detail).toMatch(/unavailable|credits|quota|rate limit/i);
     } else {
       expect(res.status).toBe(200);
       expect(res.body.suggested_title).toBeDefined();
@@ -497,7 +497,7 @@ describe('6. Realtime Events & AI Civic Diagnostics', () => {
       });
 
     if (res.status === 503) {
-      expect(res.body.detail).toContain('unavailable');
+      expect(res.body.detail).toMatch(/unavailable|credits|quota|rate limit/i);
     } else {
       expect(res.status).toBe(200);
       expect(res.body.reply).toBeDefined();
