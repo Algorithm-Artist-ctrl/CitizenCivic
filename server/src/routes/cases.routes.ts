@@ -10,6 +10,7 @@ import { CaseStatus, UserRole } from '../types';
 import { config } from '../config';
 import { getConfiguredRewardPoints } from '../services/rewards.service';
 import { notifyCaseSubmitted, notifyCaseStatusChanged, notifyVerifiedResolved } from '../services/email.service';
+import { createNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -748,6 +749,29 @@ router.post('/', authenticateToken, reportLimiter, async (req: Request, res: Res
 
     await client.query('COMMIT');
 
+    // Trigger in-app notification for the reporting citizen
+    createNotification({
+      userId: user.id,
+      title: `Case #${caseNumber} Submitted`,
+      titleHi: `शिकायत #${caseNumber} दर्ज की गई`,
+      message: `Your civic complaint has been registered and is pending municipal review.`,
+      messageHi: `आपकी नागरिक शिकायत दर्ज कर ली गई है और नगर निगम समीक्षा के लिए प्रतीक्षारत है।`,
+      type: 'CASE_CREATED',
+      relatedCaseId: caseId,
+    }).catch((err) => console.warn('[notification/createCase] Notice:', err.message));
+
+    if (submissionRewardPoints !== null && submissionRewardPoints > 0) {
+      createNotification({
+        userId: user.id,
+        title: `+${submissionRewardPoints} Karma Points Earned`,
+        titleHi: `+${submissionRewardPoints} कर्म अंक प्राप्त`,
+        message: `You earned ${submissionRewardPoints} civic karma points for reporting #${caseNumber}.`,
+        messageHi: `शिकायत #${caseNumber} दर्ज करने के लिए आपको ${submissionRewardPoints} कर्म अंक प्राप्त हुए।`,
+        type: 'REWARD_EARNED',
+        relatedCaseId: caseId,
+      }).catch((err) => console.warn('[notification/reward] Notice:', err.message));
+    }
+
     // Trigger asynchronous Resend email notification (non-blocking)
     (async () => {
       try {
@@ -1023,6 +1047,53 @@ router.post('/:id/transition', authenticateToken, async (req: Request, res: Resp
     }
 
     await client.query('COMMIT');
+
+    // Trigger in-app notification for the reporting citizen regarding status update
+    const statusLabels: Record<string, { en: string; hi: string }> = {
+      SUBMITTED: { en: 'Submitted', hi: 'दर्ज' },
+      REVIEWED: { en: 'Reviewed', hi: 'समीक्षित' },
+      FORWARDED: { en: 'Forwarded to Dept', hi: 'संबंधित विभाग को अग्रेषित' },
+      ACKNOWLEDGED: { en: 'Acknowledged', hi: 'स्वीकृत' },
+      IN_PROGRESS: { en: 'In Progress', hi: 'प्रगति पर' },
+      RESOLUTION_REPORTED: { en: 'Resolution Reported', hi: 'समाधान रिपोर्टेड' },
+      VERIFICATION_PENDING: { en: 'Verification Pending', hi: 'सत्यापन लंबित' },
+      VERIFIED_RESOLVED: { en: 'Verified & Resolved', hi: 'सत्यापित एवं समाधान संपन्न' },
+      REJECTED: { en: 'Rejected', hi: 'अस्वीकृत' },
+      DUPLICATE: { en: 'Marked Duplicate', hi: 'डुप्लिकेट चिह्नित' },
+      DISPUTED_CLOSURE: { en: 'Disputed Closure', hi: 'समाधान पर विवाद' },
+      REOPENED: { en: 'Reopened', hi: 'पुनः खोला गया' },
+      ESCALATED: { en: 'Escalated', hi: 'उच्चाधिकारी को प्रेषित' },
+      UNABLE_TO_RESOLVE: { en: 'Unable to Resolve', hi: 'समाधान संभव नहीं' },
+    };
+
+    const labelEn = statusLabels[new_status]?.en || new_status;
+    const labelHi = statusLabels[new_status]?.hi || new_status;
+
+    createNotification({
+      userId: currentCase.primary_reporter_id,
+      title: `Case #${currentCase.case_number}: ${labelEn}`,
+      titleHi: `शिकायत #${currentCase.case_number}: ${labelHi}`,
+      message: reason
+        ? `Status updated to ${labelEn}. Note: ${reason}`
+        : `Status updated to ${labelEn} by municipal administration.`,
+      messageHi: reason
+        ? `स्थिति बदलकर ${labelHi} की गई। विवरण: ${reason}`
+        : `नगर निगम प्रशासन द्वारा स्थिति बदलकर ${labelHi} की गई।`,
+      type: new_status === 'VERIFIED_RESOLVED' ? 'CASE_RESOLVED' : 'STATUS_CHANGED',
+      relatedCaseId: caseId,
+    }).catch((err) => console.warn('[notification/transition] Notice:', err.message));
+
+    if (new_status === 'VERIFIED_RESOLVED' && verifiedResolutionPoints !== null && verifiedResolutionPoints > 0) {
+      createNotification({
+        userId: currentCase.primary_reporter_id,
+        title: `+${verifiedResolutionPoints} Karma Points Earned`,
+        titleHi: `+${verifiedResolutionPoints} कर्म अंक प्राप्त`,
+        message: `Your verified case #${currentCase.case_number} resolution awarded you ${verifiedResolutionPoints} civic karma points!`,
+        messageHi: `शिकायत #${currentCase.case_number} के सत्यापित समाधान पर आपको ${verifiedResolutionPoints} कर्म अंक प्राप्त हुए!`,
+        type: 'REWARD_EARNED',
+        relatedCaseId: caseId,
+      }).catch((err) => console.warn('[notification/rewardResolved] Notice:', err.message));
+    }
 
     // Trigger asynchronous Resend email notification (non-blocking)
     (async () => {

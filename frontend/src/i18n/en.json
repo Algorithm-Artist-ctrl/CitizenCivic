@@ -19,7 +19,15 @@
     "login": "Sign In",
     "register": "Register",
     "logout": "Logout",
-    "profile": "Profile"
+    "profile": "Profile",
+    "notifications": "Notifications"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "unread",
+    "markAllRead": "Mark all read",
+    "emptyTitle": "No notifications yet",
+    "emptySubtitle": "Updates on your reported cases and karma points will appear here."
   },
   "landing": {
     "eyebrow": "Independent Civic Accountability Initiative",
@@ -164,6 +172,21 @@
     "resetFilters": "Reset Filters",
     "noCasesFound": "No active cases found",
     "noCasesDesc": "No records match your selected filter criteria. Try resetting filters.",
+    "myReportsTitle": "My Reported Cases",
+    "myReportsSubtitle": "Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.",
+    "myReportsEyebrow": "MY REPORTED INCIDENTS",
+    "publicEyebrow": "PUBLIC RESOLUTION DIRECTORY",
+    "myTotalReports": "My Total Reports",
+    "totalPublicCases": "Total Public Cases",
+    "resolvedCases": "Resolved Cases",
+    "inProgressCases": "In Progress",
+    "officialLedger": "Official Civic Ledger",
+    "clearActiveFilters": "Clear Active Filters",
+    "noMatchingCases": "No matching cases found",
+    "noMatchingCasesDesc": "Try adjusting your search criteria or resetting the active filters above.",
+    "errorTitle": "Unable to load cases",
+    "cardsView": "Cards",
+    "tableView": "Table",
     "table": {
       "caseNumber": "Case Reference",
       "status": "Workflow Status",
@@ -171,7 +194,9 @@
       "landmark": "Landmark / Location",
       "evidence": "Evidence",
       "reported": "Reported",
-      "action": "Action"
+      "action": "Action",
+      "reviewDetails": "Review Details →",
+      "showingEntries": "Showing {{start}} to {{end}} of {{total}} entries"
     }
   },
   "case": {

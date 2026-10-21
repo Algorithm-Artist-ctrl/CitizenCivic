@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
-import { pool, query } from '../src/db';
+import { pool, query, ensureBaseData } from '../src/db';
 
 let testUserEmail: string;
 let testUserPassword = 'TestPassword123!';
@@ -16,6 +16,9 @@ beforeAll(async () => {
   // Ensure DB connection (allowing Neon serverless spin-up)
   const res = await query('SELECT 1;');
   expect(res.rows.length).toBe(1);
+
+  // Ensure base schema exists (including notifications_notification)
+  await ensureBaseData();
 
   // Pick an existing category and service area
   const catRes = await query('SELECT id FROM areas_category LIMIT 1;');
@@ -41,6 +44,7 @@ afterAll(async () => {
     await query('DELETE FROM cases_case WHERE id = $1;', [createdCaseId]);
   }
   if (testUserId) {
+    await query('DELETE FROM notifications_notification WHERE user_id = $1;', [testUserId]);
     await query('DELETE FROM rewards_rewardledger WHERE user_id = $1;', [testUserId]);
     await query('DELETE FROM core_auditlog WHERE actor_id = $1;', [testUserId]);
     await query('DELETE FROM accounts_user WHERE id = $1;', [testUserId]);
@@ -743,5 +747,64 @@ describe('8. Role-Based Access Control, Officer Workflows & Administrative Secur
     expect(otherCat).toBeDefined();
   });
 });
+
+describe('9. In-App Notifications System & Truthful Delivery', () => {
+  let createdNotificationId: string;
+
+  it('GET /api/v1/notifications requires authentication', async () => {
+    const res = await request(app).get('/api/v1/notifications');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/v1/notifications returns real notifications and unread_count for authenticated user', async () => {
+    const res = await request(app)
+      .get('/api/v1/notifications')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('count');
+    expect(res.body).toHaveProperty('unread_count');
+    expect(res.body).toHaveProperty('results');
+    expect(Array.isArray(res.body.results)).toBe(true);
+    expect(res.body.count).toBeGreaterThan(0);
+    expect(res.body.unread_count).toBeGreaterThan(0);
+
+    const firstNotif = res.body.results[0];
+    expect(firstNotif).toHaveProperty('id');
+    expect(firstNotif).toHaveProperty('title');
+    expect(firstNotif).toHaveProperty('message');
+    expect(firstNotif).toHaveProperty('is_read');
+    expect(firstNotif.is_read).toBe(false);
+    createdNotificationId = firstNotif.id;
+  });
+
+  it('POST /api/v1/notifications/:id/read marks notification as read', async () => {
+    const res = await request(app)
+      .post(`/api/v1/notifications/${createdNotificationId}/read`)
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.is_read).toBe(true);
+  });
+
+  it('POST /api/v1/notifications/mark-all-read marks all remaining notifications as read', async () => {
+    const res = await request(app)
+      .post('/api/v1/notifications/mark-all-read')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // Verify unread count is now 0
+    const checkRes = await request(app)
+      .get('/api/v1/notifications')
+      .set('Authorization', `Bearer ${testAccessToken}`);
+
+    expect(checkRes.status).toBe(200);
+    expect(checkRes.body.unread_count).toBe(0);
+  });
+});
+
 
 

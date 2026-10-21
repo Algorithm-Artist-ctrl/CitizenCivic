@@ -13,6 +13,7 @@ import casesRoutes from './routes/cases.routes';
 import rewardsRoutes from './routes/rewards.routes';
 import aiRoutes from './routes/ai.routes';
 import municipalRoutes from './routes/municipal.routes';
+import notificationsRoutes from './routes/notifications.routes';
 
 export const app = express();
 
@@ -102,6 +103,7 @@ app.use('/api/v1/cases', casesRoutes);
 app.use('/api/v1/rewards', rewardsRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/municipal', municipalRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
 
 // Root route (API info & health check, or frontend index if browser request)
 app.get('/', (req: Request, res: Response) => {

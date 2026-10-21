@@ -11,7 +11,6 @@ import {
   X,
   Award,
   Landmark,
-  Bell,
   ChevronDown,
   Compass,
   ShieldCheck,
@@ -23,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import NotificationDropdown from '../components/NotificationDropdown';
 import Badge from '../components/ui/Badge';
 import CivicAIAssistant from '../components/CivicAIAssistant';
 
@@ -71,7 +71,7 @@ export const MainLayout: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <nav className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-slate-700 shrink-0">
             {user ? (
               <>
                 {/* Admin-specific links */}
@@ -79,7 +79,7 @@ export const MainLayout: React.FC = () => {
                   <>
                     <Link
                       to="/admin"
-                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                      className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                         isActive('/admin') || isActive('/')
                           ? 'bg-purple-900 text-white shadow-xs'
                           : 'hover:bg-purple-50 text-purple-900 font-bold'
@@ -90,7 +90,7 @@ export const MainLayout: React.FC = () => {
                     </Link>
                     <Link
                       to="/officer"
-                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                      className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                         isActive('/officer')
                           ? 'bg-slate-900 text-white shadow-xs'
                           : 'hover:bg-slate-100 text-slate-700'
@@ -106,7 +106,7 @@ export const MainLayout: React.FC = () => {
                 {['OPERATOR', 'MODERATOR', 'SUPERVISOR'].includes(user.role) && (
                   <Link
                     to="/officer"
-                    className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                    className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                       isActive('/officer') || isActive('/')
                         ? 'bg-blue-900 text-white shadow-xs'
                         : 'hover:bg-blue-50 text-blue-900 font-bold'
@@ -122,7 +122,7 @@ export const MainLayout: React.FC = () => {
                   <>
                     <Link
                       to="/dashboard"
-                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                      className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                         isActive('/dashboard') || isActive('/')
                           ? 'bg-slate-900 text-white shadow-xs'
                           : 'hover:bg-slate-100 text-slate-700'
@@ -134,7 +134,7 @@ export const MainLayout: React.FC = () => {
 
                     <Link
                       to="/cases?scope=mine"
-                      className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                      className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                         isActive('/cases') && location.search.includes('scope=mine')
                           ? 'bg-slate-900 text-white shadow-xs'
                           : 'hover:bg-slate-100 text-slate-700'
@@ -149,7 +149,7 @@ export const MainLayout: React.FC = () => {
                 {/* Universal civic transparency links */}
                 <Link
                   to="/cases"
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                     isActive('/cases') && !location.search.includes('scope=mine')
                       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
                       : 'hover:bg-slate-100 text-slate-700'
@@ -161,7 +161,7 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/rewards"
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                     isActive('/rewards')
                       ? 'bg-slate-900 text-white shadow-xs'
                       : 'hover:bg-slate-100 text-slate-700'
@@ -173,7 +173,7 @@ export const MainLayout: React.FC = () => {
 
                 <Link
                   to="/municipal"
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-all ${
                     isActive('/municipal')
                       ? 'bg-slate-900 text-white shadow-xs'
                       : 'hover:bg-slate-100 text-slate-700'
@@ -181,13 +181,13 @@ export const MainLayout: React.FC = () => {
                 >
                   <Landmark className="h-3.5 w-3.5" />
                   <span>{t('nav.municipal', 'Municipal Data')}</span>
-                  <span className="text-[9px] font-mono uppercase bg-rose-500 text-white px-1.5 py-0.2 rounded-full font-bold">New</span>
+                  <span className="text-[9px] font-mono uppercase bg-rose-500 text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">New</span>
                 </Link>
 
                 {user.role === 'CITIZEN' && (
                   <Link
                     to="/report"
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-800 active:scale-95 transition-all ml-1.5"
+                    className="h-9 whitespace-nowrap shrink-0 px-3.5 flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold shadow-xs active:scale-95 transition-all ml-1"
                   >
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span>{t('nav.report', 'Report Issue')}</span>
@@ -195,62 +195,48 @@ export const MainLayout: React.FC = () => {
                 )}
               </>
             ) : (
-              <div className="flex items-center gap-4 text-xs font-semibold text-slate-700">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
                 <Link
                   to="/"
-                  className={`relative flex items-center gap-1.5 py-1.5 px-3 transition-colors ${
-                    isActive('/') ? 'text-slate-950 font-bold' : 'hover:text-slate-950'
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-colors ${
+                    isActive('/') ? 'bg-slate-900 text-white font-bold' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <Home className="h-4 w-4 text-slate-800" />
+                  <Home className="h-4 w-4" />
                   <span>{t('nav.overview', 'Overview')}</span>
-                  {isActive('/') && (
-                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-1 w-10 bg-emerald-600 rounded-full" />
-                  )}
                 </Link>
 
                 <Link
                   to="/cases"
-                  className={`relative flex items-center gap-1.5 py-1.5 px-3 transition-colors ${
-                    isActive('/cases') ? 'text-slate-950 font-bold' : 'hover:text-slate-950'
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-colors ${
+                    isActive('/cases') ? 'bg-slate-900 text-white font-bold' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <Folder className="h-4 w-4 text-slate-500" />
+                  <Folder className="h-4 w-4" />
                   <span>{t('nav.publicCases', 'Public Cases')}</span>
-                  {isActive('/cases') && (
-                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-1 w-10 bg-emerald-600 rounded-full" />
-                  )}
                 </Link>
 
                 <Link
                   to="/rewards"
-                  className={`relative flex items-center gap-1.5 py-1.5 px-3 transition-colors ${
-                    isActive('/rewards') ? 'text-slate-950 font-bold' : 'hover:text-slate-950'
+                  className={`h-9 whitespace-nowrap shrink-0 px-3 flex items-center gap-1.5 rounded-lg transition-colors ${
+                    isActive('/rewards') ? 'bg-slate-900 text-white font-bold' : 'hover:bg-slate-100 text-slate-800'
                   }`}
                 >
-                  <Award className="h-4 w-4 text-slate-500" />
+                  <Award className="h-4 w-4" />
                   <span>{t('nav.karma', 'Community Karma')}</span>
-                  {isActive('/rewards') && (
-                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-1 w-10 bg-emerald-600 rounded-full" />
-                  )}
                 </Link>
               </div>
             )}
           </nav>
 
-          {/* Right Header Controls: Language, Notification Bell & Account */}
-          <div className="flex items-center gap-3">
+          {/* Right Header Controls: Language, Real Notification Dropdown & Account */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <LanguageSwitcher />
 
             {user ? (
               <>
-                {/* Notification Bell (for authenticated users) */}
-                <div className="relative p-1.5 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer" title="Notifications">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
-                    1
-                  </span>
-                </div>
+                {/* Real Notification Dropdown */}
+                <NotificationDropdown />
 
                 <div className="relative">
                   <button

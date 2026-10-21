@@ -19,7 +19,15 @@
     "login": "साइन इन",
     "register": "रजिस्टर करें",
     "logout": "लॉगआउट",
-    "profile": "प्रोफ़ाइल"
+    "profile": "प्रोफ़ाइल",
+    "notifications": "सूचनाएं"
+  },
+  "notifications": {
+    "title": "सूचनाएं",
+    "unread": "अपठित",
+    "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+    "emptyTitle": "अभी कोई सूचना नहीं है",
+    "emptySubtitle": "आपकी दर्ज शिकायतों और कर्म अंकों के अपडेट यहां दिखाई देंगे।"
   },
   "landing": {
     "eyebrow": "स्वतंत्र नागरिक जवाबदेही पहल",
@@ -164,6 +172,21 @@
     "resetFilters": "फ़िल्टर रीसेट करें",
     "noCasesFound": "कोई मामला नहीं मिला",
     "noCasesDesc": "आपके चुने गए फ़िल्टर से कोई मामला मेल नहीं खाता। कृपया फ़िल्टर रीसेट करके देखें।",
+    "myReportsTitle": "मेरी दर्ज शिकायतें",
+    "myReportsSubtitle": "आपके द्वारा दर्ज की गई समस्याओं के रीयल-टाइम स्थिति अपडेट, अधिकारी आवंटन और फ़ोटो सत्यापन को ट्रैक करें।",
+    "myReportsEyebrow": "मेरी दर्ज घटनाएं",
+    "publicEyebrow": "सार्वजनिक समाधान डायरेक्टरी",
+    "myTotalReports": "मेरी कुल रिपोर्टें",
+    "totalPublicCases": "कुल सार्वजनिक मामले",
+    "resolvedCases": "समाधानित मामले",
+    "inProgressCases": "प्रगति पर",
+    "officialLedger": "आधिकारिक नागरिक लेज़र",
+    "clearActiveFilters": "सक्रिय फ़िल्टर हटाएं",
+    "noMatchingCases": "कोई मेल खाता मामला नहीं मिला",
+    "noMatchingCasesDesc": "कृपया अपनी खोज बदलें या ऊपर दिए गए फ़िल्टर रीसेट करें।",
+    "errorTitle": "मामले लोड करने में असमर्थ",
+    "cardsView": "कार्ड",
+    "tableView": "तालिका",
     "table": {
       "caseNumber": "केस संदर्भ",
       "status": "कार्यप्रवाह स्थिति",
@@ -171,7 +194,9 @@
       "landmark": "लैंडमार्क / स्थान",
       "evidence": "साक्ष्य",
       "reported": "दर्ज दिनांक",
-      "action": "कार्यवाही"
+      "action": "कार्यवाही",
+      "reviewDetails": "विवरण देखें →",
+      "showingEntries": "कुल {{total}} में से {{start}} से {{end}} रिकॉर्ड प्रदर्शित"
     }
   },
   "case": {

@@ -39,6 +39,22 @@ export async function ensureBaseData(): Promise<void> {
       ALTER TABLE cases_case ADD COLUMN IF NOT EXISTS structured_data JSONB;
     `);
     await query(`
+      CREATE TABLE IF NOT EXISTS notifications_notification (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        title_hi VARCHAR(255),
+        message TEXT NOT NULL,
+        message_hi TEXT,
+        notification_type VARCHAR(50) NOT NULL,
+        related_case_id UUID REFERENCES cases_case(id) ON DELETE SET NULL,
+        is_read BOOLEAN DEFAULT FALSE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications_notification(user_id, is_read);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications_notification(user_id, created_at DESC);
+    `);
+    await query(`
       INSERT INTO areas_category (id, name_en, name_hi, slug, description, is_active, sort_order, created_at)
       VALUES (
         gen_random_uuid(),

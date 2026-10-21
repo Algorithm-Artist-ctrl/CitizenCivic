@@ -178,3 +178,23 @@ export interface MunicipalMetric {
   higher_is_better: boolean | null;
 }
 
+export interface InAppNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  title_hi?: string | null;
+  message: string;
+  message_hi?: string | null;
+  notification_type: 'CASE_CREATED' | 'STATUS_CHANGED' | 'CASE_RESOLVED' | 'REWARD_EARNED' | string;
+  related_case_id?: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationResponse {
+  count: number;
+  unread_count: number;
+  results: InAppNotification[];
+}
+
+

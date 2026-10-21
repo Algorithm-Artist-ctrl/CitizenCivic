@@ -34,9 +34,41 @@ export const CivicAIAssistant: React.FC = () => {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [aiStatus, setAiStatus] = useState<{ operational: boolean; configured: boolean; checking: boolean }>({
+    operational: false,
+    configured: false,
+    checking: true,
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<any>(null);
+
+  // Probe real AI operational status from backend
+  useEffect(() => {
+    let mounted = true;
+    const checkStatus = async () => {
+      try {
+        const res = await apiClient.get<{ operational: boolean; configured: boolean }>('/ai/status');
+        if (mounted) {
+          setAiStatus({
+            operational: Boolean(res.data?.operational),
+            configured: Boolean(res.data?.configured),
+            checking: false,
+          });
+        }
+      } catch {
+        if (mounted) {
+          setAiStatus({ operational: false, configured: false, checking: false });
+        }
+      }
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 60000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Initialize Speech Recognition if supported
   useEffect(() => {
@@ -204,18 +236,28 @@ export const CivicAIAssistant: React.FC = () => {
             className="group relative flex items-center gap-2.5 rounded-full bg-slate-950 px-4 py-3 text-white shadow-xl hover:bg-slate-900 hover:shadow-2xl active:scale-95 transition-all duration-200 border border-emerald-500/30"
           >
             <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs">
-              <Sparkles className="h-4 w-4 animate-pulse text-emerald-200" />
+              <Sparkles className="h-4 w-4 text-emerald-200" />
               <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                {aiStatus.operational ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  </>
+                ) : (
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+                )}
               </span>
             </div>
             <div className="text-left hidden sm:block">
               <span className="block text-xs font-bold leading-tight tracking-wide">
                 {isHi ? 'नागरिक सहायक' : 'Civic AI Guide'}
               </span>
-              <span className="block text-[10px] text-emerald-400 font-mono">
-                {isHi ? '24x7 ऑनलाइन' : '24x7 Online'}
+              <span className={`block text-[10px] font-mono ${aiStatus.operational ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {aiStatus.checking
+                  ? (isHi ? 'जाँच जारी...' : 'Checking...')
+                  : aiStatus.operational
+                  ? (isHi ? '● ऑनलाइन' : '● Online')
+                  : (isHi ? '○ ऑफलाइन' : '○ Offline')}
               </span>
             </div>
           </button>
@@ -235,9 +277,18 @@ export const CivicAIAssistant: React.FC = () => {
                 <h3 className="text-xs font-extrabold text-white leading-tight">
                   {isHi ? 'CitizenCivic नागरिक सहायक' : 'CitizenCivic AI Guide'}
                 </h3>
-                <p className="text-[10px] text-emerald-400 font-mono">
-                  {isHi ? 'सत्यापित नगर निगम सहायता' : 'Verified Municipal Support'}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      aiStatus.operational ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                    }`}
+                  />
+                  <p className="text-[10px] text-slate-300 font-mono">
+                    {aiStatus.operational
+                      ? (isHi ? 'सत्यापित नगर निगम सहायता (ऑनलाइन)' : 'Verified Municipal Support (Online)')
+                      : (isHi ? 'सहायक ऑफलाइन (मैन्युअल रिपोर्टिंग उपलब्ध)' : 'Assistant Offline (Direct reporting active)')}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -276,6 +327,26 @@ export const CivicAIAssistant: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Truthful Offline Fallback Banner */}
+          {!aiStatus.operational && !aiStatus.checking && (
+            <div className="bg-amber-50/90 border-b border-amber-200/90 px-3.5 py-2 flex items-center justify-between text-[11px] text-amber-950 shrink-0">
+              <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="truncate">
+                  {isHi
+                    ? 'एआई सेवा ऑफलाइन मोड में है। सीधे शिकायत दर्ज करें:'
+                    : 'AI service in offline mode. Direct filing is ready:'}
+                </span>
+              </div>
+              <a
+                href="/report"
+                className="shrink-0 font-bold text-emerald-800 hover:text-emerald-950 underline text-[10.5px]"
+              >
+                {isHi ? 'समस्या दर्ज करें' : 'Report Issue'}
+              </a>
+            </div>
+          )}
 
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/60 text-xs">

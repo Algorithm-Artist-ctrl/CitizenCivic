@@ -184,11 +184,11 @@ export const LandingPage: React.FC = () => {
 
         {/* RIGHT COLUMN: Premium 3D Miniature Smart City Diorama matching Reference Image */}
         <div className="min-w-0 relative flex items-center justify-center lg:justify-end select-none w-full">
-          <div className="relative w-full max-w-[560px] overflow-hidden rounded-2xl flex items-center justify-center">
+          <div className="relative w-full max-w-[580px] flex items-center justify-center">
             <img
               src="/assets/landing-hero-city-2x.jpg"
               alt="CitizenCivic Floating 3D Smart City"
-              className="w-full h-auto max-h-[460px] object-contain drop-shadow-xl pointer-events-none transition-transform duration-700"
+              className="w-full h-auto max-h-[500px] object-contain drop-shadow-xl pointer-events-none transition-transform duration-700"
               loading="eager"
             />
           </div>

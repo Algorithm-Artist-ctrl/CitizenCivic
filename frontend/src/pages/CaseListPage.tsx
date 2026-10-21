@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Camera,
   Filter,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../api/client';
@@ -34,6 +35,7 @@ export const CaseListPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -57,6 +59,7 @@ export const CaseListPage: React.FC = () => {
 
   const fetchCases = async () => {
     setLoading(true);
+    setError(null);
     try {
       let url = '/cases/?';
       if (activeScope === 'mine') url += 'scope=mine&';
@@ -75,8 +78,9 @@ export const CaseListPage: React.FC = () => {
       if (analyticsRes.data) {
         setAnalytics(analyticsRes.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch cases', err);
+      setError(err?.response?.data?.detail || err?.message || 'Unable to connect to the case registry. Please check your network and retry.');
     } finally {
       setLoading(false);
     }
@@ -127,17 +131,17 @@ export const CaseListPage: React.FC = () => {
           <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{activeScope === 'mine' ? 'MY REPORTED INCIDENTS' : 'PUBLIC RESOLUTION DIRECTORY'}</span>
+              <span>{activeScope === 'mine' ? t('cases.myReportsEyebrow', 'MY REPORTED INCIDENTS') : t('cases.publicEyebrow', 'PUBLIC RESOLUTION DIRECTORY')}</span>
             </div>
 
             <div className="space-y-1.5">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading">
-                {activeScope === 'mine' ? 'My Reported Cases' : 'Civic Resolution Directory'}
+                {activeScope === 'mine' ? t('cases.myReportsTitle', 'My Reported Cases') : t('cases.title', 'Civic Resolution Directory')}
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
                 {activeScope === 'mine'
-                  ? 'Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.'
-                  : 'Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.'}
+                  ? t('cases.myReportsSubtitle', 'Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.')
+                  : t('cases.subtitle', 'Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.')}
               </p>
             </div>
 
@@ -148,7 +152,7 @@ export const CaseListPage: React.FC = () => {
                   {activeScope === 'mine' ? totalCount : (analytics?.total_cases ?? totalCount)}
                 </span>
                 <span className="text-[11px] font-semibold text-slate-600">
-                  {activeScope === 'mine' ? 'My Total Reports' : 'Total Public Cases'}
+                  {activeScope === 'mine' ? t('cases.myTotalReports', 'My Total Reports') : t('cases.totalPublicCases', 'Total Public Cases')}
                 </span>
               </div>
 
@@ -158,7 +162,7 @@ export const CaseListPage: React.FC = () => {
                     ? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length
                     : (analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length)}
                 </span>
-                <span className="text-[11px] font-semibold text-emerald-700">Resolved Cases</span>
+                <span className="text-[11px] font-semibold text-emerald-700">{t('cases.resolvedCases', 'Resolved Cases')}</span>
               </div>
 
               <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 shadow-2xs">
@@ -169,7 +173,7 @@ export const CaseListPage: React.FC = () => {
                         ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
                         : cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length)}
                 </span>
-                <span className="text-[11px] font-semibold text-amber-700">In Progress</span>
+                <span className="text-[11px] font-semibold text-amber-700">{t('cases.inProgressCases', 'In Progress')}</span>
               </div>
             </div>
           </div>
@@ -201,7 +205,7 @@ export const CaseListPage: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              My Reports
+              {t('cases.myReportsTab', 'My Reports')}
             </button>
             <button
               type="button"
@@ -212,12 +216,12 @@ export const CaseListPage: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              All Public Cases
+              {t('cases.allPublicTab', 'All Public Cases')}
             </button>
           </div>
         ) : (
           <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Official Civic Ledger
+            {t('cases.officialLedger', 'Official Civic Ledger')}
           </div>
         )}
 
@@ -321,8 +325,27 @@ export const CaseListPage: React.FC = () => {
         </form>
       </div>
 
-      {/* Loading state */}
-      {loading ? (
+      {/* Error state */}
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-8 text-center space-y-3">
+          <AlertCircle className="mx-auto h-8 w-8 text-rose-500" />
+          <h3 className="text-sm font-bold text-rose-950 font-heading">
+            {t('cases.errorTitle', 'Unable to load cases')}
+          </h3>
+          <p className="text-xs text-rose-700 max-w-sm mx-auto">
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={fetchCases}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>{t('common.retry', 'Retry')}</span>
+          </button>
+        </div>
+      ) : loading ? (
+        /* Loading state */
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="h-9 w-9 animate-spin rounded-full border-3 border-emerald-600 border-t-transparent" />
         </div>
@@ -331,18 +354,18 @@ export const CaseListPage: React.FC = () => {
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center space-y-3">
           <Layers className="mx-auto h-8 w-8 text-slate-300" />
           <h3 className="text-sm font-bold text-slate-900 font-heading">
-            No matching cases found
+            {t('cases.noMatchingCases', 'No matching cases found')}
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-            Try adjusting your search criteria or resetting the active filters above.
+            {t('cases.noMatchingCasesDesc', 'Try adjusting your search criteria or resetting the active filters above.')}
           </p>
           {(selectedStatus || selectedCategory || searchQuery) && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50"
+              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
             >
-              Clear Active Filters
+              {t('cases.clearActiveFilters', 'Clear Active Filters')}
             </button>
           )}
         </div>
@@ -353,12 +376,12 @@ export const CaseListPage: React.FC = () => {
             <table className="w-full text-left text-xs text-slate-800">
               <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-mono uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th scope="col" className="px-5 py-3.5 font-bold">Case Reference</th>
-                  <th scope="col" className="px-5 py-3.5 font-bold">Category</th>
-                  <th scope="col" className="px-5 py-3.5 font-bold">Landmark / Location</th>
-                  <th scope="col" className="px-5 py-3.5 font-bold">Workflow Status</th>
-                  <th scope="col" className="px-5 py-3.5 font-bold">Evidence</th>
-                  <th scope="col" className="px-5 py-3.5 font-bold text-right">Action</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold">{t('cases.table.caseNumber', 'Case Reference')}</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold">{t('cases.table.category', 'Category')}</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold">{t('cases.table.landmark', 'Landmark / Location')}</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold">{t('cases.table.status', 'Workflow Status')}</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold">{t('cases.table.evidence', 'Evidence')}</th>
+                  <th scope="col" className="px-5 py-3.5 font-bold text-right">{t('cases.table.action', 'Action')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -426,7 +449,7 @@ export const CaseListPage: React.FC = () => {
                           to={`/cases/${c.id}`}
                           className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:text-slate-950 shadow-2xs transition-colors inline-flex items-center gap-1"
                         >
-                          <span>Review Details →</span>
+                          <span>{t('cases.table.reviewDetails', 'Review Details →')}</span>
                         </Link>
                       </td>
                     </tr>
@@ -439,14 +462,19 @@ export const CaseListPage: React.FC = () => {
           {/* Pagination Footer */}
           <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-xs text-slate-500 bg-slate-50/50">
             <span>
-              Showing <strong className="text-slate-900">1</strong> to <strong className="text-slate-900">{cases.length}</strong> of <strong className="text-slate-900">{cases.length}</strong> entries
+              {t('cases.table.showingEntries', {
+                start: cases.length > 0 ? 1 : 0,
+                end: cases.length,
+                total: totalCount || cases.length,
+                defaultValue: `Showing 1 to ${cases.length} of ${totalCount || cases.length} entries`,
+              })}
             </span>
             <div className="flex items-center gap-1">
               <button
                 disabled
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-60 cursor-not-allowed"
               >
-                Previous
+                {t('common.previous', 'Previous')}
               </button>
               <button className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-2xs">
                 1
@@ -455,7 +483,7 @@ export const CaseListPage: React.FC = () => {
                 disabled
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-60 cursor-not-allowed"
               >
-                Next
+                {t('common.next', 'Next')}
               </button>
             </div>
           </div>
@@ -490,7 +518,7 @@ export const CaseListPage: React.FC = () => {
                   to={`/cases/${c.id}`}
                   className="font-bold text-slate-900 hover:text-emerald-700 inline-flex items-center gap-1"
                 >
-                  <span>Review Details →</span>
+                  <span>{t('cases.table.reviewDetails', 'Review Details →')}</span>
                 </Link>
               </div>
             </div>
