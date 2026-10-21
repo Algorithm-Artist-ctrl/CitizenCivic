@@ -278,7 +278,9 @@
     "citizen": {
       "acceptResolution": "Confirm Clean (Accept Resolution)",
       "disputeClosure": "Dispute Closure"
-    }
+    },
+    "notFoundTitle": "Case Record Not Found",
+    "notFoundDesc": "The requested case reference does not exist or has been archived."
   },
   "report": {
     "title": "Report a Civic Issue",
@@ -488,5 +490,30 @@
     "rawVoiceText": "Original Raw Description",
     "reviewTitle": "AI Structuring & Confirmation",
     "reviewSubtitle": "Please review and confirm every detail before final municipal submission. CitizenCivic never submits without your approval."
+  },
+  "officer": {
+    "title": "Municipal Operations & Triage Workspace",
+    "subtitle": "Authorized municipal officer dashboard for complaint triage, physical field verification, and resolution reporting.",
+    "verifiedBadge": "Verified Municipal Personnel",
+    "citizensLeaderboard": "Citizens Leaderboard",
+    "officerStandings": "Officer Standings",
+    "cityFinanceData": "CityFinance Data",
+    "activeQueue": "Active Queue",
+    "activeQueueSub": "Assigned & role-filtered",
+    "needsAction": "Needs Action",
+    "needsActionSub": "Pending triage / ack",
+    "inProgress": "In Progress",
+    "inProgressSub": "Field work underway",
+    "awaitingAudit": "Awaiting Audit",
+    "awaitingAuditSub": "Resolution proof review",
+    "tabs": {
+      "all": "All Cases",
+      "actionRequired": "Needs Action",
+      "inProgress": "In Progress",
+      "verification": "Awaiting Audit"
+    },
+    "searchPlaceholder": "Search by case #, landmark, description, reporter…",
+    "emptyQueue": "No cases matching this criteria.",
+    "hotspot": "Hotspot"
   }
 }

@@ -191,61 +191,65 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
       {/* 3D City Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
-          {/* Banner Left Content */}
-          <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{t('dashboard.workspaceLabel', 'Civic Response Workspace')}</span>
-            </div>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs min-h-[220px] sm:min-h-[240px] flex flex-col justify-center">
+        {/* Banner Right 3D Scene */}
+        <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-[60%] xl:w-[56%] h-full flex items-center justify-end select-none pointer-events-none overflow-hidden z-0">
+          <img
+            src="/assets/dashboard-hero.jpg"
+            alt="CitizenCivic Smart City"
+            className="h-full w-full object-cover object-left lg:object-contain lg:object-right drop-shadow-sm"
+            loading="eager"
+          />
+        </div>
 
-            <div className="space-y-1.5">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading">
-                Welcome back, {user?.display_name || user?.email?.split('@')[0] || t('dashboard.officer', 'Citizen')} 👋
-              </h1>
-              <p className="text-sm font-medium text-slate-600 flex items-center gap-2 flex-wrap">
-                <span className="text-emerald-700 font-semibold">Cleaner Neighbourhoods</span>
-                <span className="text-slate-300">·</span>
-                <span className="text-slate-700">Safer Streets</span>
-                <span className="text-slate-300">·</span>
-                <span className="text-slate-700">Better Cities</span>
-              </p>
-            </div>
-
-            <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
-              Track real-time field progress on reported civic issues, inspect photo-verified resolutions by municipal response teams, and earn community karma.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                to="/report"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-95 transition-all"
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span>+ Report an Issue →</span>
-              </Link>
-
-              <Link
-                to="/cases"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-950 transition-all"
-              >
-                <Compass className="h-4 w-4 text-slate-500" />
-                <span>View Public Cases</span>
-              </Link>
-            </div>
+        {/* Banner Left Content */}
+        <div className="relative z-10 p-5 sm:p-7 lg:p-9 max-w-xl lg:max-w-[50%] space-y-3.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800 backdrop-blur-xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>
+              {i18n.language === 'hi'
+                ? 'नागरिक पोर्टल · पायलट वार्ड 82 (इंदिरानगर)'
+                : `${user?.role || 'CITIZEN'} PORTAL · PILOT WARD 82 (INDIRANAGAR)`}
+            </span>
           </div>
 
-          {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0 pr-0">
-            <div className="relative w-full overflow-hidden flex items-center justify-center lg:justify-end">
-              <img
-                src="/assets/dashboard-hero.jpg"
-                alt="CitizenCivic Smart City"
-                className="w-full h-auto max-h-[260px] object-contain object-right drop-shadow-sm pointer-events-none"
-                loading="eager"
-              />
-            </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading leading-tight">
+              {i18n.language === 'hi' ? (
+                <>
+                  वापसी पर स्वागत है,<br />
+                  <span className="text-emerald-700">{user?.display_name || 'नागरिक'}</span> 👋
+                </>
+              ) : (
+                <>
+                  Welcome back,<br />
+                  <span className="text-emerald-700">{user?.display_name || user?.email?.split('@')[0] || 'shivam officer'}</span> 👋
+                </>
+              )}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md pt-0.5">
+              {i18n.language === 'hi'
+                ? 'अपने दर्ज स्थानीय ब्लैकस्पॉट की निगरानी करें और नगर निगम सफाई के फोटो साक्ष्य सत्यापित करें।'
+                : 'Monitor your reported local blackspots and verify photographic evidence of municipal cleanups.'}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Link
+              to="/report"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-95 transition-all"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>{i18n.language === 'hi' ? '+ समस्या दर्ज करें →' : '+ Report an Issue →'}</span>
+            </Link>
+
+            <Link
+              to="/cases"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white/95 px-5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-950 transition-all backdrop-blur-xs"
+            >
+              <Compass className="h-4 w-4 text-slate-500" />
+              <span>{i18n.language === 'hi' ? 'सार्वजनिक मामले देखें' : 'View Public Cases'}</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -344,7 +348,9 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            
+            <svg className="h-7 w-16 text-blue-500 shrink-0 self-center" viewBox="0 0 64 28" fill="none">
+              <path d="M2 24 C14 24, 22 8, 34 14 C46 20, 52 4, 62 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
         </div>
 
@@ -375,7 +381,9 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            
+            <svg className="h-7 w-16 text-emerald-500 shrink-0 self-center" viewBox="0 0 64 28" fill="none">
+              <path d="M2 26 C12 26, 24 16, 36 16 C48 16, 54 6, 62 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
         </div>
 
@@ -406,28 +414,19 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            
+            <svg className="h-7 w-16 text-amber-500 shrink-0 self-center" viewBox="0 0 64 28" fill="none">
+              <path d="M2 22 C14 22, 24 10, 36 14 C48 18, 54 8, 62 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
         </div>
 
         {/* Card 4: 3D Earth Globe Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-1 z-10">
-            <div className="text-xs font-extrabold text-slate-900 leading-tight">
-              {i18n.language === 'hi' ? (
-                <>नागरिक<br />रिपोर्ट करें<br />शहर<br /><span className="text-emerald-700">सुधरें</span></>
-              ) : (
-                <>People<br />Report<br />Cities<br /><span className="text-emerald-700">Improve</span></>
-              )}
-            </div>
-          </div>
-          <div className="h-20 w-24 shrink-0 overflow-hidden rounded-xl flex items-center justify-center">
-            <img
-              src="/assets/earth-card.jpg"
-              alt="People Report Cities Improve"
-              className="h-full w-full object-contain"
-            />
-          </div>
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-[#eaf7f2] shadow-xs flex items-center justify-center p-0 min-h-[120px]">
+          <img
+            src="/assets/earth-card.jpg"
+            alt="People Report Cities Improve"
+            className="h-full w-full object-cover rounded-2xl"
+          />
         </div>
       </div>
 
@@ -607,15 +606,17 @@ export const DashboardPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Radar Graphic Map */}
-            <div className="relative h-44 w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
-              <div className="absolute inset-0 bg-slate-900" aria-hidden="true" />
-              <div className="absolute inset-0 bg-radial from-transparent to-slate-950/60 pointer-events-none" />
-
+            {/* Radar Graphic Map matching Screenshot */}
+            <div className="relative h-44 w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+              <img
+                src="/assets/radar-map.jpg"
+                alt="Nearby Field Radar Map"
+                className="h-full w-full object-cover"
+              />
               {/* Pulsing Concentric Radar Rings */}
-              <div className="absolute h-28 w-28 rounded-full border border-emerald-400/40 animate-ping pointer-events-none" />
-              <div className="absolute h-20 w-20 rounded-full border border-emerald-400/60 pointer-events-none" />
-              <div className="absolute h-3 w-3 rounded-full bg-emerald-400 shadow-md pointer-events-none" />
+              <div className="absolute h-24 w-24 rounded-full border-2 border-blue-400/50 animate-ping pointer-events-none" />
+              <div className="absolute h-14 w-14 rounded-full border border-blue-400/70 pointer-events-none" />
+              <div className="absolute h-3.5 w-3.5 rounded-full bg-blue-600 ring-4 ring-blue-300/50 shadow-md pointer-events-none" />
             </div>
 
             {/* Radar Active Markers List */}

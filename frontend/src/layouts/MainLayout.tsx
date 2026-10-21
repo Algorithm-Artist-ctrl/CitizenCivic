@@ -51,7 +51,7 @@ export const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8fafc] text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased">
+    <div className="flex min-h-screen flex-col bg-[#f8fafc] text-slate-900 font-sans selection:bg-slate-900 selection:text-white antialiased overflow-x-hidden w-full max-w-full">
       {/* Main Navigation Header: Clean White with 1px border */}
       <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-md min-h-[72px] sm:min-h-[76px] flex items-center shadow-xs">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -515,7 +515,7 @@ export const MainLayout: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">
         <Outlet />
       </main>
 

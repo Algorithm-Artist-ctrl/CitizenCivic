@@ -162,77 +162,63 @@ export const RewardsPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
       {/* 3D Celebration Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-        {/* Floating Small Actions Big Impact Badge */}
-        <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-2 rounded-xl border border-emerald-100 bg-white/95 px-3 py-1.5 shadow-xs backdrop-blur-xs">
-          <div className="h-6 w-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
-            <Leaf className="h-3.5 w-3.5" />
-          </div>
-          <div className="text-[10px] leading-tight">
-            <div className="font-bold text-slate-900">Small Actions</div>
-            <div className="text-emerald-700 font-semibold">Big Impact!</div>
-          </div>
+      {/* 3D Karma Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs min-h-[220px] sm:min-h-[240px] flex flex-col justify-center">
+        {/* Banner Right 3D Scene */}
+        <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-[50%] h-full flex items-center justify-end select-none pointer-events-none overflow-hidden z-0">
+          <img
+            src="/assets/karma-hero.png"
+            alt="Community Karma Celebration"
+            className="h-full w-full object-cover object-left lg:object-contain lg:object-right drop-shadow-sm"
+            loading="eager"
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
-          {/* Banner Left Content */}
-          <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/90 bg-amber-50/80 px-3.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-amber-800">
-              <span>🏆 CIVIC RECOGNITION &amp; KARMA LEDGER</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading">
-                Community Karma &amp; Recognition
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.
-              </p>
-            </div>
-
-            {/* 3 Reference Feature Highlight Pills */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <div className="flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3.5 py-2 shadow-2xs">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
-                  <Leaf className="h-4 w-4" />
-                </div>
-                <div className="text-[11px] leading-tight">
-                  <span className="font-bold text-slate-900 block">Cleaner Neighbourhoods</span>
-                  <span className="text-slate-500 text-[10px]">Real Civic Impact</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-2 shadow-2xs">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
-                  <ShieldCheck className="h-4 w-4" />
-                </div>
-                <div className="text-[11px] leading-tight">
-                  <span className="font-bold text-slate-900 block">Verified Actions</span>
-                  <span className="text-slate-500 text-[10px]">Trusted by Community</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 rounded-xl border border-orange-100 bg-orange-50/60 px-3.5 py-2 shadow-2xs">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 text-orange-800">
-                  <Users className="h-4 w-4" />
-                </div>
-                <div className="text-[11px] leading-tight">
-                  <span className="font-bold text-slate-900 block">Recognized Contributors</span>
-                  <span className="text-slate-500 text-[10px]">Build a Better City</span>
-                </div>
-              </div>
-            </div>
+        {/* Banner Left Content */}
+        <div className="relative z-10 p-5 sm:p-7 lg:p-9 max-w-xl lg:max-w-[52%] space-y-3.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/90 bg-amber-50/90 px-3.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-amber-800 backdrop-blur-xs">
+            <span>🏆 {t('rewards.heroTag', 'CIVIC RECOGNITION & KARMA LEDGER')}</span>
           </div>
 
-          {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0 pr-0">
-            <div className="relative w-full overflow-hidden flex items-center justify-center lg:justify-end">
-              <img
-                src="/assets/karma-hero.png"
-                alt="Community Karma Celebration"
-                className="w-full h-auto max-h-[260px] object-contain object-right drop-shadow-sm pointer-events-none"
-                loading="eager"
-              />
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading leading-tight">
+              {t('rewards.heroTitle', 'Community Karma & Recognition')}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
+              {t('rewards.heroSubtitle', 'Auditable points credited for verified reporting, photographic accuracy, and on-ground audits.')}
+            </p>
+          </div>
+
+          {/* 3 Reference Feature Highlight Pills */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/90 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                <Leaf className="h-4 w-4" />
+              </div>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-slate-900 block">{t('rewards.feature1Title', 'Cleaner Neighbourhoods')}</span>
+                <span className="text-slate-500 text-[10px]">{t('rewards.feature1Sub', 'Real Civic Impact')}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 rounded-xl border border-blue-100 bg-blue-50/90 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-slate-900 block">{t('rewards.feature2Title', 'Verified Actions')}</span>
+                <span className="text-slate-500 text-[10px]">{t('rewards.feature2Sub', 'Trusted by Community')}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 rounded-xl border border-orange-100 bg-orange-50/90 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 text-orange-800">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-slate-900 block">{t('rewards.feature3Title', 'Recognized Contributors')}</span>
+                <span className="text-slate-500 text-[10px]">{t('rewards.feature3Sub', 'Build a Better City')}</span>
+              </div>
             </div>
           </div>
         </div>

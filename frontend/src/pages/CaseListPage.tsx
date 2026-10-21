@@ -125,68 +125,64 @@ export const CaseListPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6 font-sans">
       {/* 3D City Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
-          {/* Banner Left Content */}
-          <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{activeScope === 'mine' ? t('cases.myReportsEyebrow', 'MY REPORTED INCIDENTS') : t('cases.publicEyebrow', 'PUBLIC RESOLUTION DIRECTORY')}</span>
-            </div>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs min-h-[220px] sm:min-h-[240px] flex flex-col justify-center">
+        {/* Banner Right 3D Scene */}
+        <div className="lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-[56%] xl:w-[52%] h-full flex items-center justify-end select-none pointer-events-none overflow-hidden z-0">
+          <img
+            src="/assets/cases-hero.jpg"
+            alt="Civic Resolution Directory"
+            className="h-full w-full object-cover object-left lg:object-contain lg:object-right drop-shadow-sm"
+            loading="eager"
+          />
+        </div>
 
-            <div className="space-y-1.5">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading">
-                {activeScope === 'mine' ? t('cases.myReportsTitle', 'My Reported Cases') : t('cases.title', 'Civic Resolution Directory')}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                {activeScope === 'mine'
-                  ? t('cases.myReportsSubtitle', 'Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.')
-                  : t('cases.subtitle', 'Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.')}
-              </p>
-            </div>
-
-            {/* 3 Metric Pills (Scoped to Active Scope) */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-slate-950">
-                  {activeScope === 'mine' ? totalCount : (analytics?.total_cases ?? totalCount)}
-                </span>
-                <span className="text-[11px] font-semibold text-slate-600">
-                  {activeScope === 'mine' ? t('cases.myTotalReports', 'My Total Reports') : t('cases.totalPublicCases', 'Total Public Cases')}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-emerald-800">
-                  {activeScope === 'mine'
-                    ? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length
-                    : (analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length)}
-                </span>
-                <span className="text-[11px] font-semibold text-emerald-700">{t('cases.resolvedCases', 'Resolved Cases')}</span>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 shadow-2xs">
-                <span className="font-mono text-sm font-extrabold text-amber-800">
-                  {activeScope === 'mine'
-                    ? cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length
-                    : (analytics?.by_status
-                        ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
-                        : cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length)}
-                </span>
-                <span className="text-[11px] font-semibold text-amber-700">{t('cases.inProgressCases', 'In Progress')}</span>
-              </div>
-            </div>
+        {/* Banner Left Content */}
+        <div className="relative z-10 p-5 sm:p-7 lg:p-9 max-w-xl lg:max-w-[48%] space-y-3.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800 backdrop-blur-xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{activeScope === 'mine' ? t('cases.myReportsEyebrow', 'MY REPORTED INCIDENTS') : t('cases.publicEyebrow', 'PUBLIC RESOLUTION DIRECTORY')}</span>
           </div>
 
-          {/* Banner Right 3D Scene */}
-          <div className="lg:col-span-5 relative flex items-center justify-center lg:justify-end select-none w-full min-w-0 pr-0">
-            <div className="relative w-full overflow-hidden flex items-center justify-center lg:justify-end">
-              <img
-                src="/assets/cases-hero.jpg"
-                alt="Civic Resolution Directory"
-                className="w-full h-auto max-h-[260px] object-contain object-right drop-shadow-sm pointer-events-none"
-                loading="eager"
-              />
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-950 font-heading leading-tight">
+              {activeScope === 'mine' ? t('cases.myReportsTitle', 'My Reported Cases') : t('cases.title', 'Civic Resolution Directory')}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
+              {activeScope === 'mine'
+                ? t('cases.myReportsSubtitle', 'Track real-time status transitions, field officer assignments, and photo verification for issues you submitted.')
+                : t('cases.subtitle', 'Search, track and verify civic issues reported across wards. Real-time photographic evidence and resolution tracking.')}
+            </p>
+          </div>
+
+          {/* 3 Metric Pills (Scoped to Active Scope) */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <span className="font-mono text-sm font-extrabold text-slate-950">
+                {activeScope === 'mine' ? totalCount : (analytics?.total_cases ?? totalCount)}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-600">
+                {activeScope === 'mine' ? t('cases.myTotalReports', 'My Total Reports') : t('cases.totalPublicCases', 'Total Public Cases')}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <span className="font-mono text-sm font-extrabold text-emerald-800">
+                {activeScope === 'mine'
+                  ? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length
+                  : (analytics?.by_status?.VERIFIED_RESOLVED ?? cases.filter((c) => c.status === 'VERIFIED_RESOLVED').length)}
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-700">{t('cases.resolvedCases', 'Resolved Cases')}</span>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/90 px-3.5 py-1.5 shadow-2xs backdrop-blur-xs">
+              <span className="font-mono text-sm font-extrabold text-amber-800">
+                {activeScope === 'mine'
+                  ? cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length
+                  : (analytics?.by_status
+                      ? ((analytics.by_status.IN_PROGRESS || 0) + (analytics.by_status.FORWARDED || 0) + (analytics.by_status.ACKNOWLEDGED || 0) + (analytics.by_status.SUBMITTED || 0))
+                      : cases.filter((c) => !['VERIFIED_RESOLVED', 'REJECTED'].includes(c.status)).length)}
+              </span>
+              <span className="text-[11px] font-semibold text-amber-700">{t('cases.inProgressCases', 'In Progress')}</span>
             </div>
           </div>
         </div>

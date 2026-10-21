@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -41,6 +42,7 @@ interface OfficerQueueItem {
 
 export const OfficerPortalPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [queue, setQueue] = useState<OfficerQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,17 +147,17 @@ export const OfficerPortalPage: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-0.5 text-xs font-semibold text-emerald-800">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                Verified Municipal Personnel
+                {t('officer.verifiedBadge', 'Verified Municipal Personnel')}
               </span>
               <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase text-white">
                 {user?.role || 'OFFICER'}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
-              Municipal Operations & Triage Workspace
+              {t('officer.title', 'Municipal Operations & Triage Workspace')}
             </h1>
             <p className="text-xs text-slate-500">
-              Authorized municipal officer dashboard for complaint triage, physical field verification, and resolution reporting.
+              {t('officer.subtitle', 'Authorized municipal officer dashboard for complaint triage, physical field verification, and resolution reporting.')}
             </p>
           </div>
 
@@ -166,21 +168,21 @@ export const OfficerPortalPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
             >
               <Award className="h-3.5 w-3.5 text-amber-600" />
-              <span>Citizens Leaderboard</span>
+              <span>{t('officer.citizensLeaderboard', 'Citizens Leaderboard')}</span>
             </Link>
             <Link
               to="/rewards?tab=officer"
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Officer Standings</span>
+              <span>{t('officer.officerStandings', 'Officer Standings')}</span>
             </Link>
             <Link
               to="/municipal"
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
             >
               <Landmark className="h-3.5 w-3.5 text-indigo-600" />
-              <span>CityFinance Data</span>
+              <span>{t('officer.cityFinanceData', 'CityFinance Data')}</span>
             </Link>
           </div>
         </div>
@@ -188,24 +190,24 @@ export const OfficerPortalPage: React.FC = () => {
         {/* Operational Metrics Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
           <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Active Queue</div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t('officer.activeQueue', 'Active Queue')}</div>
             <div className="mt-1 text-2xl font-bold text-slate-900">{queue.length}</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Assigned & role-filtered</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">{t('officer.activeQueueSub', 'Assigned & role-filtered')}</div>
           </div>
           <div className="rounded-xl bg-amber-50/60 p-4 border border-amber-200/80">
-            <div className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider">Needs Action</div>
+            <div className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider">{t('officer.needsAction', 'Needs Action')}</div>
             <div className="mt-1 text-2xl font-bold text-amber-900">{actionRequiredCount}</div>
-            <div className="text-[10px] text-amber-700/80 mt-0.5">Pending triage / ack</div>
+            <div className="text-[10px] text-amber-700/80 mt-0.5">{t('officer.needsActionSub', 'Pending triage / ack')}</div>
           </div>
           <div className="rounded-xl bg-blue-50/60 p-4 border border-blue-200/80">
-            <div className="text-[11px] font-semibold text-blue-800 uppercase tracking-wider">In Progress</div>
+            <div className="text-[11px] font-semibold text-blue-800 uppercase tracking-wider">{t('officer.inProgress', 'In Progress')}</div>
             <div className="mt-1 text-2xl font-bold text-blue-900">{inProgressCount}</div>
-            <div className="text-[10px] text-blue-700/80 mt-0.5">Physical repairs underway</div>
+            <div className="text-[10px] text-blue-700/80 mt-0.5">{t('officer.inProgressSub', 'Field work underway')}</div>
           </div>
           <div className="rounded-xl bg-emerald-50/60 p-4 border border-emerald-200/80">
-            <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">Pending Audit</div>
+            <div className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">{t('officer.awaitingAudit', 'Awaiting Audit')}</div>
             <div className="mt-1 text-2xl font-bold text-emerald-900">{verificationCount}</div>
-            <div className="text-[10px] text-emerald-700/80 mt-0.5">Requires supervisor sign-off</div>
+            <div className="text-[10px] text-emerald-700/80 mt-0.5">{t('officer.awaitingAuditSub', 'Resolution proof review')}</div>
           </div>
         </div>
       </div>
@@ -237,7 +239,7 @@ export const OfficerPortalPage: React.FC = () => {
                 filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
-              All Tasks ({queue.length})
+              {t('officer.tabs.all', 'All Cases')} ({queue.length})
             </button>
             <button
               type="button"
@@ -246,7 +248,7 @@ export const OfficerPortalPage: React.FC = () => {
                 filterTab === 'ACTION_REQUIRED' ? 'bg-white text-slate-900 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
-              Action Required ({actionRequiredCount})
+              {t('officer.tabs.actionRequired', 'Needs Action')} ({actionRequiredCount})
             </button>
             <button
               type="button"
@@ -255,7 +257,7 @@ export const OfficerPortalPage: React.FC = () => {
                 filterTab === 'IN_PROGRESS' ? 'bg-white text-slate-900 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
-              In Progress ({inProgressCount})
+              {t('officer.tabs.inProgress', 'In Progress')} ({inProgressCount})
             </button>
             <button
               type="button"
@@ -264,7 +266,7 @@ export const OfficerPortalPage: React.FC = () => {
                 filterTab === 'VERIFICATION' ? 'bg-white text-slate-900 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
-              Pending Audit ({verificationCount})
+              {t('officer.tabs.verification', 'Awaiting Audit')} ({verificationCount})
             </button>
           </div>
 
@@ -274,7 +276,7 @@ export const OfficerPortalPage: React.FC = () => {
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search case #, landmark..."
+                placeholder={t('officer.searchPlaceholder', 'Search by case #, landmark, description, reporter…')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-hidden"

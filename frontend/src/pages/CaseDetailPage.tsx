@@ -207,10 +207,10 @@ export const CaseDetailPage: React.FC = () => {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <AlertTriangle className="mx-auto h-8 w-8 text-rose-600" />
-        <h2 className="mt-3 text-base font-bold text-slate-900">Case Record Not Found</h2>
-        <p className="mt-1 text-xs text-slate-500">The requested case reference does not exist or has been archived.</p>
+        <h2 className="mt-3 text-base font-bold text-slate-900">{t('caseDetail.notFoundTitle', 'Case Record Not Found')}</h2>
+        <p className="mt-1 text-xs text-slate-500">{t('caseDetail.notFoundDesc', 'The requested case reference does not exist or has been archived.')}</p>
         <Link to="/cases" className="mt-4 inline-block text-xs font-semibold text-slate-900 underline">
-          Return to Cases Directory
+          {t('caseDetail.back', 'Return to cases directory')}
         </Link>
       </div>
     );
@@ -229,7 +229,7 @@ export const CaseDetailPage: React.FC = () => {
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Return to cases directory</span>
+            <span>{t('caseDetail.back', 'Return to cases directory')}</span>
           </Link>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono text-slate-500 uppercase">
@@ -254,7 +254,7 @@ export const CaseDetailPage: React.FC = () => {
             {caseData.is_hotspot && (
               <span className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
                 <Flame className="h-3 w-3" />
-                <span>Monitored Hotspot</span>
+                <span>{t('caseDetail.hotspotBadge', 'Monitored Hotspot')}</span>
               </span>
             )}
           </div>
@@ -527,10 +527,10 @@ export const CaseDetailPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
                 <Camera className="h-4 w-4 text-slate-600" />
-                <span>Photographic Evidence Archive</span>
+                <span>{t('caseDetail.evidenceArchive', 'Photographic Evidence Archive')}</span>
               </h2>
               <span className="text-xs font-mono text-slate-400">
-                {caseData.evidence?.length || 0} photo(s) on file
+                {caseData.evidence?.length || 0} {t('caseDetail.photosOnFile', 'photo(s) on file')}
               </span>
             </div>
 
@@ -538,10 +538,10 @@ export const CaseDetailPage: React.FC = () => {
             <div className="space-y-2">
               <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                <span>Incident Report Photos (Before Cleanup)</span>
+                <span>{t('caseDetail.beforePhotos', 'Incident Report Photos (Before Cleanup)')}</span>
               </span>
               {beforeEvidence.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No initial photo recorded.</p>
+                <p className="text-xs text-slate-400 italic">{t('caseDetail.noBeforePhotos', 'No initial photo recorded.')}</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {beforeEvidence.map((ev) => (
@@ -579,11 +579,11 @@ export const CaseDetailPage: React.FC = () => {
             <div className="space-y-2 pt-3 border-t border-slate-100">
               <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>On-Ground Resolution Proof (After Cleanup)</span>
+                <span>{t('caseDetail.afterPhotos', 'On-Ground Resolution Proof (After Cleanup)')}</span>
               </span>
               {afterEvidence.length === 0 ? (
                 <div className="rounded border border-dashed border-slate-200 bg-slate-50/50 p-4 text-center text-xs text-slate-400">
-                  Field team has not uploaded completion proof yet.
+                  {t('caseDetail.noAfterPhotos', 'Field team has not uploaded completion proof yet.')}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -626,7 +626,7 @@ export const CaseDetailPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-slate-600" />
-                <span>Immutable Transition Log</span>
+                <span>{t('caseDetail.verifiedTimeline', 'Immutable Transition Log')}</span>
               </h2>
               <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
                 Tamper-Evident
